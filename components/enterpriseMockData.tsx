@@ -1,4 +1,4 @@
-import { EnterpriseActivityData } from './EnterpriseActivityCard';
+import { EnterpriseActivity } from '../lib/types/activity';
 import { ENTERPRISE_SITES, Site, getSiteById } from './sitesMockData';
 
 // Get all buildings from all sites
@@ -150,7 +150,7 @@ const BUSINESS_IMPACT_PROBABILITIES = {
 };
 
 // Generate realistic activity based on type
-const generateActivityByType = (type: string, timestamp: Date): Partial<EnterpriseActivityData> => {
+const generateActivityByType = (type: string, timestamp: Date): Partial<EnterpriseActivity> => {
   const location = generateLocation();
   const camera = generateCamera(location);
   
@@ -294,11 +294,11 @@ const selectByProbability = (probabilities: Record<string, number>): string => {
 };
 
 // Generate single enterprise activity
-const generateEnterpriseActivity = (baseTime: Date, idCounter: number): EnterpriseActivityData => {
-  const type = selectByProbability(ACTIVITY_TYPE_PROBABILITIES) as EnterpriseActivityData['type'];
-  const priority = selectByProbability(PRIORITY_PROBABILITIES) as EnterpriseActivityData['priority'];
-  const status = selectByProbability(STATUS_PROBABILITIES) as EnterpriseActivityData['status'];
-  const businessImpact = selectByProbability(BUSINESS_IMPACT_PROBABILITIES) as EnterpriseActivityData['businessImpact'];
+const generateEnterpriseActivity = (baseTime: Date, idCounter: number): EnterpriseActivity => {
+  const type = selectByProbability(ACTIVITY_TYPE_PROBABILITIES) as EnterpriseActivity['type'];
+  const priority = selectByProbability(PRIORITY_PROBABILITIES) as EnterpriseActivity['priority'];
+  const status = selectByProbability(STATUS_PROBABILITIES) as EnterpriseActivity['status'];
+  const businessImpact = selectByProbability(BUSINESS_IMPACT_PROBABILITIES) as EnterpriseActivity['businessImpact'];
   
   const location = generateLocation();
   const camera = generateCamera(location);
@@ -322,7 +322,7 @@ const generateEnterpriseActivity = (baseTime: Date, idCounter: number): Enterpri
     ...(priority === 'critical' ? [`Unit-${Math.floor(Math.random() * 20) + 21}`] : [])
   ] : undefined;
   
-  const activity: EnterpriseActivityData = {
+  const activity: EnterpriseActivity = {
     id: `ACT-${idCounter.toString().padStart(6, '0')}`,
     timestamp: baseTime,
     type,
@@ -374,8 +374,8 @@ const generateEnterpriseActivity = (baseTime: Date, idCounter: number): Enterpri
 };
 
 // Generate realistic enterprise activity dataset
-export const generateEnterpriseActivities = (count: number = 5000): EnterpriseActivityData[] => {
-  const activities: EnterpriseActivityData[] = [];
+export const generateEnterpriseActivities = (count: number = 5000): EnterpriseActivity[] => {
+  const activities: EnterpriseActivity[] = [];
   const now = new Date();
   
   for (let i = 0; i < count; i++) {
@@ -399,13 +399,13 @@ export const generateEnterpriseActivities = (count: number = 5000): EnterpriseAc
 };
 
 // Generate real-time activity stream
-export const generateRealtimeActivity = (idCounter: number): EnterpriseActivityData => {
+export const generateRealtimeActivity = (idCounter: number): EnterpriseActivity => {
   const now = new Date();
   return generateEnterpriseActivity(now, idCounter);
 };
 
 // Facility statistics for dashboard
-export const getFacilityStats = (activities: EnterpriseActivityData[]) => {
+export const getFacilityStats = (activities: EnterpriseActivity[]) => {
   const now = Date.now();
   const oneHourAgo = now - 60 * 60 * 1000;
   const oneDayAgo = now - 24 * 60 * 60 * 1000;

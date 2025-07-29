@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { EnterpriseActivityCard, EnterpriseActivityData, ActivityCluster } from './EnterpriseActivityCard';
+import { EnterpriseActivityCard } from './EnterpriseActivityCard';
+import { EnterpriseActivity, ActivityCluster } from '../lib/types/activity';
 import { 
   Search, 
   Filter, 
@@ -58,19 +59,19 @@ interface PerformanceMetrics {
 }
 
 interface EnterpriseActivityManagerProps {
-  activities: EnterpriseActivityData[];
-  onActivitySelect?: (activity: EnterpriseActivityData | ActivityCluster) => void;
-  onActivityAction?: (action: string, activity: EnterpriseActivityData | ActivityCluster) => void;
-  onBulkAction?: (action: string, activities: EnterpriseActivityData[]) => void;
+  activities: EnterpriseActivity[];
+  onActivitySelect?: (activity: EnterpriseActivity | ActivityCluster) => void;
+  onActivityAction?: (action: string, activity: EnterpriseActivity | ActivityCluster) => void;
+  onBulkAction?: (action: string, activities: EnterpriseActivity[]) => void;
   realTimeMode?: boolean;
   className?: string;
 }
 
 // Intelligent activity clustering algorithm
-const clusterActivities = (activities: EnterpriseActivityData[], maxDistance: number = 300): (EnterpriseActivityData | ActivityCluster)[] => {
+const clusterActivities = (activities: EnterpriseActivity[], maxDistance: number = 300): (EnterpriseActivity | ActivityCluster)[] => {
   const clusters: ActivityCluster[] = [];
   const processed = new Set<string>();
-  const result: (EnterpriseActivityData | ActivityCluster)[] = [];
+  const result: (EnterpriseActivity | ActivityCluster)[] = [];
 
   activities.forEach((activity) => {
     if (processed.has(activity.id)) return;
@@ -124,7 +125,7 @@ const clusterActivities = (activities: EnterpriseActivityData[], maxDistance: nu
 };
 
 // AI-powered intelligent filtering
-const applyAIFiltering = (activities: EnterpriseActivityData[]): EnterpriseActivityData[] => {
+const applyAIFiltering = (activities: EnterpriseActivity[]): EnterpriseActivity[] => {
   return activities.filter(activity => {
     // Filter out likely false positives
     if (activity.falsePositiveLikelihood && activity.falsePositiveLikelihood > 0.8) {
@@ -147,7 +148,7 @@ const applyAIFiltering = (activities: EnterpriseActivityData[]): EnterpriseActiv
 };
 
 // Performance optimized filtering
-const useFilteredActivities = (activities: EnterpriseActivityData[], filters: EnterpriseFilterState) => {
+const useFilteredActivities = (activities: EnterpriseActivity[], filters: EnterpriseFilterState) => {
   return useMemo(() => {
     let filtered = [...activities];
 
@@ -454,11 +455,11 @@ export function EnterpriseActivityManager({
   }, [activities, filteredActivities]);
 
   // Handle selection
-  const handleItemSelect = useCallback((item: EnterpriseActivityData | ActivityCluster) => {
+  const handleItemSelect = useCallback((item: EnterpriseActivity | ActivityCluster) => {
     onActivitySelect?.(item);
   }, [onActivitySelect]);
 
-  const handleItemAction = useCallback((action: string, item: EnterpriseActivityData | ActivityCluster) => {
+  const handleItemAction = useCallback((action: string, item: EnterpriseActivity | ActivityCluster) => {
     onActivityAction?.(action, item);
   }, [onActivityAction]);
 

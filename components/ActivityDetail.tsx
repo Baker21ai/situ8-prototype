@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Badge } from './ui/badge';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { 
   AlertTriangle, 
   FileText, 
   Camera, 
-  MessageSquare,
   Phone,
-  Radio,
   Target,
-  Bell,
-  Users,
-  Navigation,
   X,
   Play,
   Lock,
@@ -20,7 +14,6 @@ import {
   Shield,
   Eye,
   Clock,
-  MapPin,
   FolderPlus,
   CheckCircle,
   AlertCircle
@@ -60,16 +53,6 @@ interface ActivityDetailProps {
   onUpdate: (activityId: number, updates: Partial<Activity>) => void;
 }
 
-const formatTimeAgo = (date: Date) => {
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return date.toLocaleDateString();
-};
 
 const formatElapsedTime = (startTime: Date) => {
   const diff = Date.now() - startTime.getTime();
@@ -80,7 +63,7 @@ const formatElapsedTime = (startTime: Date) => {
   return `${minutes}m`;
 };
 
-export function ActivityDetail({ activity, isOpen = true, onClose, onUpdate }: ActivityDetailProps) {
+export function ActivityDetail({ activity, isOpen = true, onClose }: ActivityDetailProps) {
   const [showTimeline, setShowTimeline] = useState(false);
 
   // Focus management for accessibility

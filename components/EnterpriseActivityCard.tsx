@@ -1,134 +1,41 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import { useState, memo } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Checkbox } from './ui/checkbox';
-import { Progress } from './ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { 
-  Clock, 
   MapPin, 
-  User, 
-  AlertTriangle, 
   Eye, 
-  FileText, 
-  UserCheck,
-  Radio,
-  Play,
-  Pause,
-  ExternalLink,
   MoreVertical,
-  Flag,
-  Shield,
   Camera,
-  Users,
-  TrendingUp,
-  Zap,
-  Target,
   Layers
 } from 'lucide-react';
+import { EnterpriseActivity, ActivityCluster } from '../lib/types/activity';
+import { getPriorityColor, getStatusColor, getBusinessImpactColor, Priority } from '../lib/utils/status';
+import { getTypeIcon } from '../lib/utils/security';
+import { formatTime, formatTimeAgo } from '../lib/utils/time';
 
-// Enhanced ActivityData for enterprise scale
-export interface EnterpriseActivityData {
-  id: string;
-  timestamp: Date;
-  type: 'TAILGATE' | 'ARMED_PERSON' | 'BREACH' | 'FIRE' | 'MEDICAL' | 'PATROL' | 'ACCESS_DENIED' | 'SUSPICIOUS_BEHAVIOR' | 'EQUIPMENT_FAULT' | 'CROWD_DETECTION';
-  title: string;
-  location: string;
-  zone?: string;
-  building?: string;
-  floor?: string;
-  sector?: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  status: 'new' | 'active' | 'assigned' | 'investigating' | 'resolved' | 'archived';
-  
-  // Enhanced enterprise data
-  confidence?: number;
-  description?: string;
-  detectedObjects?: string[];
-  badgeHolder?: {
-    name: string;
-    id: string;
-    department?: string;
-    clearanceLevel?: string;
-  };
-  assignedTo?: string;
-  respondingUnits?: string[];
-  
-  // Media and evidence
-  gifUrl?: string;
-  thumbnailUrl?: string;
-  cameraId?: string;
-  cameraName?: string;
-  additionalCameras?: string[];
-  
-  // Enterprise flags
-  isBoloActive?: boolean;
-  isNewActivity?: boolean;
-  isMassCasualty?: boolean;
-  isSecurityThreat?: boolean;
-  isOperationalImpact?: boolean;
-  caseRelevance?: string;
-  evidenceNumber?: number;
-  
-  // Timing and context
-  relativeTime?: string;
-  caseTimeOffset?: string;
-  correlatedActivities?: string[];
-  
-  // Performance and analytics
-  aiProcessingTime?: number;
-  confidenceScore?: number;
-  falsePositiveLikelihood?: number;
-  
-  // Enterprise workflow
-  escalationLevel?: number;
-  departmentNotified?: string[];
-  externalAgencies?: string[];
-  complianceFlags?: string[];
-  businessImpact?: 'none' | 'low' | 'medium' | 'high' | 'critical';
-  
-  // Site and geographic data
-  metadata?: {
-    site: string;
-    siteCode: string;
-    region: string;
-    facilityType: string;
-    coordinates: { lat: number; lng: number };
-    securityLevel: string;
-    operationalHours: string;
-  };
-}
+// Helper function to get simple priority background color
+const getPriorityBgColor = (priority: Priority) => {
+  switch (priority) {
+    case 'critical': return 'bg-red-500';
+    case 'high': return 'bg-orange-500';
+    case 'medium': return 'bg-yellow-500';
+    case 'low': return 'bg-gray-400';
+    default: return 'bg-gray-400';
+  }
+};
 
-// Activity aggregation for performance
-export interface ActivityCluster {
-  id: string;
-  clusterType: 'single' | 'cluster';
-  type: any; // Activity type
-  activities: EnterpriseActivityData[];
-  representative: EnterpriseActivityData; // Main activity to display
-  count: number;
-  highestPriority: 'critical' | 'high' | 'medium' | 'low';
-  location: string;
-  building?: string;
-  zone?: string;
-  title?: string;
-  description?: string;
-  timeRange: { start: Date; end: Date };
-  isExpanded?: boolean;
-  timestamp: Date;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  status: string;
-}
+
 
 // Card variant types for enterprise
 export type EnterpriseCardVariant = 'stream' | 'timeline' | 'list' | 'evidence' | 'mobile' | 'cluster' | 'summary' | 'minimal';
 
 interface EnterpriseActivityCardProps {
-  activity: EnterpriseActivityData | ActivityCluster;
+  activity: EnterpriseActivity | ActivityCluster;
   variant: EnterpriseCardVariant;
-  onSelect?: (activity: EnterpriseActivityData | ActivityCluster) => void;
-  onAction?: (action: string, activity: EnterpriseActivityData | ActivityCluster) => void;
+  onSelect?: (activity: EnterpriseActivity | ActivityCluster) => void;
+  onAction?: (action: string, activity: EnterpriseActivity | ActivityCluster) => void;
   isSelected?: boolean;
   showCheckbox?: boolean;
   className?: string;
@@ -137,81 +44,11 @@ interface EnterpriseActivityCardProps {
   compactMode?: boolean;
 }
 
-// Utility functions optimized for enterprise scale
-const formatTimeAgo = (date: Date) => {
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  
-  if (minutes < 1) return 'Now';
-  if (minutes < 60) return `${minutes}m`;
-  if (hours < 24) return `${hours}h`;
-  if (days < 7) return `${days}d`;
-  return date.toLocaleDateString();
-};
-
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    hour12: false 
-  });
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-    case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'low': return 'bg-gray-100 text-gray-800 border-gray-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'new': return 'bg-blue-100 text-blue-800';
-    case 'active': return 'bg-red-100 text-red-800';
-    case 'assigned': return 'bg-orange-100 text-orange-800';
-    case 'investigating': return 'bg-yellow-100 text-yellow-800';
-    case 'resolved': return 'bg-green-100 text-green-800';
-    case 'archived': return 'bg-gray-100 text-gray-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case 'TAILGATE': return '🚪';
-    case 'ARMED_PERSON': return '⚠️';
-    case 'BREACH': return '🔓';
-    case 'FIRE': return '🔥';
-    case 'MEDICAL': return '🏥';
-    case 'PATROL': return '👮';
-    case 'ACCESS_DENIED': return '🚫';
-    case 'SUSPICIOUS_BEHAVIOR': return '👁️';
-    case 'EQUIPMENT_FAULT': return '⚙️';
-    case 'CROWD_DETECTION': return '👥';
-    default: return '📋';
-  }
-};
-
-const getBusinessImpactColor = (impact: string) => {
-  switch (impact) {
-    case 'critical': return 'bg-red-500';
-    case 'high': return 'bg-orange-500';
-    case 'medium': return 'bg-yellow-500';
-    case 'low': return 'bg-blue-500';
-    case 'none': return 'bg-gray-400';
-    default: return 'bg-gray-400';
-  }
-};
 
 // Minimal Card for high-density displays - Even More Compact
 const MinimalCard = memo<{ 
-  activity: EnterpriseActivityData; 
-  onSelect?: (activity: EnterpriseActivityData) => void; 
+  activity: EnterpriseActivity; 
+  onSelect?: (activity: EnterpriseActivity) => void; 
   isSelected?: boolean;
 }>(({ activity, onSelect, isSelected = false }) => {
   return (
@@ -220,9 +57,7 @@ const MinimalCard = memo<{
         <TooltipTrigger asChild>
           <div 
             className={`w-2 h-2 rounded cursor-pointer transition-all hover:scale-125 ${
-              getPriorityColor(activity.priority).includes('red') ? 'bg-red-500' :
-              getPriorityColor(activity.priority).includes('orange') ? 'bg-orange-500' :
-              getPriorityColor(activity.priority).includes('yellow') ? 'bg-yellow-500' : 'bg-gray-400'
+              getPriorityBgColor(activity.priority)
             } ${activity.priority === 'critical' ? 'animate-pulse' : ''} ${
               isSelected ? 'ring-1 ring-blue-500' : ''
             }`}
@@ -262,9 +97,7 @@ const ClusterCard = memo<{
           <TooltipTrigger asChild>
             <div 
               className={`relative w-3 h-3 rounded cursor-pointer transition-all hover:scale-110 ${
-                getPriorityColor(cluster.highestPriority).includes('red') ? 'bg-red-500' :
-                getPriorityColor(cluster.highestPriority).includes('orange') ? 'bg-orange-500' :
-                getPriorityColor(cluster.highestPriority).includes('yellow') ? 'bg-yellow-500' : 'bg-gray-400'
+                getPriorityBgColor(cluster.highestPriority)
               } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
               onClick={() => onSelect?.(cluster)}
             >
@@ -298,7 +131,7 @@ const ClusterCard = memo<{
           <div className="flex items-center gap-1">
             <Layers className="h-3 w-3 text-blue-600" />
             <span className="font-medium text-xs">{cluster.count} activities</span>
-            <Badge className={getPriorityColor(cluster.highestPriority)}>
+            <Badge className={`${getPriorityColor(cluster.highestPriority).background} ${getPriorityColor(cluster.highestPriority).text} ${getPriorityColor(cluster.highestPriority).border}`}>
               {cluster.highestPriority.toUpperCase()}
             </Badge>
           </div>
@@ -330,9 +163,7 @@ const ClusterCard = memo<{
             <div
               key={activity.id}
               className={`w-1 h-1 rounded ${
-                getPriorityColor(activity.priority).includes('red') ? 'bg-red-500' :
-                getPriorityColor(activity.priority).includes('orange') ? 'bg-orange-500' :
-                getPriorityColor(activity.priority).includes('yellow') ? 'bg-yellow-500' : 'bg-gray-400'
+                getPriorityBgColor(activity.priority)
               }`}
               title={activity.title}
             />
@@ -373,9 +204,9 @@ const ClusterCard = memo<{
 
 // Enhanced Stream Card for enterprise features - Always Compact Version
 const EnterpriseStreamCard = memo<{ 
-  activity: EnterpriseActivityData; 
-  onSelect?: (activity: EnterpriseActivityData) => void; 
-  onAction?: (action: string, activity: EnterpriseActivityData) => void;
+  activity: EnterpriseActivity; 
+  onSelect?: (activity: EnterpriseActivity) => void; 
+  onAction?: (action: string, activity: EnterpriseActivity) => void;
   isSelected?: boolean;
   compactMode?: boolean;
 }>(({ activity, onSelect, onAction, isSelected = false, compactMode = true }) => {
@@ -431,7 +262,7 @@ const EnterpriseStreamCard = memo<{
         {/* Status and Assignment */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <Badge className={getPriorityColor(activity.priority)}>
+            <Badge className={`${getPriorityColor(activity.priority).background} ${getPriorityColor(activity.priority).text} ${getPriorityColor(activity.priority).border}`}>
               {activity.priority.toUpperCase()}
             </Badge>
             {activity.escalationLevel && activity.escalationLevel > 0 && (
@@ -461,8 +292,8 @@ const EnterpriseStreamCard = memo<{
 
 // Summary Card for high-level overview - Compact Version
 const SummaryCard = memo<{ 
-  activity: EnterpriseActivityData; 
-  onSelect?: (activity: EnterpriseActivityData) => void;
+  activity: EnterpriseActivity; 
+  onSelect?: (activity: EnterpriseActivity) => void;
   isSelected?: boolean;
 }>(({ activity, onSelect, isSelected = false }) => {
   return (
@@ -551,7 +382,7 @@ export const EnterpriseActivityCard = memo<EnterpriseActivityCardProps>(({
     );
   }
 
-  const activityData = activity as EnterpriseActivityData;
+  const activityData = activity as EnterpriseActivity;
 
   switch (variant) {
     case 'minimal':

@@ -1,53 +1,13 @@
-import React from 'react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { MapPin } from 'lucide-react';
-import { formatTime, formatTimeAgo } from '@/lib/utils/time';
-import { getPriorityColor, getStatusColor, Priority, Status } from '@/lib/utils/status';
-import { getTypeIcon, ActivityType } from '@/lib/utils/security';
+import { formatTime, formatTimeAgo } from '../lib/utils/time';
+import { getPriorityColor, getStatusColor } from '../lib/utils/status';
+import { getTypeIcon } from '../lib/utils/security';
 import { cn } from './ui/utils';
-
-// Activity data types
-export interface ActivityData {
-  id: string;
-  timestamp: Date;
-  type: ActivityType;
-  title: string;
-  location: string;
-  zone?: string;
-  building?: string;
-  priority: Priority;
-  status: Status;
-  
-  // Enhanced data for rich cards
-  confidence?: number;
-  description?: string;
-  detectedObjects?: string[];
-  badgeHolder?: {
-    name: string;
-    id: string;
-    department?: string;
-  };
-  assignedTo?: string;
-  respondingUnits?: string[];
-  
-  // Media
-  gifUrl?: string;
-  thumbnailUrl?: string;
-  cameraId?: string;
-  
-  // Status flags
-  isBoloActive?: boolean;
-  isNewActivity?: boolean;
-  caseRelevance?: string;
-  evidenceNumber?: number;
-  
-  // Timing
-  relativeTime?: string;
-  caseTimeOffset?: string;
-}
+import { ActivityData } from '../lib/types/activity';
 
 // Card variant types
 export type ActivityCardVariant = 'stream' | 'timeline' | 'list' | 'evidence' | 'mobile';
@@ -168,7 +128,7 @@ const ListCard: React.FC<{
 }> = ({
   activity,
   onSelect,
-  onAction,
+  onAction: _onAction,
   isSelected = false,
   showCheckbox = false
 }) => {

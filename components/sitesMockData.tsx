@@ -1,6 +1,8 @@
 // Enterprise-scale site data for Situ8 Security Platform
 // 30+ facilities across North America with realistic geographic distribution
 
+import { SecurityLevel } from '../lib/utils/security';
+
 export interface Site {
   id: string;
   name: string;
@@ -22,7 +24,7 @@ export interface Site {
   employeeCount: number;
   buildings: string[];
   operationalHours: '24/7' | 'business' | 'extended';
-  securityLevel: 'standard' | 'enhanced' | 'maximum';
+  securityLevel: SecurityLevel;
 }
 
 export const ENTERPRISE_SITES: Site[] = [
@@ -45,7 +47,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 5000,
     buildings: ['Main Warehouse', 'Sort Center A', 'Sort Center B', 'Admin Tower', 'Maintenance Facility', 'Security Building', 'Parking Structure A', 'Parking Structure B'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'pdx-fc-001',
@@ -65,7 +67,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3500,
     buildings: ['Fulfillment Center', 'Returns Processing', 'Outbound Dock', 'Employee Center', 'Maintenance Shop'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'sfo-ds-001',
@@ -85,7 +87,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 800,
     buildings: ['Delivery Station', 'Vehicle Maintenance', 'Driver Facilities'],
     operationalHours: 'extended',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   },
   {
     id: 'lax-hub-001',
@@ -105,7 +107,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 6000,
     buildings: ['North Warehouse', 'South Warehouse', 'Cross-dock Facility', 'International Processing', 'Admin Complex', 'Security Center', 'Fleet Parking'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'phx-fc-001',
@@ -125,7 +127,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 4000,
     buildings: ['Main Fulfillment', 'Robotics Center', 'Climate-controlled Storage', 'Shipping Dock', 'Employee Services'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   
   // Central Region
@@ -147,7 +149,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 5500,
     buildings: ['Distribution Center A', 'Distribution Center B', 'Air Cargo Facility', 'Rail Terminal', 'Admin Building', 'Security Operations'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'hou-fc-001',
@@ -167,7 +169,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3800,
     buildings: ['Fulfillment Center', 'Hazmat Storage', 'Heavy Items Processing', 'Outbound Staging', 'Maintenance'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'chi-hub-001',
@@ -187,7 +189,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 5200,
     buildings: ['Main Distribution', 'Cold Storage', 'Intermodal Terminal', 'Sort Center', 'Fleet Hub', 'Security Building'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'msp-fc-001',
@@ -207,7 +209,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3200,
     buildings: ['Fulfillment Center', 'Winter Storage', 'Returns Center', 'Employee Facilities', 'Vehicle Bay'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'den-sc-001',
@@ -227,7 +229,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 1500,
     buildings: ['Sort Facility', 'Conveyor Systems', 'Loading Docks', 'Admin Office'],
     operationalHours: '24/7',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   },
   
   // East Coast Region
@@ -249,7 +251,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 6500,
     buildings: ['Distribution Center North', 'Distribution Center South', 'Air Cargo Terminal', 'International Hub', 'Security Complex', 'Admin Tower'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'bos-fc-001',
@@ -269,7 +271,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3000,
     buildings: ['Main Fulfillment', 'Robotics Wing', 'Quality Control', 'Shipping Hub', 'Employee Center'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'atl-hub-001',
@@ -289,7 +291,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 5800,
     buildings: ['East Distribution', 'West Distribution', 'Regional Sort', 'Cross-dock', 'Fleet Center', 'Security HQ'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'mia-fc-001',
@@ -309,7 +311,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3500,
     buildings: ['Fulfillment Center', 'Hurricane-proof Storage', 'International Processing', 'Loading Complex', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'dc-corp-001',
@@ -329,7 +331,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 2000,
     buildings: ['Executive Tower', 'Operations Center', 'Technology Hub', 'Conference Center', 'Security Command'],
     operationalHours: 'business',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   
   // Additional Strategic Locations
@@ -351,7 +353,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 4500,
     buildings: ['Air Cargo Terminal', 'Sort Center A', 'Sort Center B', 'Ground Hub', 'Maintenance Hangar', 'Admin Complex'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'cvg-hub-001',
@@ -371,7 +373,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 5000,
     buildings: ['Main Sort', 'International Hub', 'Domestic Terminal', 'Fleet Operations', 'Security Center'],
     operationalHours: '24/7',
-    securityLevel: 'maximum'
+    securityLevel: 'secret'
   },
   {
     id: 'ind-fc-001',
@@ -391,7 +393,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3300,
     buildings: ['Fulfillment Center', 'Robotics Floor', 'Outbound Dock', 'Returns Processing', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'clt-fc-001',
@@ -411,7 +413,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3600,
     buildings: ['Main Fulfillment', 'Pick Tower', 'Pack Floor', 'Shipping Center', 'Employee Services'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'cmh-fc-001',
@@ -431,7 +433,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3400,
     buildings: ['Fulfillment Center', 'Small Items', 'Large Items', 'Specialty Handling', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'bna-fc-001',
@@ -451,7 +453,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3200,
     buildings: ['Fulfillment Center', 'Music Equipment Specialty', 'Standard Processing', 'Outbound', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'slc-fc-001',
@@ -471,7 +473,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 2800,
     buildings: ['Main Fulfillment', 'Winter Gear Specialty', 'Standard Items', 'Shipping Hub', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'abq-ds-001',
@@ -491,7 +493,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 500,
     buildings: ['Delivery Station', 'Vehicle Bay', 'Driver Lounge'],
     operationalHours: 'extended',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   },
   {
     id: 'rno-fc-001',
@@ -511,7 +513,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 2200,
     buildings: ['Fulfillment Center', 'Nevada Tax-Free Storage', 'Shipping', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'pdx-ds-001',
@@ -531,7 +533,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 600,
     buildings: ['Delivery Hub', 'Van Loading', 'Driver Services'],
     operationalHours: 'extended',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   },
   {
     id: 'oak-sc-001',
@@ -551,7 +553,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 1200,
     buildings: ['Sort Center', 'Package Processing', 'Loading Docks', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   },
   {
     id: 'phl-fc-001',
@@ -571,7 +573,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3100,
     buildings: ['Fulfillment Center', 'Multi-story Pick Tower', 'Pack Center', 'Dock Complex', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'bwi-fc-001',
@@ -591,7 +593,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 2900,
     buildings: ['Main Fulfillment', 'Port Interface', 'Import Processing', 'Outbound', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'dtw-fc-001',
@@ -611,7 +613,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 3000,
     buildings: ['Fulfillment Center', 'Auto Parts Specialty', 'Standard Processing', 'Shipping', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'enhanced'
+    securityLevel: 'restricted'
   },
   {
     id: 'stl-sc-001',
@@ -631,7 +633,7 @@ export const ENTERPRISE_SITES: Site[] = [
     employeeCount: 1100,
     buildings: ['Sort Facility', 'Regional Processing', 'Fleet Dock', 'Admin'],
     operationalHours: '24/7',
-    securityLevel: 'standard'
+    securityLevel: 'public'
   }
 ];
 
@@ -675,6 +677,6 @@ export const getSiteStatistics = () => {
     sitesByType,
     sitesByRegion,
     megaSites: ENTERPRISE_SITES.filter(s => s.size === 'mega').length,
-    criticalSites: ENTERPRISE_SITES.filter(s => s.securityLevel === 'maximum').length
+    criticalSites: ENTERPRISE_SITES.filter(s => s.securityLevel === 'secret').length
   };
 };

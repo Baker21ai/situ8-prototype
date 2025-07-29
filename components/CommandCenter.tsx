@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -12,10 +12,8 @@ import { Timeline } from './Timeline';
 import { RadioModal } from './RadioModal';
 import { CommunicationsPage } from './CommunicationsPage';
 import { ActivityCard } from './organisms/ActivityCard';
-import { ActivityData } from '@/lib/types/activity';
+import { ActivityData } from '../lib/types/activity';
 import { ActivityDetail } from './ActivityDetail';
-import { EnterpriseActivityManager } from './EnterpriseActivityManager';
-import { mockActivities, getActivitiesByPriority, getCriticalActivities } from './mockActivityData';
 import { enterpriseActivities, generateRealtimeActivity, getFacilityStats } from './enterpriseMockData';
 import { 
   AlertTriangle, 
@@ -298,22 +296,10 @@ const initialTimelineEvents = [
   }
 ];
 
-// Utility functions for activities
-const formatTimeAgo = (date: Date) => {
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return date.toLocaleDateString();
-};
 
 export function CommandCenter() {
   const [activities, setActivities] = useState<ActivityData[]>(getInitialActivities());
   const [guards, setGuards] = useState(initialGuards);
-  const [timelineEvents, setTimelineEvents] = useState(initialTimelineEvents);
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
   const [selectedActivityDetail, setSelectedActivityDetail] = useState<ActivityData | null>(null);
   const [selectedGuard, setSelectedGuard] = useState<typeof initialGuards[0] | null>(null);
@@ -321,7 +307,8 @@ export function CommandCenter() {
   const [showRadioModal, setShowRadioModal] = useState(false);
   const [showCommunicationsPage, setShowCommunicationsPage] = useState(false);
   const [activityIdCounter, setActivityIdCounter] = useState(100001);
-  const [facilityStats, setFacilityStats] = useState(getFacilityStats(enterpriseActivities));
+  const [_timelineEvents, setTimelineEvents] = useState(initialTimelineEvents);
+  const [_facilityStats, setFacilityStats] = useState(getFacilityStats(enterpriseActivities));
   
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
@@ -499,9 +486,6 @@ export function CommandCenter() {
     }
   }, []);
 
-  const handleBulkAction = useCallback((action: string, activities: any[]) => {
-    console.log(`Bulk action: ${action} on ${activities.length} activities`);
-  }, []);
 
   // Auto-add new enterprise activities periodically
   useEffect(() => {
