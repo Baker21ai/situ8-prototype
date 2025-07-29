@@ -3,7 +3,7 @@
  */
 
 import { Priority, Status, BusinessImpact } from '../utils/status';
-import { ActivityType, ThreatLevel, SecurityLevel } from '../utils/security';
+import { ActivityType, ThreatLevel as _ThreatLevel, SecurityLevel } from '../utils/security';
 
 // Base activity interface
 export interface BaseActivity {

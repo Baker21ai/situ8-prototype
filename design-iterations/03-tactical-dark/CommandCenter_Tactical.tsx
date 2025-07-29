@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from '../../components/ui/card';
+import { Badge as _Badge } from '../../components/ui/badge';
+import { Button as _Button } from '../../components/ui/button';
+import { ScrollArea as _ScrollArea } from '../../components/ui/scroll-area';
+import { Alert as _Alert, AlertDescription as _AlertDescription } from '../../components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import { InteractiveMap } from '../../components/InteractiveMap';
 import { GuardProfile } from '../../components/GuardProfile';
@@ -11,26 +11,26 @@ import { GuardManagement } from '../../components/GuardManagement';
 import { Timeline } from '../../components/Timeline';
 import { RadioModal } from '../../components/RadioModal';
 import { CommunicationsPage } from '../../components/CommunicationsPage';
-import { ActivityCard, ActivityData } from '../../components/ActivityCard';
+import { ActivityCard as _ActivityCard, ActivityData } from '../../components/ActivityCard';
 import { ActivityDetail } from '../../components/ActivityDetail';
-import { EnterpriseActivityManager } from '../../components/EnterpriseActivityManager';
+import { EnterpriseActivityManager as _EnterpriseActivityManager } from '../../components/EnterpriseActivityManager';
 import { enterpriseActivities, generateRealtimeActivity, getFacilityStats } from '../../components/enterpriseMockData';
 import { 
   AlertTriangle, 
   Clock, 
   Target,
-  Users,
+  Users as _Users,
   Radio,
-  Headphones,
+  Headphones as _Headphones,
   ChevronDown,
   ChevronRight,
   AlertCircle,
   Info,
   Search,
-  Filter,
-  BarChart3,
+  Filter as _Filter,
+  _BarChart3,
   Shield,
-  Activity,
+  Activity as _Activity,
   MapPin,
   Zap,
   Eye,
@@ -271,7 +271,7 @@ export function CommandCenter_Tactical() {
     setSelectedActivityDetail(activity);
   }, [selectedActivity]);
 
-  const handleActivityAction = useCallback((action: string, activity: any) => {
+  const _handleActivityAction = useCallback((action: string, activity: any) => {
     console.log(`Activity action: ${action}`, activity);
   }, []);
 

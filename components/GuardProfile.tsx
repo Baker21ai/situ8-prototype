@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from './ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { 
-  User, 
+  User as _User, 
   MapPin, 
   Radio, 
   Clock, 
@@ -17,19 +17,19 @@ import {
   MessageCircle, 
   Activity,
   AlertTriangle,
-  CheckCircle,
+  CheckCircle as _CheckCircle,
   Eye,
   Navigation,
-  Shield,
+  Shield as _Shield,
   FileText,
-  Signal,
+  Signal as _Signal,
   X,
   Target,
   Bell,
   ArrowRight,
   Users,
   Hash,
-  Timer,
+  Timer as _Timer,
   ChevronDown,
   ChevronRight,
   BarChart3,

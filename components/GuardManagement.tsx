@@ -1,38 +1,38 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
+import { Separator as _Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Progress } from './ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsContent as _TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Search, 
   Phone, 
   MessageCircle, 
   MapPin, 
   Target, 
-  Car,
+  Car as _Car,
   UserPlus,
-  Clock,
-  Users,
+  Clock as _Clock,
+  Users as _Users,
   Building,
-  MoreVertical,
-  Filter,
-  Eye,
-  Bell,
-  AlertCircle,
-  CheckCircle,
+  MoreVertical as _MoreVertical,
+  Filter as _Filter,
+  Eye as _Eye,
+  Bell as _Bell,
+  AlertCircle as _AlertCircle,
+  CheckCircle as _CheckCircle,
   ChevronDown,
   ChevronRight,
-  Activity,
-  Wifi,
-  WifiOff,
+  Activity as _Activity,
+  Wifi as _Wifi,
+  WifiOff as _WifiOff,
   Radio,
   Maximize2,
   Minimize2
@@ -134,7 +134,7 @@ const mockBuildings: Building[] = [
 
 // formatTimeAgo now imported from centralized utilities
 
-const getMetrics = (guard: Guard, status: Guard['status']) => {
+const _getMetrics = (guard: Guard, status: Guard['status']) => {
   switch (status) {
     case 'responding':
       return `${formatTimeAgo(guard.lastUpdate)} / INC-${guard.assignedActivity || '---'}`;
@@ -651,9 +651,6 @@ function AllGuardsView({ guards, onGuardClick, onQuickAction, selectedGuard, isC
 // Main Guard Management Component
 export function GuardManagement({ 
   guards, 
-  onGuardUpdate, 
-  onGuardAssign, 
-  onGuardStatusChange,
   onGuardSelect
 }: GuardManagementProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('building');

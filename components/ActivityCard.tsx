@@ -128,7 +128,7 @@ const ListCard: React.FC<{
 }> = ({
   activity,
   onSelect,
-  onAction: _onAction,
+  onAction,
   isSelected = false,
   showCheckbox = false
 }) => {

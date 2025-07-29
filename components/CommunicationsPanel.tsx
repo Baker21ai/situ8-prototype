@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from './ui/card';
+import { Card as _Card, CardContent as _CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -9,23 +9,23 @@ import {
   Radio,
   Shield,
   AlertTriangle,
-  Clock,
+  Clock as _Clock,
   MapPin,
-  User,
+  User as _User,
   Activity,
   MessageCircle,
-  Phone,
+  Phone as _Phone,
   ExternalLink,
   Play,
   Volume2,
   Zap,
   Eye,
-  Users,
+  Users as _Users,
   Building,
   Camera,
-  Mic,
+  Mic as _Mic,
   CheckCircle,
-  XCircle,
+  XCircle as _XCircle,
   AlertCircle,
   Info
 } from 'lucide-react';
@@ -254,8 +254,6 @@ const generateCommunicationData = (): CommunicationEntry[] => [
 export function CommunicationsPanel({ 
   className = '', 
   onOpenModal, 
-  onOpenFullPage, 
-  activities = [],
   showAllTab = true,
   defaultTab = 'timeline'
 }: CommunicationsPanelProps) {

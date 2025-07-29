@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader as _CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
-import { MapPin, Camera, Play, Eye, MoreVertical } from 'lucide-react';
+import { MapPin, Camera as _Camera, Play, Eye as _Eye, MoreVertical } from 'lucide-react';
 
 // Import atomic components
 import { StatusBadge, PriorityIndicator, TimeDisplay, LocationBadge } from '@/components/atoms';
@@ -75,7 +75,6 @@ export const ActivityCard = memo<ActivityCardProps>(({
   layout = 'stream',
   features = {},
   isSelected = false,
-  isHovered = false,
   onClick,
   onAction,
   className
@@ -85,7 +84,7 @@ export const ActivityCard = memo<ActivityCardProps>(({
   const activityData = isCluster ? (activity as ActivityCluster).representative : activity as ActivityData;
   
   // Get activity type info
-  const typeInfo = getActivityTypeInfo(activityData.type);
+  const _typeInfo = getActivityTypeInfo(activityData.type);
   
   // Layout-specific styles
   const layoutStyles = {

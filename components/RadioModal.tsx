@@ -4,18 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
+import { Separator as _Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { 
   Radio, 
   Mic, 
-  Phone, 
+  Phone as _Phone, 
   MessageCircle, 
   Activity, 
-  AlertTriangle, 
-  Shield, 
+  AlertTriangle as _AlertTriangle, 
+  Shield as _Shield, 
   Clock, 
   MapPin, 
   Search,
@@ -24,10 +24,9 @@ import {
   ExternalLink,
   Play,
   Pause,
-  Volume2,
-  Users,
+  Users as _Users,
   Wifi,
-  X,
+  X as _X,
   Filter
 } from 'lucide-react';
 
@@ -181,7 +180,7 @@ export function RadioModal({ isOpen, onClose, onOpenFullPage }: RadioModalProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [playingMessage, setPlayingMessage] = useState<string | null>(null);
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case 'available': return 'text-green-600';
       case 'responding': return 'text-blue-600';
@@ -252,7 +251,7 @@ export function RadioModal({ isOpen, onClose, onOpenFullPage }: RadioModalProps)
   });
 
   const activeGuards = guards.filter(g => g.status !== 'offline');
-  const channelStats = mockChannels.find(c => c.id === selectedChannel);
+  const _channelStats = mockChannels.find(c => c.id === selectedChannel);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

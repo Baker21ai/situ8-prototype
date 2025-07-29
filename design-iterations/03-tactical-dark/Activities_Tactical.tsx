@@ -5,37 +5,37 @@ import { CommunicationsPanel } from '../../components/CommunicationsPanel';
 import { RadioModal } from '../../components/RadioModal';
 import { CommunicationsPage } from '../../components/CommunicationsPage';
 import { enterpriseActivities, getFacilityStats } from '../../components/enterpriseMockData';
-import { Card, CardContent } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
+import { Card as _Card, CardContent as _CardContent } from '../../components/ui/card';
+import { Badge as _Badge } from '../../components/ui/badge';
+import { Button as _Button } from '../../components/ui/button';
+import { Input as _Input } from '../../components/ui/input';
 import { 
   Building, 
   Camera, 
-  Activity, 
+  Activity as _Activity, 
   Users, 
   AlertTriangle,
   TrendingUp,
   Shield,
   Zap,
   Radio,
-  Headphones,
+  Headphones as _Headphones,
   Search,
   Filter,
   Download,
   RefreshCw,
   BarChart3,
-  Clock,
-  MapPin,
+  Clock as _Clock,
+  MapPin as _MapPin,
   Eye,
   Crosshair,
   Radar,
   Signal,
   Target,
-  Settings,
-  Database,
-  Layers,
-  Globe,
+  Settings as _Settings,
+  Database as _Database,
+  Layers as _Layers,
+  Globe as _Globe,
   Cpu
 } from 'lucide-react';
 import './tactical-dark-styles.css';

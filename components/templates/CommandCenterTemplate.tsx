@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card as _Card, CardContent as _CardContent } from '@/components/ui/card';
 import { cn } from '@/components/ui/utils';
 import { cardPadding, cardSpacing } from '@/lib/tokens/spacing';
 

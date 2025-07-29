@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { ScrollArea } from '../../components/ui/scroll-area';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from '../../components/ui/card';
+import { Button as _Button } from '../../components/ui/button';
+import { Badge as _Badge } from '../../components/ui/badge';
+import { Tabs as _Tabs, TabsContent as _TabsContent, TabsList as _TabsList, TabsTrigger as _TabsTrigger } from '../../components/ui/tabs';
+import { ScrollArea as _ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
+import { Select as _Select, SelectContent as _SelectContent, SelectItem as _SelectItem, SelectTrigger as _SelectTrigger, SelectValue as _SelectValue } from '../../components/ui/select';
+import { Input as _Input } from '../../components/ui/input';
+import { Textarea as _Textarea } from '../../components/ui/textarea';
 import { 
   Radio, 
   Mic, 
   Phone, 
   MessageCircle, 
-  Activity, 
+  Activity as _Activity, 
   AlertTriangle, 
   Shield, 
   Clock, 
-  MapPin, 
+  MapPin as _MapPin, 
   Search,
-  Settings,
+  Settings as _Settings,
   BarChart3,
   ArrowLeft,
   Play,
@@ -28,26 +28,26 @@ import {
   Volume2,
   Users,
   Wifi,
-  Bell,
-  User,
-  LogOut,
+  Bell as _Bell,
+  User as _User,
+  LogOut as _LogOut,
   Download,
-  Upload,
+  Upload as _Upload,
   Filter,
   RefreshCw,
   Send,
-  Headphones,
+  Headphones as _Headphones,
   VolumeX,
-  Volume1,
+  _Volume1,
   Building,
   Eye,
-  FileText,
-  Calendar,
+  FileText as _FileText,
+  Calendar as _Calendar,
   TrendingUp,
-  Database,
+  Database as _Database,
   Zap,
-  Layers,
-  Globe,
+  Layers as _Layers,
+  Globe as _Globe,
   Cpu
 } from 'lucide-react';
 import './glass-morphism-styles.css';
@@ -211,7 +211,7 @@ const mockMessages: RadioMessage[] = [
 
 export function CommunicationsPage_Glass({ onBackToCommandCenter }: CommunicationsPageGlassProps) {
   const [selectedChannel, setSelectedChannel] = useState('main');
-  const [selectedSite, setSelectedSite] = useState('all');
+  const [_selectedSite, setSelectedSite] = useState('all');
   const [selectedGuard, setSelectedGuard] = useState('all');
   const [timeFilter, setTimeFilter] = useState('last_24_hours');
   const [priorityFilter, setPriorityFilter] = useState('all');

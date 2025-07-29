@@ -5,10 +5,10 @@ import { CommunicationsPanel } from '../../components/CommunicationsPanel';
 import { RadioModal } from '../../components/RadioModal';
 import { CommunicationsPage } from '../../components/CommunicationsPage';
 import { enterpriseActivities, getFacilityStats } from '../../components/enterpriseMockData';
-import { Card, CardContent } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
+import { Card as _Card, CardContent as _CardContent } from '../../components/ui/card';
+import { Badge as _Badge } from '../../components/ui/badge';
+import { Button as _Button } from '../../components/ui/button';
+import { Input as _Input } from '../../components/ui/input';
 import { 
   Building, 
   Camera, 
@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   TrendingUp,
   Shield,
-  Zap,
+  Zap as _Zap,
   Radio,
   Headphones,
   Search,

@@ -6,6 +6,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Situ8 is an enterprise-scale security platform designed for 24/7 operations across 30+ facilities. It provides real-time security management with a sophisticated three-panel interface optimized for security command centers.
 
+## Development Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (port 5173)
+npm run dev
+
+# Build for production
+npm run build
+
+# Run ESLint
+npm run lint
+
+# Preview production build
+npm run preview
+
+# TypeScript type checking (included in build)
+tsc
+```
+
 ## Architecture
 
 ### Core Layout Structure
@@ -34,20 +56,6 @@ The application uses a three-panel command center layout:
 - Mock data generators in `enterpriseMockData.tsx` create realistic security scenarios
 - Activities include site/building metadata for geographic distribution
 - Real-time simulation through `generateRealtimeActivity()`
-
-## Development Commands
-
-**Note**: This appears to be a component library within a larger project. Build/test commands should be run from the parent project directory that contains package.json and build configuration.
-
-```bash
-# Component development workflow
-# 1. Choose main component version in App.tsx:
-#    - CommandCenter.tsx (stable)
-#    - CommandCenter_new.tsx (latest)
-
-# 2. Verify mock data integration
-# 3. Check component imports match the setup guide
-```
 
 ## Key Development Patterns
 
@@ -88,6 +96,66 @@ Activities must include:
 3. Feature Components → CommandCenter
 4. CommandCenter → App.tsx
 
+## Using Multiple Claude Sessions for Concurrent Work
+
+You can leverage multiple Claude Code sessions to work on different aspects of the codebase simultaneously. Here are effective patterns:
+
+### 1. Feature Branch Workflow
+Open separate Claude sessions in different git worktrees:
+
+```bash
+# Main branch for stable development
+cd /path/to/situ8
+claude
+
+# Feature branch for new components
+git worktree add ../situ8-new-feature feature/new-component
+cd ../situ8-new-feature
+claude
+
+# Bug fix branch
+git worktree add ../situ8-bugfix fix/timeline-issue
+cd ../situ8-bugfix
+claude
+```
+
+### 2. Component-Focused Sessions
+Dedicate each session to specific components:
+- **Session 1**: Activities and EnterpriseActivityManager
+- **Session 2**: Timeline and Communications
+- **Session 3**: InteractiveMap and navigation
+- **Session 4**: UI components and styling
+
+### 3. Task Division Strategies
+- **Frontend/Backend Split**: One session for UI, another for data/logic
+- **Feature/Testing Split**: One for implementation, another for tests
+- **Refactoring/Feature Split**: One maintaining existing code, another adding features
+
+### 4. Coordination Tips
+- Use clear commit messages to track work across sessions
+- Create a shared TODO file or use Task Master AI for task coordination
+- Use different terminals/tabs with descriptive names
+- Regularly pull changes between sessions to stay synchronized
+
+### 5. Example Multi-Session Setup
+```bash
+# Terminal 1: Main development
+cd ~/situ8 && claude
+# Working on: CommandCenter layout improvements
+
+# Terminal 2: Component development  
+cd ~/situ8-components && claude
+# Working on: New ActivityCard variants
+
+# Terminal 3: Bug fixes
+cd ~/situ8-fixes && claude
+# Working on: Timeline data loading issues
+
+# Terminal 4: Documentation
+cd ~/situ8 && claude
+# Working on: Updating component documentation
+```
+
 ## Important References
 
 - `SITU8_SETUP_GUIDE.md` - Detailed setup checklist and troubleshooting
@@ -107,3 +175,26 @@ Activities must include:
 2. **No Data in Timeline**: Check mock data generators return arrays with metadata.site
 3. **Styling Issues**: Verify globals.css is imported and no conflicting CSS
 4. **Component Not Rendering**: Check import paths are relative (./ui/ not @/components/ui/)
+5. **TypeScript Errors**: Run `tsc` to check types, ensure tsconfig.json includes all source files
+6. **Build Failures**: Check for unused variables (ESLint), fix with `npm run lint`
+
+## Project-Specific Configuration
+
+### TypeScript Configuration
+- Target: ES2020
+- Module: ESNext with bundler resolution
+- Strict mode enabled
+- Path alias: `@/*` maps to project root
+- Includes: src, components, *.tsx files in root
+- Excludes: design-iterations, ui-iterations folders
+
+### ESLint Configuration
+- TypeScript parser with React plugins
+- Ignores design-iterations and ui-iterations folders
+- Unused vars must be prefixed with underscore
+- React globals are pre-defined
+
+### Vite Configuration
+- React plugin with Fast Refresh
+- Development server on port 5173
+- Path alias resolution matching tsconfig

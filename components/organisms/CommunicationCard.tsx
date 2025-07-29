@@ -7,10 +7,10 @@ import { cn } from '@/components/ui/utils';
 import { 
   Radio, 
   MessageCircle, 
-  Phone, 
+  Phone as _Phone, 
   Play, 
-  MapPin, 
-  Mic,
+  MapPin as _MapPin, 
+  Mic as _Mic,
   Bot,
   CheckCircle,
   Clock,
@@ -18,11 +18,11 @@ import {
 } from 'lucide-react';
 
 // Import atomic components
-import { TimeDisplay, PriorityIndicator, LocationBadge } from '@/components/atoms';
+import { TimeDisplay, PriorityIndicator as _PriorityIndicator, LocationBadge } from '@/components/atoms';
 
 // Import types and utilities
 import { CommunicationEntry, CommunicationType, ChannelType } from '@/lib/types/communications';
-import { Priority } from '@/lib/types';
+import { Priority as _Priority } from '@/lib/types';
 import { channelColors, specialColors } from '@/lib/tokens/colors';
 import { cardPadding, cardSpacing } from '@/lib/tokens/spacing';
 
@@ -313,7 +313,7 @@ const MinimalCommunicationCard: React.FC<{
   communication: CommunicationEntry;
   onClick?: (communication: CommunicationEntry) => void;
 }> = ({ communication, onClick }) => {
-  const isAI = communication.type === 'ai_response';
+  const _isAI = communication.type === 'ai_response';
   
   return (
     <div

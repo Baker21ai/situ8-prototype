@@ -1,14 +1,14 @@
 import React from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
+import { Card as _Card, CardContent as _CardContent } from './ui/card';
 import { motion } from 'framer-motion';
 import { 
   AlertTriangle, 
   CheckCircle, 
   Clock, 
   Shield, 
-  Users, 
+  Users as _Users, 
   Camera,
   Phone,
   Radio,

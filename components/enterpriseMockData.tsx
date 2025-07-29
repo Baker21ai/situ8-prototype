@@ -1,11 +1,11 @@
 import { EnterpriseActivity } from '../lib/types/activity';
-import { ENTERPRISE_SITES, Site, getSiteById } from './sitesMockData';
+import { ENTERPRISE_SITES, Site as _Site, getSiteById } from './sitesMockData';
 
 // Get all buildings from all sites
 const ALL_BUILDINGS = ENTERPRISE_SITES.flatMap(site => site.buildings);
 
 // Building types mapped from site data
-const BUILDING_TYPES = [
+const _BUILDING_TYPES = [
   'Main Warehouse', 'Fulfillment Center', 'Sort Center', 'Distribution Center',
   'Admin Tower', 'Admin Building', 'Admin Office', 'Admin Complex',
   'Security Building', 'Security Center', 'Security HQ', 'Security Command',
@@ -152,7 +152,7 @@ const BUSINESS_IMPACT_PROBABILITIES = {
 // Generate realistic activity based on type
 const generateActivityByType = (type: string, timestamp: Date): Partial<EnterpriseActivity> => {
   const location = generateLocation();
-  const camera = generateCamera(location);
+  const _camera = generateCamera(location);
   
   switch (type) {
     case 'TAILGATE':

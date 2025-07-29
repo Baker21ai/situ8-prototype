@@ -10,7 +10,6 @@ import {
   Pause,
   RotateCcw,
   ExternalLink,
-  Volume2,
   MapPin,
   ChevronDown,
   ChevronUp,

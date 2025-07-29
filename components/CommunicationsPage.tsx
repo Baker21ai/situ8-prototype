@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs as _Tabs, TabsContent as _TabsContent, TabsList as _TabsList, TabsTrigger as _TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
+import { Textarea as _Textarea } from './ui/textarea';
 import { 
   Radio, 
   Mic, 
@@ -16,9 +16,9 @@ import {
   MessageCircle, 
   Activity, 
   AlertTriangle, 
-  Shield, 
+  Shield as _Shield, 
   Clock, 
-  MapPin, 
+  MapPin as _MapPin, 
   Search,
   Settings,
   BarChart3,
@@ -32,18 +32,17 @@ import {
   User,
   LogOut,
   Download,
-  Upload,
+  Upload as _Upload,
   Filter,
   RefreshCw,
   Send,
-  Headphones,
+  Headphones as _Headphones,
   VolumeX,
-  Volume1,
   Building,
   Eye,
-  FileText,
-  Calendar,
-  TrendingUp,
+  FileText as _FileText,
+  Calendar as _Calendar,
+  TrendingUp as _TrendingUp,
   Database
 } from 'lucide-react';
 
@@ -295,7 +294,7 @@ export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPage
   const [newMessage, setNewMessage] = useState('');
   const [volume, setVolume] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
-  const [activeTab, setActiveTab] = useState('communications');
+  const [_activeTab, setActiveTab] = useState('communications');
 
   // Calculate location stats
   const locationStats: LocationStats[] = [
@@ -406,7 +405,7 @@ export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPage
   });
 
   const activeGuards = guards.filter(g => g.status !== 'offline');
-  const selectedChannelData = mockChannels.find(c => c.id === selectedChannel);
+  const _selectedChannelData = mockChannels.find(c => c.id === selectedChannel);
   const totalMessagesToday = mockChannels.reduce((sum, channel) => sum + channel.messageCount, 0);
   const avgTranscriptionRate = mockChannels.reduce((sum, channel) => sum + channel.transcriptionRate, 0) / mockChannels.length;
 

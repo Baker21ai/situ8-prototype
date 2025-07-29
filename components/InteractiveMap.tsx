@@ -27,7 +27,6 @@ import {
   Building2,
   Settings,
   Map,
-  Maximize2,
   Grid3X3,
   ArrowLeft,
   ArrowRight,
@@ -261,7 +260,7 @@ export function InteractiveMap({ onZoneClick, onGuardClick }: InteractiveMapProp
   });
   const [zoom, setZoom] = useState(5);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [emergencyMode, setEmergencyMode] = useState(false);
+  const [_emergencyMode, setEmergencyMode] = useState(false);
 
   // Navigation helpers
   const getCurrentData = () => {
@@ -519,7 +518,7 @@ export function InteractiveMap({ onZoneClick, onGuardClick }: InteractiveMapProp
           )}
           {/* Assets */}
           {currentData.assets?.map((asset) => {
-            const IconComponent = getAssetIcon(asset.type);
+            const _IconComponent = getAssetIcon(asset.type);
             return (
               <g key={asset.id}>
                 <circle

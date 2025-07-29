@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
+import { Progress as _Progress } from '@/components/ui/progress';
 import { cn } from '@/components/ui/utils';
 import { 
   Phone, 
@@ -17,15 +17,15 @@ import {
   Target,
   AlertCircle,
   CheckCircle,
-  Car,
+  Car as _Car,
   Wifi,
   WifiOff,
   MoreVertical
 } from 'lucide-react';
 
 // Import atomic components
-import { StatusBadge, TimeDisplay, LocationBadge } from '@/components/atoms';
-import { ActivityHeader, ActivityFooter, MetadataDisplay } from '@/components/molecules';
+import { StatusBadge as _StatusBadge, TimeDisplay as _TimeDisplay, LocationBadge as _LocationBadge } from '@/components/atoms';
+import { ActivityHeader as _ActivityHeader, ActivityFooter as _ActivityFooter, MetadataDisplay as _MetadataDisplay } from '@/components/molecules';
 
 // Import types and utilities
 import { Guard, GuardStatus, GuardMetrics } from '@/lib/types/guards';

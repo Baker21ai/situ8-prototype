@@ -352,9 +352,7 @@ export const EnterpriseActivityCard = memo<EnterpriseActivityCardProps>(({
   onSelect,
   onAction,
   isSelected = false,
-  showCheckbox = false,
   className = '',
-  index = 0,
   isVisible = true,
   compactMode = false
 }) => {

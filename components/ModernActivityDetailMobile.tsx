@@ -9,19 +9,19 @@ import {
   X,
   Shield,
   AlertTriangle,
-  Camera,
+  Camera as _Camera,
   Users,
-  Clock,
+  Clock as _Clock,
   Star,
   Phone,
-  Radio,
+  Radio as _Radio,
   Lock,
   Megaphone,
   Eye,
   Play,
   CheckCircle,
   FileText,
-  ChevronUp,
+  ChevronUp as _ChevronUp,
   ChevronDown
 } from 'lucide-react';
 import { 

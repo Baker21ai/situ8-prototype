@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Separator as _Separator } from './ui/separator';
+import { Dialog as _Dialog, DialogContent as _DialogContent, DialogHeader as _DialogHeader, DialogTitle as _DialogTitle } from './ui/dialog';
 import { Alert, AlertDescription } from './ui/alert';
 import { InteractiveMap } from './InteractiveMap';
 import { GuardProfile } from './GuardProfile';
@@ -12,26 +12,26 @@ import { GuardManagement } from './GuardManagement';
 import { 
   AlertTriangle, 
   Clock, 
-  MapPin, 
-  Radio, 
-  User, 
-  Eye,
-  MessageCircle,
-  Zap,
-  Shield,
-  Navigation,
-  Phone,
-  ArrowRight,
-  UserCheck,
-  Bell,
-  Megaphone,
+  MapPin as _MapPin, 
+  Radio as _Radio, 
+  User as _User, 
+  Eye as _Eye,
+  MessageCircle as _MessageCircle,
+  Zap as _Zap,
+  Shield as _Shield,
+  Navigation as _Navigation,
+  Phone as _Phone,
+  ArrowRight as _ArrowRight,
+  UserCheck as _UserCheck,
+  Bell as _Bell,
+  Megaphone as _Megaphone,
   Target,
   Users,
-  Activity,
-  Command,
-  Keyboard,
-  X,
-  Play,
+  Activity as _Activity,
+  Command as _Command,
+  Keyboard as _Keyboard,
+  X as _X,
+  Play as _Play,
   Pause
 } from 'lucide-react';
 
@@ -339,7 +339,7 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
-const getStatusColor = (status: string) => {
+const _getStatusColor = (status: string) => {
   switch (status) {
     case 'available': return 'bg-green-500';
     case 'responding': return 'bg-orange-500';

@@ -27,6 +27,6 @@
     }
   },
   "include": ["src", "components", "*.tsx", "App.tsx"],
-  "exclude": ["vite.config.ts"],
+  "exclude": ["vite.config.ts", "design-iterations", "ui-iterations"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

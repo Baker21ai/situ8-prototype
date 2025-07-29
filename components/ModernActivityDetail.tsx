@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Separator } from './ui/separator';
+import { Card, CardContent, CardHeader as _CardHeader } from './ui/card';
+import { Separator as _Separator } from './ui/separator';
 import { Progress } from './ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,13 +10,13 @@ import {
   AlertTriangle, 
   FileText, 
   Camera, 
-  MessageSquare,
+  MessageSquare as _MessageSquare,
   Phone,
   Radio,
-  Target,
-  Bell,
+  Target as _Target,
+  Bell as _Bell,
   Users,
-  Navigation,
+  Navigation as _Navigation,
   X,
   Play,
   Lock,
@@ -24,12 +24,12 @@ import {
   Shield,
   Eye,
   Clock,
-  MapPin,
+  MapPin as _MapPin,
   FolderPlus,
   CheckCircle,
   AlertCircle,
   ChevronDown,
-  ChevronRight,
+  ChevronRight as _ChevronRight,
   Zap,
   Activity,
   Star,
@@ -201,7 +201,7 @@ interface ModernActivityDetailProps {
   onUpdate: (activityId: number, updates: Partial<Activity>) => void;
 }
 
-const formatTimeAgo = (date: Date) => {
+const _formatTimeAgo = (date: Date) => {
   const diff = Date.now() - date.getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
@@ -303,7 +303,7 @@ export function ModernActivityDetail({ activity, isOpen = true, onClose, onUpdat
     businessImpact: 'medium'
   };
 
-  const getSeverityStyle = () => {
+  const _getSeverityStyle = () => {
     switch (activity.priority) {
       case 'critical':
         return 'bg-red-900/30 border-red-500/50 shadow-red-500/20';

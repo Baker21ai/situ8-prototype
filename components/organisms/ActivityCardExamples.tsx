@@ -8,7 +8,7 @@ import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/a
  */
 
 // Mock activity data
-const mockActivity: ActivityData = {
+const _mockActivity: ActivityData = {
   id: '001',
   timestamp: new Date(),
   type: 'TAILGATE',

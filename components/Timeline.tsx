@@ -1,34 +1,34 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from './ui/card';
+import { Card as _Card, CardContent as _CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
+import { Separator as _Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { 
   Radio,
   Shield,
   AlertTriangle,
-  Clock,
+  Clock as _Clock,
   MapPin,
   User,
   Activity,
   MessageCircle,
-  Phone,
+  Phone as _Phone,
   ExternalLink,
   Play,
   Volume2,
   Zap,
   Eye,
-  Users,
-  Building,
+  Users as _Users,
+  Building as _Building,
   Camera,
-  ChevronDown,
-  ChevronRight,
+  ChevronDown as _ChevronDown,
+  ChevronRight as _ChevronRight,
   Mic,
   CheckCircle,
-  XCircle,
+  XCircle as _XCircle,
   AlertCircle,
   Info
 } from 'lucide-react';
@@ -206,7 +206,7 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
   });
   const [communicationData, setCommunicationData] = useState<CommunicationEntry[]>(generateCommunicationData());
   const [activeTab, setActiveTab] = useState<'incidents' | 'communications'>('incidents');
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const [_expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [timeFilter, setTimeFilter] = useState<'15m' | '1h' | '4h' | '24h'>('1h');
 
   // Real-time data simulation

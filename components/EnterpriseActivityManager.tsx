@@ -1,36 +1,36 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Progress } from './ui/progress';
+import { Tabs, TabsContent as _TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Progress as _Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
 import { EnterpriseActivityCard } from './EnterpriseActivityCard';
 import { EnterpriseActivity, ActivityCluster } from '../lib/types/activity';
 import { 
   Search, 
-  Filter, 
-  TrendingUp, 
+  Filter as _Filter, 
+  TrendingUp as _TrendingUp, 
   AlertTriangle, 
   Clock, 
-  Target,
-  Users,
-  Building,
-  Camera,
+  Target as _Target,
+  Users as _Users,
+  Building as _Building,
+  Camera as _Camera,
   Layers,
   Zap,
   Shield,
   BarChart3,
-  Settings,
-  Download,
-  RefreshCw,
+  Settings as _Settings,
+  Download as _Download,
+  RefreshCw as _RefreshCw,
   Maximize2,
   Minimize2,
-  Eye,
-  EyeOff,
+  Eye as _Eye,
+  EyeOff as _EyeOff,
   Grid3X3,
   ArrowRight
 } from 'lucide-react';
@@ -419,7 +419,7 @@ export function EnterpriseActivityManager({
   const [layoutMode, setLayoutMode] = useState<'grid' | 'horizontal'>('grid');
   const [compactMode, setCompactMode] = useState(false);
   const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
 
   const performanceStartTime = useRef<number>();
 

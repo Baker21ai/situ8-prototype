@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Separator as _Separator } from './ui/separator';
+import { Avatar as _Avatar, AvatarFallback as _AvatarFallback } from './ui/avatar';
 import { ActivityCard } from './organisms/ActivityCard';
 import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/activity';
 import { mockActivities, getActivitiesByTime } from './mockActivityData';
 import { 
   Radio, 
   Mic, 
-  Phone, 
+  Phone as _Phone, 
   MessageCircle, 
   Activity, 
   AlertTriangle, 
-  Shield, 
+  Shield as _Shield, 
   Clock, 
   MapPin, 
   ChevronDown,
@@ -239,7 +239,6 @@ const mockTimelineEvents: TimelineEvent[] = [
 
 export function RadioCommunications({ 
   className = "", 
-  showHeader = true, 
   isModal = false,
   onOpenModal,
   onOpenFullPage,
@@ -248,7 +247,7 @@ export function RadioCommunications({
   const [messages, setMessages] = useState<RadioMessage[]>(mockMessages);
   const [guards, setGuards] = useState<Guard[]>(mockGuards);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(mockTimelineEvents);
-  const [selectedChannel, setSelectedChannel] = useState<string>('main');
+  const [_selectedChannel, setSelectedChannel] = useState<string>('main');
   const [activeTab, setActiveTab] = useState<string>('communications');
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
@@ -279,7 +278,7 @@ export function RadioCommunications({
     return () => clearInterval(interval);
   }, []);
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case 'available': return 'text-green-600';
       case 'responding': return 'text-blue-600';
@@ -290,7 +289,7 @@ export function RadioCommunications({
     }
   };
 
-  const getStatusDot = (status: string) => {
+  const _getStatusDot = (status: string) => {
     switch (status) {
       case 'available': return 'bg-green-500';
       case 'responding': return 'bg-blue-500';
@@ -337,7 +336,7 @@ export function RadioCommunications({
     return messages.filter(msg => msg.threadId === threadId);
   };
 
-  const formatTime = (date: Date) => {
+  const _formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit', 
@@ -497,7 +496,7 @@ export function RadioCommunications({
   };
 
   const activeGuards = guards.filter(g => g.status !== 'offline');
-  const channelStats = {
+  const _channelStats = {
     main: { active: activeGuards.length, total: guards.length },
     emergency: { active: 0, total: guards.length },
     telegram: { active: 3, total: guards.length }
