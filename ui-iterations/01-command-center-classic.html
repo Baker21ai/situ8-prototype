@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center - Classic Three Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Classic Security Theme */
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1f1f1f;
+            --bg-panel: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --border: #2a2a2a;
+            --border-light: #333333;
+            
+            /* Status Colors */
+            --critical: #dc2626;
+            --high: #ea580c;
+            --medium: #ca8a04;
+            --low: #16a34a;
+            --info: #2563eb;
+            
+            /* Panel Heights */
+            --header-height: 60px;
+            --panel-height: calc(100vh - var(--header-height));
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            height: var(--header-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.critical { background: var(--critical); }
+        .status-dot.high { background: var(--high); }
+        .status-dot.active { background: var(--low); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .time {
+            font-size: 18px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Container */
+        .main-container {
+            height: var(--panel-height);
+            display: grid;
+            grid-template-columns: 380px 1fr 380px;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: var(--bg-secondary);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-badge {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .panel-btn {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .panel-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--info);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Left Panel - Activities */
+        .activity-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-chip {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip.active {
+            background: var(--info);
+            color: white;
+            border-color: var(--info);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .activity-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .activity-card:hover {
+            background: var(--bg-tertiary);
+            transform: translateX(4px);
+        }
+
+        .activity-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+        }
+
+        .activity-card.critical::before { background: var(--critical); }
+        .activity-card.high::before { background: var(--high); }
+        .activity-card.medium::before { background: var(--medium); }
+        .activity-card.low::before { background: var(--low); }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .activity-type {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .activity-location {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .activity-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Center Panel - Interactive Map */
+        .map-container {
+            height: 100%;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-breadcrumb {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 10;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 80px 40px 40px;
+            height: 100%;
+        }
+
+        .map-building {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .map-building:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border-color: var(--info);
+        }
+
+        .building-name {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .building-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .building-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .building-alerts {
+            margin-top: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .alert-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .alert-indicator.critical {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--critical);
+            border: 1px solid var(--critical);
+        }
+
+        .alert-indicator.high {
+            background: rgba(234, 88, 12, 0.2);
+            color: var(--high);
+            border: 1px solid var(--high);
+        }
+
+        /* Right Panel - Timeline */
+        .timeline-tabs {
+            display: flex;
+            gap: 1px;
+            background: var(--border);
+            margin-bottom: 16px;
+        }
+
+        .timeline-tab {
+            flex: 1;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeline-tab.active {
+            background: var(--info);
+            color: white;
+        }
+
+        .timeline-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--border-light);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .timeline-item:hover {
+            background: var(--bg-tertiary);
+            border-left-color: var(--info);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 48px;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .timeline-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-badge {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 320px 1fr 320px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">SITU8</div>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <div class="status-dot critical"></div>
+                    <span>3 Critical</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot high"></div>
+                    <span>7 High Priority</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot active"></div>
+                    <span>42 Active Guards</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="time" id="currentTime"></div>
+            <button class="panel-btn">Emergency</button>
+            <button class="panel-btn">Settings</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Panel - Activities -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    Activities Stream
+                    <span class="panel-badge">247</span>
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">Filter</button>
+                    <button class="panel-btn">Export</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="activity-filters">
+                    <div class="filter-chip active">All</div>
+                    <div class="filter-chip">Critical</div>
+                    <div class="filter-chip">Active</div>
+                    <div class="filter-chip">Assigned</div>
+                </div>
+                <div class="activity-list" id="activityList"></div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Interactive Map -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Interactive Map</div>
+                <div class="panel-actions">
+                    <button class="panel-btn">Zoom In</button>
+                    <button class="panel-btn">Reset</button>
+                    <button class="panel-btn">Layers</button>
+                </div>
+            </div>
+            <div class="panel-content" style="padding: 0;">
+                <div class="map-container">
+                    <div class="map-breadcrumb">Site Overview</div>
+                    <div class="map-grid" id="mapGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Timeline -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    Timeline
+                    <span class="panel-badge">Live</span>
+                </div>
+                <div class="panel-actions">
+                    <button class="panel-btn">Refresh</button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="timeline-tabs">
+                    <button class="timeline-tab active">Incidents</button>
+                    <button class="timeline-tab">Communications</button>
+                </div>
+                <div class="timeline-list" id="timelineList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data generators
+        const activityTypes = ['TAILGATE', 'ARMED_PERSON', 'BREACH', 'FIRE', 'MEDICAL', 'PATROL', 'ACCESS_DENIED'];
+        const priorities = ['critical', 'high', 'medium', 'low'];
+        const buildings = ['Building A', 'Building B', 'Building C', 'Building D', 'Building E', 'Building F'];
+        const zones = ['North Wing', 'South Wing', 'East Wing', 'West Wing', 'Main Lobby', 'Parking Area'];
+
+        // Generate activities
+        function generateActivities() {
+            const activities = [];
+            for (let i = 0; i < 20; i++) {
+                const priority = priorities[Math.floor(Math.random() * priorities.length)];
+                activities.push({
+                    id: i,
+                    type: activityTypes[Math.floor(Math.random() * activityTypes.length)],
+                    priority,
+                    location: `${buildings[Math.floor(Math.random() * buildings.length)]} - ${zones[Math.floor(Math.random() * zones.length)]}`,
+                    time: new Date(Date.now() - Math.random() * 3600000),
+                    description: 'Automated detection system triggered. Security personnel notified.'
+                });
+            }
+            return activities.sort((a, b) => b.time - a.time);
+        }
+
+        // Generate building data
+        function generateBuildingData() {
+            return buildings.map((building, index) => ({
+                name: building,
+                activeGuards: Math.floor(Math.random() * 10) + 5,
+                incidents: Math.floor(Math.random() * 5),
+                cameras: Math.floor(Math.random() * 20) + 30,
+                criticalAlerts: Math.floor(Math.random() * 2),
+                highAlerts: Math.floor(Math.random() * 3)
+            }));
+        }
+
+        // Generate timeline items
+        function generateTimelineItems() {
+            const items = [];
+            for (let i = 0; i < 30; i++) {
+                const time = new Date(Date.now() - i * 300000); // 5 minute intervals
+                items.push({
+                    time,
+                    title: i % 3 === 0 ? 'Security Alert' : i % 3 === 1 ? 'Guard Update' : 'System Event',
+                    details: 'Status update from field operations',
+                    badge: i % 4 === 0 ? 'CRITICAL' : null
+                });
+            }
+            return items;
+        }
+
+        // Render activities
+        function renderActivities() {
+            const list = document.getElementById('activityList');
+            const activities = generateActivities();
+            
+            list.innerHTML = activities.map(activity => `
+                <div class="activity-card ${activity.priority}">
+                    <div class="activity-header">
+                        <div class="activity-type">${activity.type}</div>
+                        <div class="activity-time">${formatTime(activity.time)}</div>
+                    </div>
+                    <div class="activity-location">${activity.location}</div>
+                    <div class="activity-description">${activity.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // Render map
+        function renderMap() {
+            const grid = document.getElementById('mapGrid');
+            const buildings = generateBuildingData();
+            
+            grid.innerHTML = buildings.map(building => `
+                <div class="map-building">
+                    <div class="building-name">${building.name}</div>
+                    <div class="building-stats">
+                        <div class="building-stat">
+                            <div class="stat-value">${building.activeGuards}</div>
+                            <div class="stat-label">Guards</div>
+                        </div>
+                        <div class="building-stat">
+                            <div class="stat-value">${building.cameras}</div>
+                            <div class="stat-label">Cameras</div>
+                        </div>
+                        <div class="building-stat">
+                            <div class="stat-value">${building.incidents}</div>
+                            <div class="stat-label">Incidents</div>
+                        </div>
+                    </div>
+                    <div class="building-alerts">
+                        ${building.criticalAlerts > 0 ? `<div class="alert-indicator critical">${building.criticalAlerts} Critical</div>` : ''}
+                        ${building.highAlerts > 0 ? `<div class="alert-indicator high">${building.highAlerts} High</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render timeline
+        function renderTimeline() {
+            const list = document.getElementById('timelineList');
+            const items = generateTimelineItems();
+            
+            list.innerHTML = items.map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-time">${formatTime(item.time)}</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">${item.title}</div>
+                        <div class="timeline-details">${item.details}</div>
+                    </div>
+                    ${item.badge ? `<div class="timeline-badge">${item.badge}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Time formatting
+        function formatTime(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            
+            if (minutes < 1) return 'Now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Update current time
+        function updateTime() {
+            const timeEl = document.getElementById('currentTime');
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+        }
+
+        // Tab switching
+        document.querySelectorAll('.timeline-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.timeline-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderTimeline(); // In real app, would switch data source
+            });
+        });
+
+        // Filter chips
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                renderActivities(); // In real app, would filter data
+            });
+        });
+
+        // Initialize
+        renderActivities();
+        renderMap();
+        renderTimeline();
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Simulate real-time updates
+        setInterval(() => {
+            // Add new activity occasionally
+            if (Math.random() > 0.7) {
+                renderActivities();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

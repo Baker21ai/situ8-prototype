@@ -1,0 +1,163 @@
+/* =================================================================
+   SITU8 DESIGN SYSTEM - SHARED TOKENS
+   ================================================================= */
+
+/* Minimalist Modern Design Tokens */
+:root[data-design="minimalist"] {
+  /* Colors */
+  --design-primary: #1a1a1a;
+  --design-primary-foreground: #ffffff;
+  --design-secondary: #f8f9fa;
+  --design-secondary-foreground: #495057;
+  --design-accent: #007bff;
+  --design-accent-foreground: #ffffff;
+  --design-muted: #f1f3f4;
+  --design-muted-foreground: #6c757d;
+  --design-border: #e9ecef;
+  --design-surface: #ffffff;
+  --design-surface-foreground: #212529;
+  
+  /* Status Colors */
+  --design-critical: #dc3545;
+  --design-high: #fd7e14;
+  --design-medium: #ffc107;
+  --design-low: #28a745;
+  
+  /* Spacing Scale */
+  --design-space-xs: 0.25rem;
+  --design-space-sm: 0.5rem;
+  --design-space-md: 1rem;
+  --design-space-lg: 1.5rem;
+  --design-space-xl: 2rem;
+  --design-space-2xl: 3rem;
+  
+  /* Border Radius */
+  --design-radius-sm: 4px;
+  --design-radius-md: 8px;
+  --design-radius-lg: 12px;
+  --design-radius-xl: 16px;
+  
+  /* Shadows */
+  --design-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --design-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --design-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --design-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Glass Morphism Design Tokens */
+:root[data-design="glass"] {
+  /* Colors */
+  --design-primary: #000000;
+  --design-primary-foreground: #ffffff;
+  --design-secondary: rgba(255, 255, 255, 0.1);
+  --design-secondary-foreground: #ffffff;
+  --design-accent: #00d4ff;
+  --design-accent-foreground: #000000;
+  --design-muted: rgba(255, 255, 255, 0.05);
+  --design-muted-foreground: rgba(255, 255, 255, 0.7);
+  --design-border: rgba(255, 255, 255, 0.2);
+  --design-surface: rgba(255, 255, 255, 0.1);
+  --design-surface-foreground: #ffffff;
+  
+  /* Glass Effects */
+  --design-glass-bg: rgba(255, 255, 255, 0.1);
+  --design-glass-border: rgba(255, 255, 255, 0.2);
+  --design-glass-blur: blur(16px);
+  --design-glass-saturate: saturate(180%);
+  
+  /* Status Colors */
+  --design-critical: #ff3366;
+  --design-high: #ff8800;
+  --design-medium: #ffcc00;
+  --design-low: #00ff88;
+  
+  /* Neon Glow Effects */
+  --design-glow-critical: 0 0 20px rgba(255, 51, 102, 0.5);
+  --design-glow-accent: 0 0 20px rgba(0, 212, 255, 0.5);
+  --design-glow-success: 0 0 20px rgba(0, 255, 136, 0.5);
+  
+  /* Spacing Scale */
+  --design-space-xs: 0.25rem;
+  --design-space-sm: 0.5rem;
+  --design-space-md: 1rem;
+  --design-space-lg: 1.5rem;
+  --design-space-xl: 2rem;
+  --design-space-2xl: 3rem;
+  
+  /* Border Radius */
+  --design-radius-sm: 8px;
+  --design-radius-md: 12px;
+  --design-radius-lg: 16px;
+  --design-radius-xl: 24px;
+}
+
+/* Tactical Dark Design Tokens */
+:root[data-design="tactical"] {
+  /* Colors */
+  --design-primary: #0a0a0a;
+  --design-primary-foreground: #00ff41;
+  --design-secondary: #1a1a1a;
+  --design-secondary-foreground: #00cc33;
+  --design-accent: #00bfff;
+  --design-accent-foreground: #000000;
+  --design-muted: #262626;
+  --design-muted-foreground: #808080;
+  --design-border: #333333;
+  --design-surface: #1a1a1a;
+  --design-surface-foreground: #ffffff;
+  
+  /* Tactical Colors */
+  --design-tactical-green: #00ff41;
+  --design-tactical-blue: #00bfff;
+  --design-tactical-amber: #ffb000;
+  --design-tactical-red: #ff0040;
+  
+  /* Status Colors */
+  --design-critical: #ff0040;
+  --design-high: #ff6600;
+  --design-medium: #ffb000;
+  --design-low: #00ff41;
+  
+  /* Glow Effects */
+  --design-glow-green: 0 0 10px rgba(0, 255, 65, 0.5);
+  --design-glow-blue: 0 0 10px rgba(0, 191, 255, 0.5);
+  --design-glow-amber: 0 0 10px rgba(255, 176, 0, 0.5);
+  --design-glow-red: 0 0 10px rgba(255, 0, 64, 0.5);
+  
+  /* Spacing Scale */
+  --design-space-xs: 0.25rem;
+  --design-space-sm: 0.5rem;
+  --design-space-md: 1rem;
+  --design-space-lg: 1.5rem;
+  --design-space-xl: 2rem;
+  --design-space-2xl: 3rem;
+  
+  /* Border Radius */
+  --design-radius-sm: 2px;
+  --design-radius-md: 4px;
+  --design-radius-lg: 6px;
+  --design-radius-xl: 8px;
+  
+  /* Shadows */
+  --design-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
+  --design-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --design-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  --design-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Typography Tokens */
+:root {
+  --design-font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --design-font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  --design-font-display: 'Space Grotesk', 'SF Pro Display', sans-serif;
+}
+
+/* Animation Tokens */
+:root {
+  --design-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --design-transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --design-transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --design-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --design-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --design-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}

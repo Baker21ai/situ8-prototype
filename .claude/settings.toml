@@ -1,0 +1,193 @@
+# Claude Hooks Configuration for Situ8 Security Platform
+# This file defines automated triggers that execute during Claude's coding process
+
+# =============================================================================
+# TYPESCRIPT & REACT HOOKS
+# =============================================================================
+
+# Auto-format TypeScript/React files after editing
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["*.tsx", "*.ts", "components/**/*.tsx", "hooks/**/*.ts", "lib/**/*.ts"]
+command = "npx prettier --write $CLAUDE_FILE_PATHS && npx eslint --fix $CLAUDE_FILE_PATHS"
+run_in_background = false
+
+# Type-check after TypeScript changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["*.ts", "*.tsx"]
+command = "npx tsc --noEmit --skipLibCheck"
+run_in_background = true
+
+# =============================================================================
+# COMPONENT DEVELOPMENT HOOKS
+# =============================================================================
+
+# Auto-generate component index files when new components are created
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "create_file"
+file_paths = ["components/**/*.tsx"]
+command = "node .claude/scripts/update-component-index.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# Validate component props and exports
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["components/**/*.tsx"]
+command = "node .claude/scripts/validate-component.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# =============================================================================
+# TESTING HOOKS
+# =============================================================================
+
+# Run tests for modified components
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["components/**/*.tsx", "hooks/**/*.ts"]
+command = "npm test -- --testPathPattern=$CLAUDE_FILE_PATHS --passWithNoTests"
+run_in_background = true
+
+# Generate test files for new components (if they don't exist)
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "create_file"
+file_paths = ["components/**/*.tsx"]
+command = "node .claude/scripts/generate-test-file.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# =============================================================================
+# SECURITY & SAFETY HOOKS
+# =============================================================================
+
+# Prevent dangerous operations
+[[hooks]]
+event = "PreToolUse"
+[hooks.matcher]
+tool_name = "bash"
+query = "rm -rf"
+command = "echo 'BLOCKED: Dangerous rm -rf command prevented' && exit 1"
+run_in_background = false
+
+# Scan for security vulnerabilities in dependencies
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["package.json", "package-lock.json"]
+command = "npm audit --audit-level=moderate"
+run_in_background = true
+
+# =============================================================================
+# BUILD & DEPLOYMENT HOOKS
+# =============================================================================
+
+# Validate build after significant changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["vite.config.ts", "tsconfig.json", "tailwind.config.js"]
+command = "npm run build"
+run_in_background = true
+
+# Update documentation when README changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["README.md", "*.md"]
+command = "node .claude/scripts/update-docs.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# =============================================================================
+# DESIGN SYSTEM HOOKS
+# =============================================================================
+
+# Validate design tokens when modified
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["lib/tokens/**/*.ts", "styles/**/*.css"]
+command = "node .claude/scripts/validate-design-tokens.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# Auto-generate CSS variables from design tokens
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["lib/tokens/**/*.ts"]
+command = "node .claude/scripts/generate-css-vars.js $CLAUDE_FILE_PATHS"
+run_in_background = true
+
+# =============================================================================
+# NOTIFICATION HOOKS
+# =============================================================================
+
+# 🔊 SOUND NOTIFICATION: Play sound when Claude finishes any coding task
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["*"]
+command = "afplay /System/Library/Sounds/Glass.aiff && echo '✅ Claude finished coding task: $CLAUDE_FILE_PATHS'"
+run_in_background = false
+
+# 🔊 SOUND NOTIFICATION: Play different sound for new file creation
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "create_file"
+file_paths = ["*"]
+command = "afplay /System/Library/Sounds/Tink.aiff && echo '🎉 Claude created new file: $CLAUDE_FILE_PATHS'"
+run_in_background = false
+
+# 🔊 SOUND NOTIFICATION: Play alert sound for critical file changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["package.json", "tsconfig.json", "vite.config.ts"]
+command = "afplay /System/Library/Sounds/Sosumi.aiff && echo '🚨 Critical configuration file modified: $CLAUDE_FILE_PATHS'"
+run_in_background = false
+
+# 🔊 SOUND NOTIFICATION: Completion sound when Claude stops responding
+[[hooks]]
+event = "Stop"
+command = "afplay /System/Library/Sounds/Hero.aiff && echo '🏁 Claude has finished all tasks'"
+run_in_background = false
+
+# =============================================================================
+# DEVELOPMENT WORKFLOW HOOKS
+# =============================================================================
+
+# Auto-restart dev server when config changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["vite.config.ts", "tailwind.config.js", "tsconfig.json"]
+command = "pkill -f 'vite' && npm run dev &"
+run_in_background = true
+
+# Git commit message suggestions for component changes
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "edit_file"
+file_paths = ["components/**/*.tsx"]
+command = "node .claude/scripts/suggest-commit-message.js $CLAUDE_FILE_PATHS"
+run_in_background = true
