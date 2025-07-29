@@ -110,7 +110,7 @@ const StreamCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Activ
             getPriorityColor(activity.priority).background,
             getPriorityColor(activity.priority).text,
             getPriorityColor(activity.priority).border
-          )} size="sm">
+          )}>
             {activity.priority.toUpperCase()}
           </Badge>
           {activity.assignedTo && (
@@ -218,13 +218,13 @@ const ListCard: React.FC<{
                   getPriorityColor(activity.priority).background,
                   getPriorityColor(activity.priority).text,
                   getPriorityColor(activity.priority).border
-                )} size="sm">
+                )}>
                   {activity.priority.toUpperCase()}
                 </Badge>
                 <Badge className={cn(
                   getStatusColor(activity.status).background,
                   getStatusColor(activity.status).text
-                )} size="sm">
+                )}>
                   {activity.status.toUpperCase()}
                 </Badge>
                 {activity.isBoloActive && (
@@ -262,7 +262,7 @@ const EvidenceCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Act
             getPriorityColor(activity.priority).background,
             getPriorityColor(activity.priority).text,
             getPriorityColor(activity.priority).border
-          )} size="sm">
+          )}>
             {activity.priority}
           </Badge>
         </div>

@@ -2,7 +2,7 @@
  * Type definitions for guard management and personnel
  */
 
-export type GuardStatus = 'available' | 'responding' | 'patrolling' | 'investigating' | 'break' | 'off_duty';
+export type GuardStatus = 'available' | 'responding' | 'patrolling' | 'investigating' | 'break' | 'off_duty' | 'emergency';
 export type ShiftType = 'day' | 'night' | 'swing';
 export type SkillLevel = 'trainee' | 'junior' | 'senior' | 'supervisor' | 'manager';
 

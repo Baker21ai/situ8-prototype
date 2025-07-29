@@ -14,17 +14,12 @@ import {
   Shield, 
   Activity, 
   AlertTriangle, 
-  Folder, 
-  Eye, 
   MessageSquare, 
-  Package, 
-  Key, 
   BarChart3, 
   Users, 
   Settings,
   ChevronLeft,
   ChevronRight,
-  Radio,
   Bot,
   MapPin
 } from 'lucide-react';

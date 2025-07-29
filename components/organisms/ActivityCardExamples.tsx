@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityCard } from './ActivityCard';
-import { ActivityData } from '@/lib/types/activity';
+import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/activity';
 
 /**
  * Example implementations showing how to use the unified ActivityCard
@@ -32,7 +32,7 @@ const mockActivity: ActivityData = {
  */
 export const StreamCardExample: React.FC<{
   activity: ActivityData;
-  onSelect: (activity: ActivityData) => void;
+  onSelect: (activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
   isSelected: boolean;
 }> = ({ activity, onSelect, isSelected }) => {
   return (
@@ -55,7 +55,7 @@ export const StreamCardExample: React.FC<{
  */
 export const TimelineCardExample: React.FC<{
   activity: ActivityData;
-  onSelect: (activity: ActivityData) => void;
+  onSelect: (activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
 }> = ({ activity, onSelect }) => {
   return (
     <ActivityCard
@@ -76,8 +76,8 @@ export const TimelineCardExample: React.FC<{
  */
 export const ListCardExample: React.FC<{
   activity: ActivityData;
-  onSelect: (activity: ActivityData) => void;
-  onAction: (action: string, activity: ActivityData) => void;
+  onSelect: (activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
+  onAction: (action: string, activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
   isSelected: boolean;
   showCheckbox: boolean;
 }> = ({ activity, onSelect, onAction, isSelected, showCheckbox }) => {
@@ -106,8 +106,8 @@ export const ListCardExample: React.FC<{
  */
 export const GridCardExample: React.FC<{
   activity: ActivityData;
-  onSelect: (activity: ActivityData) => void;
-  onAction: (action: string, activity: ActivityData) => void;
+  onSelect: (activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
+  onAction: (action: string, activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
 }> = ({ activity, onSelect, onAction }) => {
   return (
     <ActivityCard
@@ -132,7 +132,7 @@ export const GridCardExample: React.FC<{
  */
 export const MinimalCardExample: React.FC<{
   activity: ActivityData;
-  onSelect: (activity: ActivityData) => void;
+  onSelect: (activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
   isSelected: boolean;
 }> = ({ activity, onSelect, isSelected }) => {
   return (
@@ -152,7 +152,7 @@ export const MinimalCardExample: React.FC<{
  */
 export const MobileCardExample: React.FC<{
   activity: ActivityData;
-  onAction: (action: string, activity: ActivityData) => void;
+  onAction: (action: string, activity: ActivityData | EnterpriseActivity | ActivityCluster) => void;
 }> = ({ activity, onAction }) => {
   return (
     <div className="w-full">

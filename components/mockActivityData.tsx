@@ -96,7 +96,7 @@ export const mockActivities: ActivityData[] = [
     zone: 'Parking Level B1',
     building: 'Building A',
     priority: 'low',
-    status: 'completed',
+    status: 'resolved',
     description: 'Completed standard perimeter check, no anomalies detected',
     assignedTo: 'Martinez, A.',
     respondingUnits: ['Patrol-1'],

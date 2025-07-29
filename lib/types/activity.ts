@@ -36,6 +36,9 @@ export interface ActivityData extends BaseActivity {
   caseRelevance?: string;
   evidenceNumber?: number;
   caseTimeOffset?: string;
+  time?: Date;
+  evidence?: Evidence[];
+  camera?: string;
 }
 
 // Enterprise activity with enhanced metadata
@@ -56,6 +59,11 @@ export interface EnterpriseActivity extends ActivityData {
   complianceFlags?: string[];
   businessImpact?: BusinessImpact;
   metadata?: SiteMetadata;
+  threatLevel?: string;
+  clusterInfo?: {
+    count: number;
+    activities: string[];
+  };
 }
 
 // Badge holder information
@@ -63,7 +71,7 @@ export interface BadgeHolder {
   name: string;
   id: string;
   department?: string;
-  clearanceLevel?: SecurityLevel;
+  clearanceLevel?: SecurityLevel | string;
   photo?: string;
 }
 
@@ -78,6 +86,8 @@ export interface SiteMetadata {
   operationalHours: string;
   timezone?: string;
   contactInfo?: ContactInfo;
+  building?: string;
+  zone?: string;
 }
 
 // Geographic coordinates
@@ -97,7 +107,8 @@ export interface ContactInfo {
 // Activity cluster for grouped activities
 export interface ActivityCluster {
   id: string;
-  type: 'single' | 'cluster';
+  clusterType: 'single' | 'cluster';
+  type: ActivityType;
   activities: (ActivityData | EnterpriseActivity)[];
   representative: ActivityData | EnterpriseActivity;
   count: number;
@@ -109,6 +120,9 @@ export interface ActivityCluster {
   description?: string;
   timeRange: TimeRange;
   isExpanded?: boolean;
+  timestamp: Date;
+  priority: Priority;
+  status: Status;
 }
 
 // Time range
@@ -175,3 +189,6 @@ export interface ActivityTimelineEntry {
   description: string;
   metadata?: Record<string, any>;
 }
+
+// Type alias for component compatibility
+export type EnterpriseActivityData = EnterpriseActivity;

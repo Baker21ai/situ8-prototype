@@ -7,7 +7,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ActivityCard } from './organisms/ActivityCard';
-import { ActivityData } from '@/lib/types/activity';
+import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/activity';
 import { mockActivities, getActivitiesByTime } from './mockActivityData';
 import { 
   Radio, 
@@ -365,7 +365,7 @@ export function RadioCommunications({
     );
   };
 
-  const handleActivitySelect = (activity: ActivityData) => {
+  const handleActivitySelect = (activity: ActivityData | EnterpriseActivity | ActivityCluster) => {
     setSelectedActivity(selectedActivity === activity.id ? null : activity.id);
   };
 
@@ -565,7 +565,7 @@ export function RadioCommunications({
           
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-3">
-              {messages.filter(msg => !msg.threadId || expandedThreads.has(msg.threadId)).map(renderMessage)}
+              {messages.filter(msg => !msg.threadId || expandedThreads.has(msg.threadId)).map(msg => renderMessage(msg))}
             </div>
           </ScrollArea>
         </TabsContent>
@@ -601,7 +601,7 @@ export function RadioCommunications({
               ))}
               
               {/* High Priority Communications */}
-              {getIncidentMessages().map(renderMessage)}
+              {getIncidentMessages().map(msg => renderMessage(msg))}
             </div>
           </ScrollArea>
         </TabsContent>

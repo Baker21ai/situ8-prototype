@@ -108,7 +108,7 @@ export const CommunicationCard = memo<CommunicationCardProps>(({
   
   // Get channel colors
   const getChannelColor = (channel: ChannelType) => {
-    return channelColors[channel] || channelColors.main;
+    return channelColors[channel as keyof typeof channelColors] || channelColors.main;
   };
   
   // Priority-based border color

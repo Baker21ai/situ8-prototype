@@ -97,14 +97,18 @@ const clusterActivities = (activities: EnterpriseActivityData[], maxDistance: nu
 
       const cluster: ActivityCluster = {
         id: `cluster-${activity.id}`,
-        type: 'cluster',
+        clusterType: 'cluster',
+        type: activity.type, // Activity type
         activities: similar,
         representative: similar.find(a => a.priority === highestPriority) || similar[0],
         count: similar.length,
         highestPriority: highestPriority as any,
         location: activity.location,
         timeRange,
-        isExpanded: false
+        isExpanded: false,
+        timestamp: similar[0].timestamp,
+        priority: highestPriority as any,
+        status: similar[0].status
       };
 
       clusters.push(cluster);
@@ -246,7 +250,7 @@ const PrioritySegmentedList = React.memo(({ items, onSelect, onAction, selectedI
     };
 
     items.forEach((item: any) => {
-      const priority = item.type === 'cluster' ? item.highestPriority : item.priority;
+      const priority = 'clusterType' in item && item.clusterType === 'cluster' ? item.highestPriority : item.priority;
       if (groups[priority as keyof typeof groups]) {
         groups[priority as keyof typeof groups].push(item);
       }
@@ -291,7 +295,7 @@ const PrioritySegmentedList = React.memo(({ items, onSelect, onAction, selectedI
                       variant={variant}
                       onSelect={onSelect}
                       onAction={onAction}
-                      isSelected={selectedItems.has('type' in item && item.type === 'cluster' ? item.id : item.id)}
+                      isSelected={selectedItems.has('clusterType' in item && item.clusterType === 'cluster' ? item.id : item.id)}
                       index={index}
                       isVisible={true}
                       compactMode={true}
@@ -423,10 +427,10 @@ export function EnterpriseActivityManager({
 
   // Priority-based metrics calculation
   const priorityMetrics = useMemo(() => {
-    const critical = filteredActivities.filter(a => (a.type === 'cluster' ? a.highestPriority : a.priority) === 'critical').length;
-    const high = filteredActivities.filter(a => (a.type === 'cluster' ? a.highestPriority : a.priority) === 'high').length;
-    const medium = filteredActivities.filter(a => (a.type === 'cluster' ? a.highestPriority : a.priority) === 'medium').length;
-    const low = filteredActivities.filter(a => (a.type === 'cluster' ? a.highestPriority : a.priority) === 'low').length;
+    const critical = filteredActivities.filter(a => ('clusterType' in a && a.clusterType === 'cluster' ? a.highestPriority : a.priority) === 'critical').length;
+    const high = filteredActivities.filter(a => ('clusterType' in a && a.clusterType === 'cluster' ? a.highestPriority : a.priority) === 'high').length;
+    const medium = filteredActivities.filter(a => ('clusterType' in a && a.clusterType === 'cluster' ? a.highestPriority : a.priority) === 'medium').length;
+    const low = filteredActivities.filter(a => ('clusterType' in a && a.clusterType === 'cluster' ? a.highestPriority : a.priority) === 'low').length;
     
     return { critical, high, medium, low };
   }, [filteredActivities]);

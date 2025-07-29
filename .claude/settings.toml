@@ -137,37 +137,43 @@ run_in_background = true
 # NOTIFICATION HOOKS
 # =============================================================================
 
-# 🔊 SOUND NOTIFICATION: Play sound when Claude finishes any coding task
+# 🔊 LOUD SOUND + VISUAL NOTIFICATION: When Claude finishes any coding task
 [[hooks]]
 event = "PostToolUse"
 [hooks.matcher]
 tool_name = "edit_file"
 file_paths = ["*"]
-command = "afplay /System/Library/Sounds/Glass.aiff && echo '✅ Claude finished coding task: $CLAUDE_FILE_PATHS'"
+command = "osascript -e 'set volume output volume 100' && osascript -e 'beep 5' && afplay /System/Library/Sounds/Glass.aiff && osascript -e 'display notification \"Claude finished editing file\" with title \"✅ Coding Complete\"' && echo '✅ Claude finished coding task: $CLAUDE_FILE_PATHS'"
 run_in_background = false
 
-# 🔊 SOUND NOTIFICATION: Play different sound for new file creation
+# 🔊 LOUD SOUND + VISUAL NOTIFICATION: When Claude creates new files
 [[hooks]]
 event = "PostToolUse"
 [hooks.matcher]
 tool_name = "create_file"
 file_paths = ["*"]
-command = "afplay /System/Library/Sounds/Tink.aiff && echo '🎉 Claude created new file: $CLAUDE_FILE_PATHS'"
+command = "osascript -e 'set volume output volume 100' && osascript -e 'beep 3' && afplay /System/Library/Sounds/Tink.aiff && afplay /System/Library/Sounds/Hero.aiff && osascript -e 'display notification \"New file created\" with title \"🎉 File Created\"' && echo '🎉 Claude created new file: $CLAUDE_FILE_PATHS'"
 run_in_background = false
 
-# 🔊 SOUND NOTIFICATION: Play alert sound for critical file changes
+# 🔊 LOUD SOUND + VISUAL NOTIFICATION: Alert for critical file changes
 [[hooks]]
 event = "PostToolUse"
 [hooks.matcher]
 tool_name = "edit_file"
 file_paths = ["package.json", "tsconfig.json", "vite.config.ts"]
-command = "afplay /System/Library/Sounds/Sosumi.aiff && echo '🚨 Critical configuration file modified: $CLAUDE_FILE_PATHS'"
+command = "osascript -e 'set volume output volume 100' && osascript -e 'beep 7' && afplay /System/Library/Sounds/Sosumi.aiff && afplay /System/Library/Sounds/Funk.aiff && osascript -e 'display notification \"Critical configuration modified\" with title \"🚨 Important Change\"' && echo '🚨 Critical configuration file modified: $CLAUDE_FILE_PATHS'"
 run_in_background = false
 
-# 🔊 SOUND NOTIFICATION: Completion sound when Claude stops responding
+# 🔊 LOUD SOUND + VISUAL NOTIFICATION: Completion sound when Claude stops
 [[hooks]]
 event = "Stop"
-command = "afplay /System/Library/Sounds/Hero.aiff && echo '🏁 Claude has finished all tasks'"
+command = "osascript -e 'set volume output volume 100' && osascript -e 'beep 4' && afplay /System/Library/Sounds/Glass.aiff && afplay /System/Library/Sounds/Ping.aiff && osascript -e 'display notification \"All tasks completed\" with title \"🏁 Claude Finished\"' && echo '🏁 Claude has finished all tasks'"
+run_in_background = false
+
+# 🔊 NOTIFICATION FOR EVERY CLAUDE RESPONSE: Plays sound after every single response
+[[hooks]]
+event = "Notification"
+command = "osascript -e 'set volume output volume 80' && osascript -e 'beep 2' && afplay /System/Library/Sounds/Ping.aiff && osascript -e 'display notification \"Claude responded\" with title \"💬 New Response\"' && echo '💬 Claude just responded'"
 run_in_background = false
 
 # =============================================================================

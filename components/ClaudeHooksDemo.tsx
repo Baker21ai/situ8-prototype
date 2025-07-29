@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// Testing Claude Hooks - this comment should trigger notifications!
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

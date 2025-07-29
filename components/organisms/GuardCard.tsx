@@ -175,7 +175,7 @@ export const GuardCard = memo<GuardCardProps>(({
         label: 'Off Duty'
       }
     };
-    return configs[status] || configs.available;
+    return configs[status as keyof typeof configs] || configs.available;
   };
 
   const statusConfig = getGuardStatusConfig(guard.status);
@@ -425,7 +425,7 @@ const MinimalGuardCard: React.FC<{
   guard: Guard;
   onClick?: (guard: Guard) => void;
 }> = ({ guard, onClick }) => {
-  const statusColor = guardStatusColors[guard.status];
+  const statusColor = guardStatusColors[guard.status as keyof typeof guardStatusColors] || guardStatusColors.available;
   const dotColor = statusColor.color.replace('text-', 'bg-').replace('-600', '-500');
 
   const statusConfig = {

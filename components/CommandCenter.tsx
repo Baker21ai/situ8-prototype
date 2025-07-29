@@ -36,6 +36,18 @@ const getInitialActivities = () => {
   return enterpriseActivities; // Full dataset - optimized with proper pagination in UI
 };
 
+const createGuardMetrics = (partial: any) => ({
+  activitiesCreated: 0,
+  incidentsResponded: 0,
+  patrolsCompleted: 0,
+  avgResponseTime: '0m',
+  radioCalls: 0,
+  shiftsCompleted: 0,
+  commendations: 0,
+  incidents: 0,
+  ...partial
+});
+
 const initialGuards = [
   {
     id: 1,
@@ -51,13 +63,13 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['Medical', 'Supervisor'],
-    metrics: {
+    metrics: createGuardMetrics({
       activitiesCreated: 34,
       incidentsResponded: 2,
       patrolsCompleted: 6,
       avgResponseTime: '1.8m',
       radioCalls: 12
-    }
+    })
   },
   {
     id: 2,
@@ -73,13 +85,13 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['K9'],
-    metrics: {
+    metrics: createGuardMetrics({
       activitiesCreated: 28,
       incidentsResponded: 1,
       patrolsCompleted: 8,
       avgResponseTime: '2.1m',
       radioCalls: 8
-    }
+    })
   },
   {
     id: 3,
@@ -320,14 +332,14 @@ export function CommandCenter() {
   });
 
   // Guard Management handlers
-  const handleGuardUpdate = useCallback((guardId: number, updates: Partial<typeof initialGuards[0]>) => {
-    setGuards(prev => prev.map(guard => 
+  const handleGuardUpdate = useCallback((guardId: number, updates: any) => {
+    setGuards((prev: any) => prev.map((guard: any) => 
       guard.id === guardId ? { ...guard, ...updates } : guard
     ));
   }, []);
 
   const handleGuardAssign = useCallback((guardId: number, activityId: number) => {
-    setGuards(prev => prev.map(guard => ({
+    setGuards((prev: any) => prev.map((guard: any) => ({
       ...guard,
       assignedActivity: guard.id === guardId ? activityId : guard.assignedActivity,
       status: guard.id === guardId ? 'responding' : guard.status
@@ -335,13 +347,13 @@ export function CommandCenter() {
 
     setActivities(prev => prev.map(activity => ({
       ...activity,
-      assignedTo: activity.id === activityId ? guards.find(g => g.id === guardId)?.name || activity.assignedTo : activity.assignedTo,
-      status: activity.id === activityId ? 'assigned' : activity.status
+      assignedTo: activity.id === activityId.toString() ? guards.find(g => g.id === guardId)?.name || activity.assignedTo : activity.assignedTo,
+      status: activity.id === activityId.toString() ? 'assigned' : activity.status
     })));
 
     // Add to timeline
     const guard = guards.find(g => g.id === guardId);
-    const activity = activities.find(a => a.id === activityId);
+    const activity = activities.find(a => a.id === activityId.toString());
     if (guard && activity) {
       const newEvent = {
         id: Date.now(),
@@ -353,8 +365,8 @@ export function CommandCenter() {
     }
   }, [guards, activities]);
 
-  const handleGuardStatusChange = useCallback((guardId: number, status: typeof initialGuards[0]['status']) => {
-    setGuards(prev => prev.map(guard => 
+  const handleGuardStatusChange = useCallback((guardId: number, status: any) => {
+    setGuards((prev: any) => prev.map((guard: any) => 
       guard.id === guardId ? { ...guard, status, lastUpdate: new Date() } : guard
     ));
     
@@ -686,11 +698,11 @@ export function CommandCenter() {
           <div className="flex-shrink-0 h-48">
             <Card className="h-full">
               <GuardManagement
-                guards={guards}
+                guards={guards as any}
                 onGuardUpdate={handleGuardUpdate}
                 onGuardAssign={handleGuardAssign}
                 onGuardStatusChange={handleGuardStatusChange}
-                onGuardSelect={setSelectedGuard}
+                onGuardSelect={setSelectedGuard as any}
               />
             </Card>
           </div>
@@ -713,7 +725,7 @@ export function CommandCenter() {
 
       {/* Guard Profile Modal */}
       <GuardProfile
-        guard={selectedGuard}
+        guard={selectedGuard as any}
         open={selectedGuard !== null}
         onOpenChange={(open) => !open && setSelectedGuard(null)}
       />

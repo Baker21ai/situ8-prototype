@@ -1,0 +1,14 @@
+{
+  "hooks": [
+    {
+      "event": "Notification",
+      "command": "osascript -e 'set volume output volume 80' && osascript -e 'beep 2' && afplay /System/Library/Sounds/Ping.aiff && osascript -e 'display notification \"Claude responded\" with title \"💬 New Response\"'",
+      "run_in_background": false
+    },
+    {
+      "event": "Stop", 
+      "command": "osascript -e 'set volume output volume 100' && osascript -e 'beep 4' && afplay /System/Library/Sounds/Glass.aiff && afplay /System/Library/Sounds/Ping.aiff && osascript -e 'display notification \"All tasks completed\" with title \"🏁 Claude Finished\"'",
+      "run_in_background": false
+    }
+  ]
+}

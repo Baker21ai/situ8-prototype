@@ -188,7 +188,7 @@ export const MetadataDisplay: React.FC<MetadataDisplayProps> = ({
     metadataItems.push(
       <Badge 
         key="threat" 
-        className={cn(config.badge, threatColors[enterprise.threatLevel])}
+        className={cn(config.badge, threatColors[enterprise.threatLevel as keyof typeof threatColors] || threatColors.low)}
       >
         <Shield className={cn(size === 'xs' ? 'h-3 w-3' : 'h-4 w-4', 'mr-1')} />
         {enterprise.threatLevel.toUpperCase()}
@@ -247,7 +247,7 @@ export const MetadataDisplay: React.FC<MetadataDisplayProps> = ({
       
       metadataItems.push(
         <div key="channel" className={cn('flex items-center', config.gap)}>
-          {channelIcons[communication.channel] || channelIcons.main}
+          {channelIcons[communication.channel as keyof typeof channelIcons] || channelIcons.main}
           <span className={cn(config.text, 'text-muted-foreground')}>
             {communication.channel}
           </span>

@@ -29,6 +29,8 @@ export interface ActivityCardFeatures {
   showAssignment?: boolean;
   showConfidence?: boolean;
   showSiteBadge?: boolean;
+  showPriority?: boolean;
+  showTime?: boolean;
 }
 
 // Main ActivityCard Props
@@ -79,7 +81,7 @@ export const ActivityCard = memo<ActivityCardProps>(({
   className
 }) => {
   // Determine if this is a cluster
-  const isCluster = 'type' in activity && activity.type === 'cluster';
+  const isCluster = 'clusterType' in activity && (activity as any).clusterType === 'cluster';
   const activityData = isCluster ? (activity as ActivityCluster).representative : activity as ActivityData;
   
   // Get activity type info

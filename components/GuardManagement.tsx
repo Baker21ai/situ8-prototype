@@ -43,15 +43,20 @@ import { formatTimeAgo } from '@/lib/utils/time';
 import { guardStatusColors } from '@/lib/tokens/colors';
 import { Guard as GuardType } from '@/lib/types/guards';
 
-// Local Guard interface - using imported GuardType as base
-interface Guard extends Omit<GuardType, 'id'> {
+// Local Guard interface - using imported GuardType as base with enhanced metrics
+interface Guard extends Omit<GuardType, 'id' | 'status' | 'metrics'> {
   id: number; // Keep local id as number for compatibility
-  id: number;
-  name: string;
-  status: 'available' | 'responding' | 'patrolling' | 'investigating' | 'break' | 'off_duty';
-  location: string;
-  building: string;
-  zone: string;
+  status: 'available' | 'responding' | 'patrolling' | 'investigating' | 'break' | 'off_duty' | 'emergency';
+  metrics?: {
+    activitiesCreated: number;
+    incidentsResponded: number;
+    patrolsCompleted: number;
+    avgResponseTime: string;
+    radioCalls: number;
+    shiftsCompleted: number;
+    commendations: number;
+    incidents: number;
+  };
   lastUpdate: Date;
   radio: string;
   assignedActivity?: number | null;
@@ -59,13 +64,6 @@ interface Guard extends Omit<GuardType, 'id'> {
   shift: string;
   department: string;
   skills?: string[];
-  metrics?: {
-    activitiesCreated: number;
-    incidentsResponded: number;
-    patrolsCompleted: number;
-    avgResponseTime: string;
-    radioCalls: number;
-  };
 }
 
 interface Building {
@@ -163,20 +161,27 @@ interface GuardCardProps {
 }
 
 function GuardCard({ guard, onClick, onQuickAction, isExpanded = false, isCompact = true }: GuardCardProps) {
-  const statusConfig = GuardStatus[guard.status];
+  const statusConfig = GuardStatus[guard.status as keyof typeof GuardStatus] || GuardStatus.available;
   const [isHovered, setIsHovered] = useState(false);
   
   // Status indicator dot
-  const StatusDot = ({ status }: { status: Guard['status'] }) => (
-    <div 
-      className={`w-3 h-3 rounded-full ${statusConfig.color === '#FF6B35' ? 'bg-orange-500' : 
-        statusConfig.color === '#FFD93D' ? 'bg-yellow-500' :
-        statusConfig.color === '#6BCF7F' ? 'bg-green-500' :
-        statusConfig.color === '#4A90E2' ? 'bg-blue-500' :
-        statusConfig.color === '#95A5A6' ? 'bg-gray-400' : 'bg-gray-600'
-      } ${status === 'responding' || status === 'investigating' ? 'animate-pulse' : ''}`}
-    />
-  );
+  const StatusDot = ({ status }: { status: Guard['status'] }) => {
+    const dotColor = {
+      available: 'bg-green-500',
+      responding: 'bg-orange-500', 
+      patrolling: 'bg-blue-500',
+      investigating: 'bg-yellow-500',
+      break: 'bg-gray-400',
+      off_duty: 'bg-gray-600',
+      emergency: 'bg-red-500'
+    }[status] || 'bg-gray-600';
+    
+    return (
+      <div 
+        className={`w-3 h-3 rounded-full ${dotColor} ${status === 'responding' || status === 'investigating' ? 'animate-pulse' : ''}`}
+      />
+    );
+  };
 
   if (isCompact) {
     return (
@@ -543,7 +548,7 @@ function StatusView({ guards, onGuardClick, onQuickAction, selectedGuard, isComp
         const statusGuards = getGuardsByStatus(status);
         if (statusGuards.length === 0) return null;
         
-        const statusConfig = GuardStatus[status];
+        const statusConfig = GuardStatus[status as keyof typeof GuardStatus] || GuardStatus.available;
         const isCollapsed = collapsedStatuses.has(status);
         
         return (
@@ -845,7 +850,7 @@ export function GuardManagement({
               onClick={() => {
                 const newStatus = filters.status.includes('available') 
                   ? filters.status.filter(s => s !== 'available')
-                  : [...filters.status, 'available'];
+                  : [...filters.status, 'available' as Guard['status']];
                 setFilters(prev => ({ ...prev, status: newStatus }));
               }}
               className="h-8 px-2 text-xs"
@@ -857,7 +862,7 @@ export function GuardManagement({
               size="sm"
               variant={getCriticalCount() > 0 && filters.status.some(s => ['responding', 'investigating'].includes(s)) ? 'default' : 'outline'}
               onClick={() => {
-                const critical = ['responding', 'investigating'];
+                const critical = ['responding', 'investigating'] as Guard['status'][];
                 const hasCritical = critical.some(s => filters.status.includes(s));
                 const newStatus = hasCritical
                   ? filters.status.filter(s => !critical.includes(s))

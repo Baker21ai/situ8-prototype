@@ -103,7 +103,8 @@ export interface EnterpriseActivityData {
 // Activity aggregation for performance
 export interface ActivityCluster {
   id: string;
-  type: 'single' | 'cluster';
+  clusterType: 'single' | 'cluster';
+  type: any; // Activity type
   activities: EnterpriseActivityData[];
   representative: EnterpriseActivityData; // Main activity to display
   count: number;
@@ -115,6 +116,9 @@ export interface ActivityCluster {
   description?: string;
   timeRange: { start: Date; end: Date };
   isExpanded?: boolean;
+  timestamp: Date;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  status: string;
 }
 
 // Card variant types for enterprise
@@ -294,7 +298,7 @@ const ClusterCard = memo<{
           <div className="flex items-center gap-1">
             <Layers className="h-3 w-3 text-blue-600" />
             <span className="font-medium text-xs">{cluster.count} activities</span>
-            <Badge className={getPriorityColor(cluster.highestPriority)} size="sm">
+            <Badge className={getPriorityColor(cluster.highestPriority)}>
               {cluster.highestPriority.toUpperCase()}
             </Badge>
           </div>
@@ -427,7 +431,7 @@ const EnterpriseStreamCard = memo<{
         {/* Status and Assignment */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <Badge className={getPriorityColor(activity.priority)} size="sm">
+            <Badge className={getPriorityColor(activity.priority)}>
               {activity.priority.toUpperCase()}
             </Badge>
             {activity.escalationLevel && activity.escalationLevel > 0 && (
@@ -531,7 +535,7 @@ export const EnterpriseActivityCard = memo<EnterpriseActivityCardProps>(({
   const baseClassName = `${className}`;
 
   // Handle both individual activities and clusters
-  const isCluster = 'type' in activity && activity.type === 'cluster';
+  const isCluster = 'clusterType' in activity && (activity as any).clusterType === 'cluster';
 
   if (isCluster) {
     return (

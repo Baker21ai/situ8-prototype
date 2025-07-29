@@ -111,7 +111,7 @@ export function Activities() {
                     </div>
                   </div>
                 </div>
-                {critical && parseInt(value) > 0 && (
+                {critical && parseInt(value.toString()) > 0 && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                 )}
               </Card>
@@ -178,7 +178,7 @@ export function Activities() {
             console.log('Activity update:', activityId, updates);
             
             // Update local state to reflect changes immediately
-            setSelectedActivityDetail(prev => prev ? { ...prev, ...updates } : null);
+            setSelectedActivityDetail((prev: any) => prev ? { ...prev, ...updates } : null);
           }}
         />
       )}
