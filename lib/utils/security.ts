@@ -5,16 +5,13 @@
 import { LucideIcon, Shield, AlertTriangle, Unlock, Flame, Heart, UserCheck, Ban, Eye, Settings, Users } from 'lucide-react';
 
 export type ActivityType = 
-  | 'TAILGATE' 
-  | 'ARMED_PERSON' 
-  | 'BREACH' 
-  | 'FIRE' 
-  | 'MEDICAL' 
-  | 'PATROL' 
-  | 'ACCESS_DENIED'
-  | 'SUSPICIOUS_BEHAVIOR'
-  | 'EQUIPMENT_FAULT'
-  | 'CROWD_DETECTION';
+  | 'medical'
+  | 'security-breach'
+  | 'alert'
+  | 'patrol'
+  | 'evidence'
+  | 'property-damage'
+  | 'bol-event';
 
 export type ThreatLevel = 'none' | 'low' | 'medium' | 'high' | 'critical';
 export type SecurityLevel = 'public' | 'restricted' | 'confidential' | 'secret' | 'top-secret';
@@ -35,16 +32,13 @@ export interface ActivityTypeInfo {
  */
 export function getTypeIcon(type: ActivityType): string {
   const icons: Record<ActivityType, string> = {
-    TAILGATE: '🚪',
-    ARMED_PERSON: '⚠️',
-    BREACH: '🔓',
-    FIRE: '🔥',
-    MEDICAL: '🏥',
-    PATROL: '👮',
-    ACCESS_DENIED: '🚫',
-    SUSPICIOUS_BEHAVIOR: '👁️',
-    EQUIPMENT_FAULT: '⚙️',
-    CROWD_DETECTION: '👥'
+    'medical': '🏥',
+    'security-breach': '🔓',
+    'alert': '⚠️',
+    'patrol': '👮',
+    'evidence': '📋',
+    'property-damage': '⚙️',
+    'bol-event': '👁️'
   };
 
   return icons[type] || '📋';
@@ -57,23 +51,15 @@ export function getTypeIcon(type: ActivityType): string {
  */
 export function getActivityTypeInfo(type: ActivityType): ActivityTypeInfo {
   const typeInfo: Record<ActivityType, ActivityTypeInfo> = {
-    TAILGATE: {
-      icon: '🚪',
-      lucideIcon: Shield,
-      label: 'Tailgating',
-      color: 'text-orange-600',
-      threatLevel: 'high',
-      category: 'security'
-    },
-    ARMED_PERSON: {
-      icon: '⚠️',
-      lucideIcon: AlertTriangle,
-      label: 'Armed Person',
+    'medical': {
+      icon: '🏥',
+      lucideIcon: Heart,
+      label: 'Medical Emergency',
       color: 'text-red-600',
       threatLevel: 'critical',
-      category: 'security'
+      category: 'safety'
     },
-    BREACH: {
+    'security-breach': {
       icon: '🔓',
       lucideIcon: Unlock,
       label: 'Security Breach',
@@ -81,23 +67,15 @@ export function getActivityTypeInfo(type: ActivityType): ActivityTypeInfo {
       threatLevel: 'critical',
       category: 'security'
     },
-    FIRE: {
-      icon: '🔥',
-      lucideIcon: Flame,
-      label: 'Fire Alert',
-      color: 'text-red-600',
-      threatLevel: 'critical',
-      category: 'safety'
-    },
-    MEDICAL: {
-      icon: '🏥',
-      lucideIcon: Heart,
-      label: 'Medical Emergency',
-      color: 'text-red-600',
+    'alert': {
+      icon: '⚠️',
+      lucideIcon: AlertTriangle,
+      label: 'System Alert',
+      color: 'text-orange-600',
       threatLevel: 'high',
-      category: 'safety'
+      category: 'security'
     },
-    PATROL: {
+    'patrol': {
       icon: '👮',
       lucideIcon: UserCheck,
       label: 'Patrol Activity',
@@ -105,36 +83,28 @@ export function getActivityTypeInfo(type: ActivityType): ActivityTypeInfo {
       threatLevel: 'none',
       category: 'operational'
     },
-    ACCESS_DENIED: {
-      icon: '🚫',
-      lucideIcon: Ban,
-      label: 'Access Denied',
-      color: 'text-yellow-600',
-      threatLevel: 'medium',
-      category: 'access'
-    },
-    SUSPICIOUS_BEHAVIOR: {
-      icon: '👁️',
-      lucideIcon: Eye,
-      label: 'Suspicious Behavior',
-      color: 'text-orange-600',
-      threatLevel: 'medium',
-      category: 'security'
-    },
-    EQUIPMENT_FAULT: {
-      icon: '⚙️',
+    'evidence': {
+      icon: '📋',
       lucideIcon: Settings,
-      label: 'Equipment Fault',
-      color: 'text-gray-600',
+      label: 'Evidence Collection',
+      color: 'text-purple-600',
       threatLevel: 'low',
       category: 'operational'
     },
-    CROWD_DETECTION: {
-      icon: '👥',
-      lucideIcon: Users,
-      label: 'Crowd Detected',
-      color: 'text-purple-600',
+    'property-damage': {
+      icon: '⚙️',
+      lucideIcon: Settings,
+      label: 'Property Damage',
+      color: 'text-orange-600',
       threatLevel: 'medium',
+      category: 'operational'
+    },
+    'bol-event': {
+      icon: '👁️',
+      lucideIcon: Eye,
+      label: 'Be-On-Lookout',
+      color: 'text-red-600',
+      threatLevel: 'high',
       category: 'security'
     }
   };

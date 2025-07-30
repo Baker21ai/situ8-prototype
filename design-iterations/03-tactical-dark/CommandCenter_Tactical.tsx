@@ -14,7 +14,7 @@ import { CommunicationsPage } from '../../components/CommunicationsPage';
 import { ActivityCard as _ActivityCard, ActivityData } from '../../components/ActivityCard';
 import { ActivityDetail } from '../../components/ActivityDetail';
 import { EnterpriseActivityManager as _EnterpriseActivityManager } from '../../components/EnterpriseActivityManager';
-import { enterpriseActivities, generateRealtimeActivity, getFacilityStats } from '../../components/enterpriseMockData';
+import { useActivityStore } from '../../stores';
 import { 
   AlertTriangle, 
   Clock, 

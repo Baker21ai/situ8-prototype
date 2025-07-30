@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
@@ -8,6 +8,8 @@ import { Toaster } from './components/ui/sonner';
 import { CommandCenter } from './components/CommandCenter';
 import { Activities } from './components/Activities';
 import { CommunicationsPage } from './components/CommunicationsPage';
+import { ServiceProvider } from './services/ServiceProvider';
+import { initializeStores } from './stores';
 import { 
   Shield, 
   Activity, 
@@ -43,6 +45,11 @@ export default function App() {
     document.documentElement.classList.add('dark');
   }, []);
 
+  // Initialize Zustand stores
+  useEffect(() => {
+    initializeStores();
+  }, []);
+
   const renderModuleContent = () => {
     switch (activeModule) {
       case 'command-center':
@@ -73,30 +80,31 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col dark">
-      {/* Header */}
-      <header className="border-b px-6 py-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-blue-500" />
-            <div>
-              <h1 className="text-xl font-semibold">Situ8 Security Platform</h1>
-              <p className="text-sm text-muted-foreground">Real-time security management</p>
+    <ServiceProvider>
+      <div className="h-screen flex flex-col dark">
+        {/* Header */}
+        <header className="border-b px-6 py-4 bg-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className="h-8 w-8 text-blue-500" />
+              <div>
+                <h1 className="text-xl font-semibold">Situ8 Security Platform</h1>
+                <p className="text-sm text-muted-foreground">Real-time security management</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <Badge variant="secondary">
+                {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+              </Badge>
+              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm">
+                A
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-            <Badge variant="secondary">
-              {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-            </Badge>
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm">
-              A
-            </div>
-          </div>
-        </div>
-      </header>
+        </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
@@ -254,8 +262,9 @@ export default function App() {
         </main>
       </div>
       
-      {/* Toast Notifications */}
-      <Toaster />
-    </div>
+        {/* Toast Notifications */}
+        <Toaster />
+      </div>
+    </ServiceProvider>
   );
 }

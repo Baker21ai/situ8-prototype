@@ -3,7 +3,7 @@
  */
 
 export type Priority = 'critical' | 'high' | 'medium' | 'low';
-export type Status = 'new' | 'active' | 'assigned' | 'investigating' | 'resolved' | 'archived';
+export type Status = 'detecting' | 'assigned' | 'responding' | 'resolved';
 export type BusinessImpact = 'none' | 'low' | 'medium' | 'high' | 'critical';
 
 export interface ColorSet {
@@ -71,17 +71,11 @@ export function getPriorityColor(priority: Priority, variant: 'default' | 'compa
  */
 export function getStatusColor(status: Status): ColorSet {
   const colors: Record<Status, ColorSet> = {
-    new: {
+    detecting: {
       border: 'border-blue-500',
       background: 'bg-blue-50',
       text: 'text-blue-800',
       icon: 'text-blue-600'
-    },
-    active: {
-      border: 'border-red-500',
-      background: 'bg-red-50',
-      text: 'text-red-800',
-      icon: 'text-red-600'
     },
     assigned: {
       border: 'border-orange-500',
@@ -89,7 +83,7 @@ export function getStatusColor(status: Status): ColorSet {
       text: 'text-orange-800',
       icon: 'text-orange-600'
     },
-    investigating: {
+    responding: {
       border: 'border-yellow-500',
       background: 'bg-yellow-50',
       text: 'text-yellow-800',
@@ -100,16 +94,10 @@ export function getStatusColor(status: Status): ColorSet {
       background: 'bg-green-50',
       text: 'text-green-800',
       icon: 'text-green-600'
-    },
-    archived: {
-      border: 'border-gray-500',
-      background: 'bg-gray-50',
-      text: 'text-gray-800',
-      icon: 'text-gray-600'
     }
   };
 
-  return colors[status] || colors.archived;
+  return colors[status] || colors.resolved;
 }
 
 /**
@@ -168,33 +156,25 @@ export function getPriorityDisplay(priority: Priority) {
  */
 export function getStatusDisplay(status: Status) {
   const displays: Record<Status, { label: string; description: string }> = {
-    new: {
-      label: 'NEW',
-      description: 'Newly detected activity'
-    },
-    active: {
-      label: 'ACTIVE',
-      description: 'Currently being handled'
+    detecting: {
+      label: 'DETECTING',
+      description: 'Initial detection phase'
     },
     assigned: {
       label: 'ASSIGNED',
       description: 'Assigned to personnel'
     },
-    investigating: {
-      label: 'INVESTIGATING',
-      description: 'Under investigation'
+    responding: {
+      label: 'RESPONDING',
+      description: 'Personnel responding to incident'
     },
     resolved: {
       label: 'RESOLVED',
       description: 'Issue resolved'
-    },
-    archived: {
-      label: 'ARCHIVED',
-      description: 'Archived for records'
     }
   };
 
-  return displays[status] || displays.archived;
+  return displays[status] || displays.resolved;
 }
 
 /**
@@ -232,7 +212,7 @@ export function sortByPriority<T extends { priority: Priority }>(items: T[]): T[
  */
 export function getActivityClasses(priority: Priority, status: Status) {
   const priorityColors = getPriorityColor(priority);
-  const isActive = status === 'active' || status === 'new';
+  const isActive = status === 'detecting' || status === 'responding';
   
   return {
     container: `${priorityColors.border} ${priorityColors.background} ${isActive ? 'animate-pulse' : ''}`,

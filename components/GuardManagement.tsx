@@ -203,15 +203,15 @@ function GuardCard({ guard, onClick, onQuickAction, isExpanded = false, isCompac
               
               <div className="space-y-1.5">
                 {/* Name */}
-                <div className="font-medium text-sm truncate pr-4">{guard.name}</div>
+                <div className="font-semibold text-sm truncate pr-4">{guard.name}</div>
                 
                 {/* Zone */}
-                <div className="text-xs text-gray-600 truncate">{guard.zone}</div>
+                <div className="text-sm text-gray-600 truncate">{guard.zone}</div>
                 
                 {/* Radio channel */}
                 <div className="flex items-center gap-1">
                   <Radio className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs text-gray-500">{guard.radio}</span>
+                  <span className="text-sm text-gray-500">{guard.radio}</span>
                 </div>
 
                 {/* Quick actions on hover */}
@@ -259,7 +259,7 @@ function GuardCard({ guard, onClick, onQuickAction, isExpanded = false, isCompac
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-xs">
             <div className="space-y-2">
-              <div className="font-medium">{guard.name}</div>
+              <div className="font-semibold">{guard.name}</div>
               <div className="text-sm text-muted-foreground">{guard.badge}</div>
               <div className="flex items-center gap-2">
                 <Badge className={`text-xs ${statusConfig.bgColor}`}>
@@ -293,16 +293,16 @@ function GuardCard({ guard, onClick, onQuickAction, isExpanded = false, isCompac
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <StatusDot status={guard.status} />
-            <span className="font-medium text-sm">{guard.name}</span>
+            <span className="font-semibold text-sm">{guard.name}</span>
           </div>
           <Badge className={`text-xs ${statusConfig.bgColor}`}>
             {statusConfig.icon} {guard.status.toUpperCase()}
           </Badge>
         </div>
 
-        <div className="text-xs text-gray-600">{guard.location}</div>
+        <div className="text-sm text-gray-600">{guard.location}</div>
         
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-sm">
           <span className="text-gray-500">📻 {guard.radio}</span>
           <span className="text-gray-500">{formatTimeAgo(guard.lastUpdate)}</span>
         </div>
@@ -405,7 +405,7 @@ function BuildingView({ guards, buildings, onGuardClick, onQuickAction, selected
                     <div className="flex items-center gap-2">
                       {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       <Building className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium text-sm">{building.name}</span>
+                      <span className="font-semibold text-sm">{building.name}</span>
                       <Badge variant="outline" className="text-xs">
                         {buildingGuards.length}/{building.capacity}
                       </Badge>
@@ -499,7 +499,7 @@ function BuildingView({ guards, buildings, onGuardClick, onQuickAction, selected
                         onClick={() => console.log(`Assign to ${building.zones[index] || `Post ${index + 1}`}`)}
                       >
                         <UserPlus className="h-4 w-4 mb-1" />
-                        <span className="text-xs font-medium">Assign</span>
+                        <span className="text-sm font-semibold">Assign</span>
                         <span className="text-xs text-gray-400">{building.zones[index] || `Post ${index + 1}`}</span>
                       </div>
                     ))}
@@ -560,7 +560,7 @@ function StatusView({ guards, onGuardClick, onQuickAction, selectedGuard, isComp
                     <div className="flex items-center gap-2">
                       {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       <span className="text-lg">{statusConfig.icon}</span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-semibold">
                         {status.toUpperCase()} ({statusGuards.length})
                       </span>
                     </div>
@@ -612,7 +612,7 @@ function AllGuardsView({ guards, onGuardClick, onQuickAction, selectedGuard, isC
       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-4">
           <div className="text-sm">
-            <span className="font-medium">{guards.length}</span> 
+            <span className="font-semibold">{guards.length}</span> 
             <span className="text-gray-600 ml-1">Total Guards</span>
           </div>
           <div className="flex gap-3">

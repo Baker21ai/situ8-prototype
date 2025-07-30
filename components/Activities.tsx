@@ -4,10 +4,12 @@ import { ResponsiveActivityDetail } from './ResponsiveActivityDetail';
 import { CommunicationsPanel } from './CommunicationsPanel';
 import { RadioModal } from './RadioModal';
 import { CommunicationsPage } from './CommunicationsPage';
-import { enterpriseActivities, getFacilityStats } from './enterpriseMockData';
+import { useActivityStore } from '../stores';
+import { useServices } from '../services/ServiceProvider';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Alert, AlertDescription } from './ui/alert';
 import { 
   Building, 
   Camera, 
@@ -22,7 +24,35 @@ import {
 } from 'lucide-react';
 
 export function Activities() {
-  const facilityStats = getFacilityStats(enterpriseActivities);
+  // Use Zustand store for activities and stats with service integration
+  const { 
+    getActivityStats, 
+    filteredActivities, 
+    loading: activitiesLoading,
+    error: activitiesError 
+  } = useActivityStore();
+  
+  // Use services for business logic operations
+  const { isInitialized } = useServices();
+  
+  const storeStats = getActivityStats();
+  
+  // Map store stats to expected facility stats format
+  const facilityStats = {
+    totalCameras: 847,
+    activeCameras: 839,
+    totalActivities: storeStats.total,
+    recentActivities: storeStats.todayCount,
+    criticalToday: storeStats.criticalCount,
+    averageResponseTime: '4.2 minutes',
+    falsePositiveRate: '12.8%',
+    systemUptime: '99.97%',
+    buildingsMonitored: 32,
+    zonesMonitored: 256,
+    employeesOnSite: 2847,
+    securityPersonnel: 23
+  };
+  
   const [selectedActivityDetail, setSelectedActivityDetail] = useState<any>(null);
   const [showRadioModal, setShowRadioModal] = useState(false);
   const [showCommunicationsPage, setShowCommunicationsPage] = useState(false);
@@ -54,8 +84,30 @@ export function Activities() {
               <p className="text-sm text-muted-foreground">Amazon-scale security operations</p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+              {/* Service Status Indicators */}
+              {activitiesLoading && (
+                <Alert className="border-blue-600/20 bg-blue-600/10 px-2 py-1">
+                  <AlertDescription className="text-blue-400 font-medium text-xs">
+                    Loading...
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {activitiesError && (
+                <Alert className="border-red-600/20 bg-red-600/10 px-2 py-1">
+                  <AlertDescription className="text-red-400 font-medium text-xs">
+                    {activitiesError}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <Badge className={`border-blue-200 ${isInitialized ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                 <Activity className="h-3 w-3 mr-1" />
+                {isInitialized ? 'Services Active' : 'Initializing'}
+              </Badge>
+              
+              <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                <Camera className="h-3 w-3 mr-1" />
                 {facilityStats.totalCameras} cameras
               </Badge>
               
@@ -127,7 +179,7 @@ export function Activities() {
           <Card className="h-full shadow-lg border-0 bg-white">
             <CardContent className="p-0 h-full">
               <EnterpriseActivityManager
-                activities={enterpriseActivities}
+                activities={filteredActivities}
                 onActivitySelect={handleActivitySelect}
                 onActivityAction={handleActivityAction}
                 onBulkAction={handleBulkAction}
@@ -145,7 +197,7 @@ export function Activities() {
               <CommunicationsPanel 
                 onOpenModal={() => setShowRadioModal(true)}
                 onOpenFullPage={() => setShowCommunicationsPage(true)}
-                activities={enterpriseActivities}
+                activities={filteredActivities}
                 showAllTab={true}
                 defaultTab="all"
                 className="h-full"

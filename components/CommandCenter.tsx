@@ -14,7 +14,8 @@ import { CommunicationsPage } from './CommunicationsPage';
 import { ActivityCard } from './organisms/ActivityCard';
 import { ActivityData } from '../lib/types/activity';
 import { ActivityDetail } from './ActivityDetail';
-import { enterpriseActivities, generateRealtimeActivity, getFacilityStats } from './enterpriseMockData';
+import { useActivityStore } from '../stores';
+import { useServices, createAuditContext } from '../services/ServiceProvider';
 import { 
   AlertTriangle, 
   Clock, 
@@ -28,10 +29,10 @@ import {
   Info
 } from 'lucide-react';
 
-// Enhanced activities using enterprise-scale data system
-const getInitialActivities = () => {
-  // Use full enterprise dataset for proper scale testing
-  return enterpriseActivities; // Full dataset - optimized with proper pagination in UI
+// Enhanced activities using enterprise-scale data system from Zustand store
+const getInitialActivities = (activities: any[]) => {
+  // Use activities from store - optimized with proper pagination in UI
+  return activities.slice(0, 100); // Limit to 100 for UI performance
 };
 
 const createGuardMetrics = (partial: any) => ({
@@ -298,7 +299,22 @@ const initialTimelineEvents = [
 
 
 export function CommandCenter() {
-  const [activities, setActivities] = useState<ActivityData[]>(getInitialActivities());
+  // Use Zustand store for activities with service integration
+  const { 
+    filteredActivities: storeActivities, 
+    loading: activitiesLoading,
+    error: activitiesError,
+    generateRealtimeActivity,
+    assignActivity: storeAssignActivity,
+    getActivityStats,
+    updateActivityStatus
+  } = useActivityStore();
+  
+  // Use services for business logic operations
+  const { activityService, bolService, auditService, isInitialized } = useServices();
+  
+  const activities = getInitialActivities(storeActivities);
+  
   const [guards, setGuards] = useState(initialGuards);
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
   const [selectedActivityDetail, setSelectedActivityDetail] = useState<ActivityData | null>(null);
@@ -306,9 +322,18 @@ export function CommandCenter() {
   const [showCriticalOnly, setShowCriticalOnly] = useState(false);
   const [showRadioModal, setShowRadioModal] = useState(false);
   const [showCommunicationsPage, setShowCommunicationsPage] = useState(false);
-  const [activityIdCounter, setActivityIdCounter] = useState(100001);
-  const [_timelineEvents, setTimelineEvents] = useState(initialTimelineEvents);
-  const [_facilityStats, setFacilityStats] = useState(getFacilityStats(enterpriseActivities));
+  const [timelineEvents, setTimelineEvents] = useState(initialTimelineEvents);
+  const [operationError, setOperationError] = useState<string | null>(null);
+  
+  // Get activity stats from store
+  const facilityStats = getActivityStats();
+  
+  // Current user context for audit trails (in real app, would come from auth)
+  const currentUser = {
+    userId: 'user-001',
+    userName: 'Officer Davis',
+    userRole: 'officer' as const
+  };
   
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
@@ -325,32 +350,52 @@ export function CommandCenter() {
     ));
   }, []);
 
-  const handleGuardAssign = useCallback((guardId: number, activityId: number) => {
-    setGuards((prev: any) => prev.map((guard: any) => ({
-      ...guard,
-      assignedActivity: guard.id === guardId ? activityId : guard.assignedActivity,
-      status: guard.id === guardId ? 'responding' : guard.status
-    })));
-
-    setActivities(prev => prev.map(activity => ({
-      ...activity,
-      assignedTo: activity.id === activityId.toString() ? guards.find(g => g.id === guardId)?.name || activity.assignedTo : activity.assignedTo,
-      status: activity.id === activityId.toString() ? 'assigned' : activity.status
-    })));
-
-    // Add to timeline
-    const guard = guards.find(g => g.id === guardId);
+  const handleGuardAssign = useCallback(async (guardId: number, activityId: number) => {
+    const assignedGuard = guards.find(g => g.id === guardId);
     const activity = activities.find(a => a.id === activityId.toString());
-    if (guard && activity) {
+    
+    if (!assignedGuard || !activity) return;
+
+    try {
+      setOperationError(null);
+      
+      // Create audit context for assignment
+      const context = createAuditContext(
+        currentUser.userId,
+        currentUser.userName,
+        currentUser.userRole,
+        'assign_activity',
+        `Assigning ${assignedGuard.name} to activity ${activity.title}`
+      );
+
+      // Use service layer for assignment with business logic
+      await storeAssignActivity(activityId.toString(), assignedGuard.name, context);
+
+      // Update guard state after successful assignment
+      setGuards((prev: any) => prev.map((guard: any) => ({
+        ...guard,
+        assignedActivity: guard.id === guardId ? activityId : guard.assignedActivity,
+        status: guard.id === guardId ? 'responding' : guard.status
+      })));
+
+      // Add to timeline
       const newEvent = {
         id: Date.now(),
         time: new Date(),
-        event: `${guard.name} assigned to ${activity.title}`,
+        event: `${assignedGuard.name} assigned to ${activity.title}`,
         type: 'assignment'
       };
       setTimelineEvents(prev => [newEvent, ...prev]);
+
+      // Show success notification
+      console.log(`Successfully assigned ${assignedGuard.name} to ${activity.title}`);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to assign guard';
+      setOperationError(errorMessage);
+      console.error('Assignment failed:', error);
     }
-  }, [guards, activities]);
+  }, [guards, activities, currentUser, storeAssignActivity]);
 
   const handleGuardStatusChange = useCallback((guardId: number, status: any) => {
     setGuards((prev: any) => prev.map((guard: any) => 
@@ -461,49 +506,122 @@ export function CommandCenter() {
     ).length;
   }, [activities]);
 
-  // Activity handlers for enterprise system
+  // Activity handlers for enterprise system with service integration
   const handleActivitySelect = useCallback((activity: any) => {
     setSelectedActivity(selectedActivity === activity.id ? null : activity.id);
     // Open activity detail modal when clicked
     setSelectedActivityDetail(activity);
   }, [selectedActivity]);
 
-  const handleActivityAction = useCallback((action: string, activity: any) => {
-    console.log(`Activity action: ${action}`, activity);
-    // Handle enterprise activity actions
-    switch (action) {
-      case 'escalate':
-        console.log('Escalating activity:', activity.id);
-        break;
-      case 'correlate':
-        console.log('Finding correlated activities:', activity.id);
-        break;
-      case 'notify_business':
-        console.log('Notifying business stakeholders:', activity.id);
-        break;
-      default:
-        console.log('Unknown action:', action);
+  const handleActivityAction = useCallback(async (action: string, activity: any) => {
+    try {
+      setOperationError(null);
+      
+      // Create audit context for the action
+      const context = createAuditContext(
+        currentUser.userId,
+        currentUser.userName,
+        currentUser.userRole,
+        action,
+        `Performing ${action} on activity ${activity.title}`
+      );
+
+      // Handle enterprise activity actions with service layer
+      switch (action) {
+        case 'escalate':
+          console.log('Escalating activity:', activity.id);
+          // Use service to escalate with proper business logic
+          if (activityService) {
+            await updateActivityStatus(activity.id, 'assigned', context, 'Manual escalation by user');
+            
+            // Add to timeline
+            const escalationEvent = {
+              id: Date.now(),
+              time: new Date(),
+              event: `Activity ${activity.title} escalated by ${currentUser.userName}`,
+              type: 'escalation'
+            };
+            setTimelineEvents(prev => [escalationEvent, ...prev]);
+          }
+          break;
+          
+        case 'correlate':
+          console.log('Finding correlated activities:', activity.id);
+          // In a real system, this would use AI/ML services for correlation
+          if (bolService) {
+            const matches = await bolService.checkNewActivity(activity, context);
+            if (matches.success && matches.data) {
+              const matchCount = matches.data.filter(m => m.matched).length;
+              if (matchCount > 0) {
+                console.log(`Found ${matchCount} BOL matches for activity ${activity.id}`);
+                
+                // Add correlation event to timeline
+                const correlationEvent = {
+                  id: Date.now(),
+                  time: new Date(),
+                  event: `Found ${matchCount} BOL correlation(s) for ${activity.title}`,
+                  type: 'correlation'
+                };
+                setTimelineEvents(prev => [correlationEvent, ...prev]);
+              }
+            }
+          }
+          break;
+          
+        case 'notify_business':
+          console.log('Notifying business stakeholders:', activity.id);
+          // Log business notification through audit service
+          if (auditService) {
+            await auditService.logAuditEntry(
+              context,
+              'activity',
+              activity.id,
+              'notify_business',
+              {
+                reason: 'Business stakeholder notification sent',
+                siteId: activity.metadata?.site,
+                siteName: activity.metadata?.site
+              }
+            );
+          }
+          
+          // Add notification event to timeline
+          const notificationEvent = {
+            id: Date.now(),
+            time: new Date(),
+            event: `Business stakeholders notified about ${activity.title}`,
+            type: 'notification'
+          };
+          setTimelineEvents(prev => [notificationEvent, ...prev]);
+          break;
+          
+        default:
+          console.log('Unknown action:', action);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Action failed';
+      setOperationError(errorMessage);
+      console.error('Activity action failed:', error);
     }
-  }, []);
+  }, [currentUser, activityService, bolService, auditService, updateActivityStatus]);
 
 
-  // Auto-add new enterprise activities periodically
+  // Auto-add new enterprise activities periodically using service-backed store
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (!isInitialized) return;
+    
+    const interval = setInterval(async () => {
       if (Math.random() > 0.8) { // 20% chance every 15 seconds (realistic for large facility)
-        const newActivity = generateRealtimeActivity(activityIdCounter);
-        setActivityIdCounter(prev => prev + 1);
-        
-        // Use the enterprise activity directly
-        setActivities(prev => [newActivity, ...prev.slice(0, 99)]); // Keep last 100 for performance
-        
-        // Update facility stats
-        setFacilityStats(getFacilityStats([...enterpriseActivities, newActivity]));
+        try {
+          await generateRealtimeActivity();
+        } catch (error) {
+          console.warn('Failed to generate realtime activity:', error);
+        }
       }
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [activityIdCounter]);
+  }, [generateRealtimeActivity, isInitialized]);
 
   const handleZoneClick = (building: string, zone: any) => {
     console.log('Zone clicked:', building, zone);
@@ -524,6 +642,54 @@ export function CommandCenter() {
             <p className="text-muted-foreground text-sm">Real-time security operations dashboard</p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Service Status Indicator */}
+            {!isInitialized && (
+              <Alert className="border-yellow-600/20 bg-yellow-600/10 px-3 py-2 max-w-sm">
+                <Clock className="h-4 w-4 text-yellow-500" />
+                <AlertDescription className="text-yellow-400 font-medium text-sm">
+                  Services Initializing...
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Operation Error Alert */}
+            {operationError && (
+              <Alert className="border-red-600/20 bg-red-600/10 px-3 py-2 max-w-sm">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-red-400 font-medium text-sm">
+                  {operationError}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-2 h-auto p-1 text-red-400 hover:text-red-300"
+                    onClick={() => setOperationError(null)}
+                  >
+                    ✕
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Activities Loading Indicator */}
+            {activitiesLoading && (
+              <Alert className="border-blue-600/20 bg-blue-600/10 px-3 py-2 max-w-sm">
+                <Clock className="h-4 w-4 text-blue-500 animate-spin" />
+                <AlertDescription className="text-blue-400 font-medium text-sm">
+                  Loading Activities...
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Activities Error Alert */}
+            {activitiesError && (
+              <Alert className="border-red-600/20 bg-red-600/10 px-3 py-2 max-w-sm">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-red-400 font-medium text-sm">
+                  {activitiesError}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {getCriticalIncidents() > 0 && (
               <Alert className="border-red-600/20 bg-red-600/10 px-3 py-2 max-w-sm">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -558,13 +724,16 @@ export function CommandCenter() {
               <Badge variant="outline" className={getCriticalIncidents() > 0 ? "bg-red-600/10 text-red-400 border-red-600/20" : "bg-green-600/10 text-green-400 border-green-600/20"}>
                 {getCriticalIncidents() > 0 ? `${getCriticalIncidents()} Critical` : 'All Systems Operational'}
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="outline" className={isInitialized ? "bg-green-600/10 text-green-400 border-green-600/20" : "bg-yellow-600/10 text-yellow-400 border-yellow-600/20"}>
                 <Clock className="h-3 w-3 mr-1" />
-                Live
+                {isInitialized ? 'Services Active' : 'Initializing'}
               </Badge>
               <Badge variant="outline">
                 <Users className="h-3 w-3 mr-1" />
                 {getAvailableGuards()} Available
+              </Badge>
+              <Badge variant="secondary" className="bg-blue-600/10 text-blue-400 border-blue-600/20">
+                {currentUser.userName} ({currentUser.userRole})
               </Badge>
             </div>
           </div>
@@ -613,7 +782,7 @@ export function CommandCenter() {
                           >
                             <div className="flex items-center gap-3">
                               <IconComponent className={`h-4 w-4 ${config.color}`} />
-                              <span className={`font-medium ${config.color}`}>
+                              <span className={`font-semibold ${config.color}`}>
                                 {config.label} Priority
                               </span>
                               <Badge 
@@ -657,7 +826,7 @@ export function CommandCenter() {
                   {Object.values(getActivitiesByPriority()).every(arr => arr.length === 0) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium">No activities found</p>
+                      <p className="font-semibold">No activities found</p>
                       <p className="text-sm">All systems operating normally</p>
                     </div>
                   )}

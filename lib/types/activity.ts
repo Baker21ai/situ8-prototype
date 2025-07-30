@@ -5,7 +5,7 @@
 import { Priority, Status, BusinessImpact } from '../utils/status';
 import { ActivityType, ThreatLevel as _ThreatLevel, SecurityLevel } from '../utils/security';
 
-// Base activity interface
+// Base activity interface with business logic compliance
 export interface BaseActivity {
   id: string;
   timestamp: Date;
@@ -17,6 +17,28 @@ export interface BaseActivity {
   description?: string;
   assignedTo?: string;
   relativeTime?: string;
+  
+  // Business logic required fields
+  created_at: Date;
+  updated_at: Date;
+  created_by: string; // User ID who created the activity
+  updated_by: string; // User ID who last updated the activity
+  
+  // Auto-tagging system
+  system_tags: string[]; // Auto-generated tags based on type/location/etc
+  user_tags: string[];   // Manual tags added by users
+  
+  // Multi-incident support
+  incident_contexts: string[]; // Array of incident IDs this activity belongs to
+  
+  // Retention and archiving
+  retention_date: Date; // 30 days from creation
+  is_archived: boolean;
+  archive_reason?: string;
+  
+  // Role-based permissions for status changes
+  allowed_status_transitions: Status[]; // Based on user role
+  requires_approval: boolean; // For certain status changes
 }
 
 // Standard activity data

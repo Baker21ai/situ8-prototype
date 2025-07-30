@@ -46,7 +46,7 @@ const StreamCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Activ
           <div className="flex items-center gap-1 min-w-0">
             <span className="text-xs font-mono shrink-0">{formatTime(activity.timestamp)}</span>
             <span className="text-sm shrink-0">{getTypeIcon(activity.type)}</span>
-            <span className="text-xs font-medium truncate">{activity.type}</span>
+            <span className="text-sm font-semibold truncate">{activity.type}</span>
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             {activity.isNewActivity && (
@@ -59,10 +59,10 @@ const StreamCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Activ
         </div>
 
         {/* Title */}
-        <div className="font-medium text-xs leading-tight">{activity.title}</div>
+        <div className="font-semibold text-sm leading-tight">{activity.title}</div>
 
         {/* Location */}
-        <div className="text-xs text-gray-600 truncate">{activity.zone || activity.location}</div>
+        <div className="text-sm text-gray-600 truncate">{activity.zone || activity.location}</div>
 
         {/* Status and Priority */}
         <div className="flex items-center justify-between">
@@ -74,7 +74,7 @@ const StreamCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Activ
             {activity.priority.toUpperCase()}
           </Badge>
           {activity.assignedTo && (
-            <div className="text-xs text-gray-600 truncate">{activity.assignedTo}</div>
+            <div className="text-sm text-gray-600 truncate">{activity.assignedTo}</div>
           )}
         </div>
       </CardContent>
@@ -103,9 +103,9 @@ const TimelineCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Act
           )}
         </div>
         
-        <div className="font-medium text-xs">{activity.title}</div>
+        <div className="font-semibold text-sm">{activity.title}</div>
         
-        <div className="flex items-center gap-1 text-xs text-gray-600">
+        <div className="flex items-center gap-1 text-sm text-gray-600">
           <MapPin className="h-2 w-2" />
           <span>{activity.location}</span>
         </div>
@@ -159,9 +159,9 @@ const ListCard: React.FC<{
               <div className="flex items-center gap-1">
                 <span className="text-xs font-mono">{formatTime(activity.timestamp)}</span>
                 <span className="text-sm">{getTypeIcon(activity.type)}</span>
-                <span className="text-xs font-medium">{activity.type}</span>
-                <span className="text-xs text-gray-600">•</span>
-                <span className="text-xs text-gray-600">{activity.location}</span>
+                <span className="text-sm font-semibold">{activity.type}</span>
+                <span className="text-sm text-gray-600">•</span>
+                <span className="text-sm text-gray-600">{activity.location}</span>
               </div>
               {activity.isNewActivity && (
                 <Badge className="bg-red-100 text-red-800 text-xs">NEW</Badge>
@@ -193,7 +193,7 @@ const ListCard: React.FC<{
               </div>
               
               {activity.assignedTo && (
-                <div className="text-xs text-gray-600">{activity.assignedTo}</div>
+                <div className="text-sm text-gray-600">{activity.assignedTo}</div>
               )}
             </div>
           </div>
@@ -215,7 +215,7 @@ const EvidenceCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Act
     >
       <CardContent className="p-2 space-y-1">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-xs">
+          <span className="font-semibold text-sm">
             EVIDENCE #{activity.evidenceNumber} - {activity.type}
           </span>
           <Badge className={cn(
@@ -227,15 +227,15 @@ const EvidenceCard: React.FC<{ activity: ActivityData; onSelect?: (activity: Act
           </Badge>
         </div>
         
-        <div className="text-xs text-gray-600">
+        <div className="text-sm text-gray-600">
           {formatTime(activity.timestamp)} {activity.caseTimeOffset && `(${activity.caseTimeOffset})`}
         </div>
         
-        <div className="text-xs text-gray-600">{activity.location}</div>
+        <div className="text-sm text-gray-600">{activity.location}</div>
         
         {activity.caseRelevance && (
-          <div className="text-xs">
-            <span className="font-medium">Relevance:</span> {activity.caseRelevance}
+          <div className="text-sm">
+            <span className="font-semibold">Relevance:</span> {activity.caseRelevance}
           </div>
         )}
       </CardContent>
@@ -254,14 +254,14 @@ const MobileCard: React.FC<{ activity: ActivityData; onAction?: (action: string,
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
             {activity.priority === 'critical' && <span className="text-sm">🔴</span>}
-            <span className="font-medium text-sm">{activity.type}</span>
+            <span className="font-semibold text-sm">{activity.type}</span>
             {activity.isNewActivity && (
               <Badge className="bg-red-100 text-red-800 text-xs">NOW</Badge>
             )}
           </div>
         </div>
         
-        <div className="font-medium text-sm">{activity.location}</div>
+        <div className="font-semibold text-sm">{activity.location}</div>
         
         <div className="flex gap-2">
           <Button 

@@ -338,14 +338,27 @@ const generateEnterpriseActivity = (baseTime: Date, idCounter: number): Enterpri
     confidence: activityDetails.confidence,
     detectedObjects: activityDetails.detectedObjects,
     badgeHolder: activityDetails.badgeHolder,
-    assignedTo: ['assigned', 'investigating'].includes(status) ? 
+    
+    // Business logic required fields
+    created_at: baseTime,
+    updated_at: baseTime,
+    created_by: 'system',
+    updated_by: 'system',
+    system_tags: [],
+    user_tags: [],
+    incident_contexts: [],
+    retention_date: new Date(baseTime.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    is_archived: false,
+    allowed_status_transitions: ['detecting', 'assigned', 'responding', 'resolved'],
+    requires_approval: false,
+    assignedTo: ['assigned', 'responding'].includes(status) ? 
       `Officer ${['Johnson', 'Smith', 'Garcia', 'Chen', 'Williams'][Math.floor(Math.random() * 5)]}` : undefined,
     respondingUnits,
     cameraId: camera.cameraId,
     cameraName: camera.cameraName,
     additionalCameras,
     isBoloActive: Math.random() < 0.05, // 5% chance
-    isNewActivity: status === 'new' || (Date.now() - baseTime.getTime()) < 5 * 60 * 1000,
+    isNewActivity: status === 'detecting' || (Date.now() - baseTime.getTime()) < 5 * 60 * 1000,
     isMassCasualty: activityDetails.isMassCasualty || false,
     isSecurityThreat: activityDetails.isSecurityThreat || false,
     isOperationalImpact: activityDetails.isOperationalImpact || false,
