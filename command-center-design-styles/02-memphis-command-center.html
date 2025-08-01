@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITU8 Command Center - Memphis Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Memphis Color Palette - Bold & Clashing */
+            --memphis-black: #000000;
+            --memphis-white: #FFFFFF;
+            --memphis-red: #FF1744;
+            --memphis-blue: #00E5FF;
+            --memphis-yellow: #FFFF00;
+            --memphis-pink: #FF4081;
+            --memphis-green: #00FF41;
+            --memphis-orange: #FF6D00;
+            --memphis-purple: #E91E63;
+            --memphis-cyan: #00BCD4;
+            --memphis-lime: #CDDC39;
+            
+            /* Memphis Gradients */
+            --memphis-gradient-1: linear-gradient(45deg, var(--memphis-pink), var(--memphis-yellow));
+            --memphis-gradient-2: linear-gradient(-45deg, var(--memphis-blue), var(--memphis-green));
+            --memphis-gradient-3: linear-gradient(90deg, var(--memphis-red), var(--memphis-orange));
+            --memphis-gradient-4: linear-gradient(180deg, var(--memphis-purple), var(--memphis-cyan));
+            
+            /* Memphis Patterns */
+            --memphis-dots: radial-gradient(circle, var(--memphis-black) 2px, transparent 2px);
+            --memphis-zigzag: linear-gradient(45deg, var(--memphis-yellow) 25%, transparent 25%, transparent 75%, var(--memphis-yellow) 75%);
+            --memphis-stripes: linear-gradient(90deg, var(--memphis-pink) 50%, var(--memphis-blue) 50%);
+        }
+
+        body {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            background: var(--memphis-white);
+            color: var(--memphis-black);
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                var(--memphis-dots),
+                linear-gradient(45deg, transparent 49%, var(--memphis-yellow) 49%, var(--memphis-yellow) 51%, transparent 51%);
+            background-size: 20px 20px, 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        /* Memphis Base Elements */
+        .memphis-box {
+            border: 4px solid var(--memphis-black);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .memphis-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            z-index: -1;
+            background: var(--memphis-gradient-1);
+            transform: rotate(1deg);
+        }
+
+        .memphis-button {
+            background: var(--memphis-gradient-1);
+            border: 3px solid var(--memphis-black);
+            color: var(--memphis-black);
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .memphis-button:hover {
+            transform: rotate(1deg) scale(1.05);
+            box-shadow: 8px 8px 0 var(--memphis-black);
+        }
+
+        .memphis-button:active {
+            transform: rotate(0deg) scale(0.95);
+            box-shadow: 4px 4px 0 var(--memphis-black);
+        }
+
+        .memphis-squiggle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .memphis-squiggle::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--memphis-red);
+            border-radius: 50% 30% 70% 40%;
+            top: 10%;
+            right: 10%;
+            animation: squiggleFloat 6s ease-in-out infinite;
+        }
+
+        .memphis-squiggle::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--memphis-blue);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            bottom: 15%;
+            left: 15%;
+            animation: squiggleFloat 4s ease-in-out infinite reverse;
+        }
+
+        @keyframes squiggleFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(180deg); }
+        }
+
+        /* Header */
+        .header {
+            background: var(--memphis-gradient-3);
+            border-bottom: 6px solid var(--memphis-black);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+            transform: skew(-2deg);
+            margin: -2px -2px 0 -2px;
+        }
+
+        .header > * {
+            transform: skew(2deg);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--memphis-black);
+            text-shadow: 3px 3px 0 var(--memphis-yellow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform: rotate(2deg);
+            border: 3px solid var(--memphis-black);
+        }
+
+        .status-critical {
+            background: var(--memphis-red);
+            color: var(--memphis-white);
+            box-shadow: 4px 4px 0 var(--memphis-black);
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 100px);
+        }
+
+        /* Panel Base */
+        .panel {
+            border: 6px solid var(--memphis-black);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transform: rotate(0.5deg);
+            background: var(--memphis-white);
+        }
+
+        .panel:nth-child(1) {
+            background: var(--memphis-gradient-2);
+            transform: rotate(-1deg);
+        }
+
+        .panel:nth-child(2) {
+            background: var(--memphis-gradient-4);
+            transform: rotate(0.5deg);
+        }
+
+        .panel:nth-child(3) {
+            background: var(--memphis-gradient-1);
+            transform: rotate(-0.5deg);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--memphis-black);
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: var(--memphis-yellow);
+            border: 3px solid var(--memphis-black);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform: rotate(-1deg);
+            text-shadow: 2px 2px 0 var(--memphis-white);
+        }
+
+        /* Activities Panel */
+        .activities-panel {
+            overflow-y: auto;
+        }
+
+        .activity-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .group-header {
+            background: var(--memphis-white);
+            border: 4px solid var(--memphis-black);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            transform: rotate(1deg);
+            position: relative;
+        }
+
+        .group-header:hover {
+            transform: rotate(-1deg) scale(1.02);
+            box-shadow: 6px 6px 0 var(--memphis-black);
+        }
+
+        .group-header.critical {
+            background: var(--memphis-red);
+            color: var(--memphis-white);
+        }
+
+        .group-header.high {
+            background: var(--memphis-orange);
+            color: var(--memphis-black);
+        }
+
+        .group-header.medium {
+            background: var(--memphis-yellow);
+            color: var(--memphis-black);
+        }
+
+        .group-title {
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .activity-item {
+            background: var(--memphis-white);
+            border: 3px solid var(--memphis-black);
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            transform: rotate(-0.5deg);
+            position: relative;
+        }
+
+        .activity-item:hover {
+            transform: rotate(0.5deg) translateX(5px);
+            box-shadow: 4px 4px 0 var(--memphis-black);
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 20px;
+            height: 20px;
+            background: var(--memphis-blue);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+
+        .activity-title {
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            color: var(--memphis-black);
+        }
+
+        .activity-meta {
+            font-size: 0.75rem;
+            color: var(--memphis-black);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+        }
+
+        /* Map Panel */
+        .map-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .map-container {
+            flex: 1;
+            background: var(--memphis-white);
+            border: 4px solid var(--memphis-black);
+            position: relative;
+            overflow: hidden;
+            transform: rotate(-0.5deg);
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            height: 100%;
+            padding: 1rem;
+            background: var(--memphis-black);
+        }
+
+        .zone {
+            background: var(--memphis-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid var(--memphis-black);
+            position: relative;
+            text-transform: uppercase;
+        }
+
+        .zone:nth-child(odd) {
+            background: var(--memphis-gradient-1);
+        }
+
+        .zone:nth-child(even) {
+            background: var(--memphis-gradient-2);
+        }
+
+        .zone:hover {
+            transform: scale(1.1) rotate(5deg);
+            z-index: 2;
+            box-shadow: 4px 4px 0 var(--memphis-black);
+        }
+
+        .zone.active::after {
+            content: '!';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: var(--memphis-red);
+            color: var(--memphis-white);
+            border: 2px solid var(--memphis-black);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 12px;
+            animation: memphisBlink 1s infinite;
+        }
+
+        @keyframes memphisBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Guards Section */
+        .guards-section {
+            background: var(--memphis-white);
+            border: 4px solid var(--memphis-black);
+            padding: 1rem;
+            transform: rotate(1deg);
+            position: relative;
+        }
+
+        .guards-section::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: var(--memphis-pink);
+            border-radius: 50% 20% 80% 40%;
+            border: 2px solid var(--memphis-black);
+        }
+
+        .guards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .guard-card {
+            background: var(--memphis-white);
+            border: 3px solid var(--memphis-black);
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transform: rotate(-1deg);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .guard-card:hover {
+            transform: rotate(1deg) scale(1.05);
+            box-shadow: 3px 3px 0 var(--memphis-black);
+        }
+
+        .guard-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 15px;
+            height: 15px;
+            background: var(--memphis-green);
+            border: 2px solid var(--memphis-black);
+            transform: rotate(45deg);
+        }
+
+        .guard-name {
+            font-weight: 900;
+            font-size: 0.7rem;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            color: var(--memphis-black);
+        }
+
+        .guard-status {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 2px solid var(--memphis-black);
+        }
+
+        .status-available { background: var(--memphis-green); color: var(--memphis-black); }
+        .status-patrolling { background: var(--memphis-blue); color: var(--memphis-white); }
+        .status-responding { background: var(--memphis-red); color: var(--memphis-white); }
+        .status-break { background: var(--memphis-yellow); color: var(--memphis-black); }
+
+        /* Timeline Panel */
+        .timeline-panel {
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--memphis-white);
+            border: 3px solid var(--memphis-black);
+            transition: all 0.2s ease;
+            transform: rotate(0.5deg);
+            position: relative;
+        }
+
+        .timeline-item:hover {
+            transform: rotate(-0.5deg) translateX(-5px);
+            box-shadow: 4px 4px 0 var(--memphis-black);
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid var(--memphis-pink);
+            border-bottom: 15px solid transparent;
+            border-top: 15px solid transparent;
+        }
+
+        .timeline-marker {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 0.25rem;
+            border: 3px solid var(--memphis-black);
+            position: relative;
+        }
+
+        .timeline-marker::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--memphis-black);
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-time {
+            font-size: 0.625rem;
+            color: var(--memphis-black);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+            font-weight: 900;
+        }
+
+        .timeline-event {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            color: var(--memphis-black);
+            font-weight: 700;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--memphis-white);
+            border: 2px solid var(--memphis-black);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--memphis-gradient-1);
+            border: 2px solid var(--memphis-black);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--memphis-gradient-3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height: auto;
+                min-height: calc(100vh - 100px);
+            }
+            
+            .panel {
+                max-height: 400px;
+                transform: rotate(0deg);
+            }
+        }
+
+        /* Animation Classes */
+        .memphis-shake {
+            animation: memphisShake 0.5s ease-in-out;
+        }
+
+        @keyframes memphisShake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
+        }
+
+        .memphis-pulse {
+            animation: memphisPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes memphisPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.05) rotate(2deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) rotate(-5deg); }
+            to { opacity: 1; transform: translateY(0) rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>📐 SITU8 Command Center</h1>
+            <p style="font-size: 0.875rem; color: var(--memphis-black); margin-top: 0.25rem; font-weight: 700; text-transform: uppercase;">Memphis Design - Bold & Geometric</p>
+        </div>
+        <div class="header-controls">
+            <div class="status-badge status-critical">3 Critical</div>
+            <button class="memphis-button">📻 Radio</button>
+            <button class="memphis-button">⚙️ Settings</button>
+            <a href="index.html" class="memphis-button" style="text-decoration: none;">← Gallery</a>
+        </div>
+    </header>
+
+    <main class="main-layout">
+        <!-- Activities Panel -->
+        <section class="panel activities-panel">
+            <div class="memphis-squiggle"></div>
+            <h2 class="panel-title">🎯 Activity Stream</h2>
+            
+            <div class="activity-group">
+                <div class="group-header critical" onclick="toggleGroup('critical')">
+                    <div class="group-title">
+                        ⚠️ Critical <span style="margin-left: auto; background: var(--memphis-white); color: var(--memphis-black); padding: 2px 8px; border: 2px solid var(--memphis-black); font-weight: 900;">3</span>
+                    </div>
+                </div>
+                <div id="critical-activities">
+                    <div class="activity-item memphis-pulse">
+                        <div class="activity-title">Unauthorized Entry</div>
+                        <div class="activity-meta">
+                            <span>Zone A-3</span>
+                            <span>2 min ago</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">Medical Emergency</div>
+                        <div class="activity-meta">
+                            <span>Building C</span>
+                            <span>5 min ago</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">Fire Alarm</div>
+                        <div class="activity-meta">
+                            <span>Zone B-1</span>
+                            <span>8 min ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-group">
+                <div class="group-header high" onclick="toggleGroup('high')">
+                    <div class="group-title">
+                        🔸 High Priority <span style="margin-left: auto; background: var(--memphis-black); color: var(--memphis-white); padding: 2px 8px; border: 2px solid var(--memphis-black); font-weight: 900;">5</span>
+                    </div>
+                </div>
+                <div id="high-activities">
+                    <div class="activity-item">
+                        <div class="activity-title">Suspicious Activity</div>
+                        <div class="activity-meta">
+                            <span>Parking P-2</span>
+                            <span>12 min ago</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">Access Card Issue</div>
+                        <div class="activity-meta">
+                            <span>Main Entrance</span>
+                            <span>15 min ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-group">
+                <div class="group-header medium" onclick="toggleGroup('medium')">
+                    <div class="group-title">
+                        🔹 Medium <span style="margin-left: auto; background: var(--memphis-black); color: var(--memphis-white); padding: 2px 8px; border: 2px solid var(--memphis-black); font-weight: 900;">7</span>
+                    </div>
+                </div>
+                <div id="medium-activities" style="display: none;">
+                    <div class="activity-item">
+                        <div class="activity-title">Patrol Check</div>
+                        <div class="activity-meta">
+                            <span>Zone A-1</span>
+                            <span>20 min</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-title">Maintenance</div>
+                        <div class="activity-meta">
+                            <span>Server Room</span>
+                            <span>25 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map & Guards Panel -->
+        <section class="panel map-panel">
+            <h2 class="panel-title">🗺️ Facility Map</h2>
+            
+            <div class="map-container">
+                <div class="map-grid">
+                    <div class="zone active" onclick="selectZone('A-1')">A-1</div>
+                    <div class="zone" onclick="selectZone('A-2')">A-2</div>
+                    <div class="zone active" onclick="selectZone('A-3')">A-3</div>
+                    <div class="zone" onclick="selectZone('B-1')">B-1</div>
+                    <div class="zone" onclick="selectZone('B-2')">B-2</div>
+                    <div class="zone" onclick="selectZone('B-3')">B-3</div>
+                    <div class="zone" onclick="selectZone('C-1')">C-1</div>
+                    <div class="zone active" onclick="selectZone('C-2')">C-2</div>
+                    <div class="zone" onclick="selectZone('P-1')">P-1</div>
+                    <div class="zone" onclick="selectZone('P-2')">P-2</div>
+                    <div class="zone" onclick="selectZone('MAIN')">MAIN</div>
+                    <div class="zone" onclick="selectZone('SERVER')">SRV</div>
+                </div>
+            </div>
+
+            <div class="guards-section">
+                <h3 style="margin-bottom: 1rem; color: var(--memphis-black); font-size: 1rem; font-weight: 900; text-transform: uppercase;">👥 Guards</h3>
+                <div class="guards-grid">
+                    <div class="guard-card" onclick="selectGuard('Garcia')">
+                        <div class="guard-name">Garcia</div>
+                        <div class="guard-status status-responding">Alert</div>
+                    </div>
+                    <div class="guard-card" onclick="selectGuard('Chen')">
+                        <div class="guard-name">Chen</div>
+                        <div class="guard-status status-patrolling">Patrol</div>
+                    </div>
+                    <div class="guard-card" onclick="selectGuard('Davis')">
+                        <div class="guard-name">Davis</div>
+                        <div class="guard-status status-break">Break</div>
+                    </div>
+                    <div class="guard-card" onclick="selectGuard('Wilson')">
+                        <div class="guard-name">Wilson</div>
+                        <div class="guard-status status-available">Ready</div>
+                    </div>
+                    <div class="guard-card" onclick="selectGuard('Martinez')">
+                        <div class="guard-name">Martinez</div>
+                        <div class="guard-status status-patrolling">Patrol</div>
+                    </div>
+                    <div class="guard-card" onclick="selectGuard('Brown')">
+                        <div class="guard-name">Brown</div>
+                        <div class="guard-status status-available">Ready</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Panel -->
+        <section class="panel timeline-panel">
+            <h2 class="panel-title">⏰ Timeline</h2>
+            
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-red);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">2 min ago</div>
+                    <div class="timeline-event">Garcia responding to Zone A-3 breach</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-red);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">5 min ago</div>
+                    <div class="timeline-event">Medical emergency Building C</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-red);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">8 min ago</div>
+                    <div class="timeline-event">Fire alarm Zone B-1 cleared</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-orange);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">12 min ago</div>
+                    <div class="timeline-event">Suspicious activity Parking P-2</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-orange);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">15 min ago</div>
+                    <div class="timeline-event">Access card malfunction resolved</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-blue);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">18 min ago</div>
+                    <div class="timeline-event">Chen patrol round complete</div>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-marker" style="background: var(--memphis-yellow);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">25 min ago</div>
+                    <div class="timeline-event">Server maintenance finished</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Interactive functionality
+        function toggleGroup(priority) {
+            const group = document.getElementById(priority + '-activities');
+            if (group.style.display === 'none') {
+                group.style.display = 'block';
+                group.classList.add('fade-in');
+            } else {
+                group.style.display = 'none';
+            }
+        }
+
+        function selectZone(zoneName) {
+            const zones = document.querySelectorAll('.zone');
+            zones.forEach(zone => {
+                if (zone.textContent === zoneName) {
+                    zone.classList.toggle('active');
+                    zone.classList.add('memphis-shake');
+                    setTimeout(() => {
+                        zone.classList.remove('memphis-shake');
+                    }, 500);
+                }
+            });
+            console.log('Memphis zone selected:', zoneName);
+        }
+
+        function selectGuard(guardName) {
+            const guardCards = document.querySelectorAll('.guard-card');
+            guardCards.forEach(card => {
+                if (card.querySelector('.guard-name').textContent.includes(guardName)) {
+                    card.classList.add('memphis-pulse');
+                    setTimeout(() => {
+                        card.classList.remove('memphis-pulse');
+                    }, 2000);
+                }
+            });
+            console.log('Memphis guard selected:', guardName);
+        }
+
+        // Memphis-style updates with dramatic effects
+        function simulateMemphisUpdates() {
+            const activities = document.querySelectorAll('.activity-item');
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            
+            if (randomActivity) {
+                randomActivity.classList.add('memphis-shake');
+                setTimeout(() => {
+                    randomActivity.classList.remove('memphis-shake');
+                    randomActivity.classList.add('memphis-pulse');
+                    setTimeout(() => {
+                        randomActivity.classList.remove('memphis-pulse');
+                    }, 1000);
+                }, 500);
+            }
+        }
+
+        // Add Memphis-style timeline entries
+        function addMemphisTimelineEntry() {
+            const events = [
+                'New patrol engaged Zone B-3',
+                'Access granted secondary gate',
+                'System backup complete success',
+                'Guard shift rotation active',
+                'Security check complete normal'
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            const timelinePanel = document.querySelector('.timeline-panel');
+            const newItem = document.createElement('div');
+            newItem.classList.add('timeline-item', 'fade-in', 'memphis-pulse');
+            newItem.innerHTML = `
+                <div class="timeline-marker" style="background: var(--memphis-green);"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">Just now</div>
+                    <div class="timeline-event">${randomEvent}</div>
+                </div>
+            `;
+            
+            const firstItem = timelinePanel.querySelector('.timeline-item');
+            timelinePanel.insertBefore(newItem, firstItem);
+            
+            // Remove oldest items if too many
+            const items = timelinePanel.querySelectorAll('.timeline-item');
+            if (items.length > 10) {
+                items[items.length - 1].remove();
+            }
+
+            setTimeout(() => {
+                newItem.classList.remove('memphis-pulse');
+            }, 2000);
+        }
+
+        // Memphis random color changes
+        function memphisColorCycle() {
+            const panels = document.querySelectorAll('.panel');
+            const gradients = [
+                'var(--memphis-gradient-1)',
+                'var(--memphis-gradient-2)',
+                'var(--memphis-gradient-3)',
+                'var(--memphis-gradient-4)'
+            ];
+            
+            panels.forEach((panel, index) => {
+                const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
+                panel.style.background = randomGradient;
+            });
+        }
+
+        // Start Memphis simulations
+        setInterval(simulateMemphisUpdates, 3000);
+        setInterval(addMemphisTimelineEntry, 12000);
+        setInterval(memphisColorCycle, 30000);
+
+        // Memphis interaction effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const memphisElements = document.querySelectorAll('.memphis-button, .activity-item, .guard-card, .zone');
+            
+            memphisElements.forEach(element => {
+                element.addEventListener('click', function() {
+                    this.classList.add('memphis-shake');
+                    setTimeout(() => {
+                        this.classList.remove('memphis-shake');
+                    }, 500);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situ8 Security Platform - Organic Design</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Natural Color Palette */
+            --earth-brown: #8B4513;
+            --warm-brown: #A0522D;
+            --light-brown: #CD853F;
+            --forest-green: #228B22;
+            --sage-green: #90EE90;
+            --ocean-blue: #4682B4;
+            --sky-blue: #87CEEB;
+            --stone-gray: #708090;
+            --light-gray: #A9A9A9;
+            --cream: #FFF8DC;
+            --natural-orange: #FF8C00;
+            --warm-orange: #FFE4B5;
+            
+            /* Natural Spacing (Fibonacci-inspired) */
+            --space-xs: 5px;
+            --space-sm: 8px;
+            --space-md: 13px;
+            --space-lg: 21px;
+            --space-xl: 34px;
+            --space-xxl: 55px;
+            
+            /* Organic Border Radius */
+            --radius-soft: 15px;
+            --radius-organic: 25px;
+            --radius-biomorphic: 40px;
+            
+            /* Natural Shadows */
+            --shadow-soft: 0 4px 20px rgba(139, 69, 19, 0.1);
+            --shadow-medium: 0 8px 30px rgba(139, 69, 19, 0.15);
+            --shadow-strong: 0 12px 40px rgba(139, 69, 19, 0.2);
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, 
+                var(--cream) 0%, 
+                #F5F5DC 25%, 
+                #FAEBD7 50%, 
+                var(--warm-orange) 100%);
+            min-height: 100vh;
+            color: var(--earth-brown);
+            overflow-x: hidden;
+        }
+
+        /* Natural texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(34, 139, 34, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 140, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(70, 130, 180, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        .navigation {
+            background: linear-gradient(90deg, var(--forest-green), var(--sage-green));
+            padding: var(--space-md) var(--space-xl);
+            border-radius: 0 0 var(--radius-biomorphic) var(--radius-biomorphic);
+            box-shadow: var(--shadow-medium);
+            margin-bottom: var(--space-xl);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .nav-tab {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-organic);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            color: var(--forest-green);
+            font-weight: 600;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-lg);
+        }
+
+        /* Command Center Section */
+        .command-center {
+            display: none;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xxl);
+            min-height: 70vh;
+        }
+
+        .command-center.active {
+            display: grid;
+        }
+
+        .panel {
+            background: linear-gradient(145deg, 
+                rgba(255,255,255,0.9) 0%, 
+                rgba(255,248,220,0.8) 100%);
+            border-radius: var(--radius-biomorphic);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-medium);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(139, 69, 19, 0.1);
+            transition: all 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, 
+                rgba(34, 139, 34, 0.03) 0%, 
+                transparent 70%);
+            animation: naturalPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes naturalPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.1) rotate(180deg); opacity: 0.8; }
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-strong);
+        }
+
+        .panel-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+            color: var(--earth-brown);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Activities Panel */
+        .activity-stream {
+            max-height: 500px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .activity-item {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.7) 0%, 
+                rgba(255,235,183,0.5) 100%);
+            margin-bottom: var(--space-md);
+            padding: var(--space-md);
+            border-radius: var(--radius-organic);
+            border-left: 4px solid var(--forest-green);
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .activity-item:hover {
+            transform: translateX(8px) scale(1.02);
+            border-left-width: 6px;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: var(--stone-gray);
+            margin-bottom: var(--space-xs);
+        }
+
+        .activity-content {
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--earth-brown);
+        }
+
+        /* Interactive Map Panel */
+        .map-container {
+            background: linear-gradient(135deg, 
+                var(--ocean-blue) 0%, 
+                var(--sky-blue) 100%);
+            border-radius: var(--radius-organic);
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .map-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 70%, 
+                rgba(255,255,255,0.2) 0%, 
+                transparent 50%);
+            animation: mapFlow 12s ease-in-out infinite;
+        }
+
+        @keyframes mapFlow {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(20px, -10px) scale(1.05); }
+            66% { transform: translate(-15px, 15px) scale(0.95); }
+        }
+
+        /* Timeline Panel */
+        .timeline {
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: var(--space-lg);
+            position: relative;
+        }
+
+        .timeline-marker {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, var(--natural-orange), var(--warm-orange));
+            border-radius: 50%;
+            margin-right: var(--space-md);
+            margin-top: var(--space-xs);
+            box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.2);
+            animation: timelinePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes timelinePulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.2); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(255, 140, 0, 0.1); }
+        }
+
+        .timeline-content {
+            flex: 1;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.8) 0%, 
+                rgba(255,228,181,0.6) 100%);
+            padding: var(--space-md);
+            border-radius: var(--radius-soft);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: var(--stone-gray);
+            margin-bottom: var(--space-xs);
+        }
+
+        /* Activities Page */
+        .activities-page {
+            display: none;
+        }
+
+        .activities-page.active {
+            display: block;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, 
+                var(--forest-green) 0%, 
+                var(--sage-green) 100%);
+            color: white;
+            padding: var(--space-xl);
+            border-radius: var(--radius-biomorphic);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: var(--space-sm);
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* Controls Section */
+        .controls-section {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.9) 0%, 
+                rgba(255,248,220,0.8) 100%);
+            padding: var(--space-lg);
+            border-radius: var(--radius-organic);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(10px);
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .toggle-btn {
+            background: linear-gradient(135deg, 
+                var(--light-brown) 0%, 
+                var(--warm-brown) 100%);
+            color: white;
+            border: none;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-organic);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, 
+                var(--earth-brown) 0%, 
+                var(--warm-brown) 100%);
+            transform: scale(1.02);
+        }
+
+        .filters {
+            display: flex;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            background: rgba(255,255,255,0.9);
+            border: 2px solid rgba(139, 69, 19, 0.2);
+            border-radius: var(--radius-soft);
+            padding: var(--space-sm) var(--space-md);
+            font-family: inherit;
+            color: var(--earth-brown);
+            transition: all 0.3s ease-out;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--forest-green);
+            box-shadow: 0 0 0 3px rgba(34, 139, 34, 0.1);
+        }
+
+        /* Activity Cards Grid */
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .activity-card {
+            background: linear-gradient(145deg, 
+                rgba(255,255,255,0.95) 0%, 
+                rgba(255,248,220,0.9) 100%);
+            border-radius: var(--radius-organic);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-medium);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 1px solid rgba(139, 69, 19, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .activity-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                var(--forest-green) 0%, 
+                var(--natural-orange) 50%, 
+                var(--ocean-blue) 100%);
+            border-radius: var(--radius-organic) var(--radius-organic) 0 0;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-8px) rotate(1deg);
+            box-shadow: var(--shadow-strong);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-md);
+        }
+
+        .activity-type {
+            background: linear-gradient(135deg, 
+                var(--natural-orange) 0%, 
+                var(--warm-orange) 100%);
+            color: white;
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-soft);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .activity-timestamp {
+            font-size: 12px;
+            color: var(--stone-gray);
+        }
+
+        .activity-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--earth-brown);
+            margin-bottom: var(--space-sm);
+        }
+
+        .activity-description {
+            color: var(--warm-brown);
+            line-height: 1.5;
+            margin-bottom: var(--space-md);
+        }
+
+        .activity-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--stone-gray);
+        }
+
+        .priority-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .priority-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--forest-green);
+        }
+
+        .priority-dot.high {
+            background: var(--natural-orange);
+            animation: priorityPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes priorityPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        /* Radio Communication */
+        .radio-section {
+            background: linear-gradient(135deg, 
+                rgba(70, 130, 180, 0.1) 0%, 
+                rgba(135, 206, 235, 0.05) 100%);
+            padding: var(--space-xl);
+            border-radius: var(--radius-biomorphic);
+            margin-bottom: var(--space-xl);
+            border: 1px solid rgba(70, 130, 180, 0.2);
+        }
+
+        .radio-header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+            color: var(--ocean-blue);
+        }
+
+        .radio-controls {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .radio-btn {
+            background: linear-gradient(135deg, 
+                var(--ocean-blue) 0%, 
+                var(--sky-blue) 100%);
+            color: white;
+            border: none;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-organic);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease-out;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .radio-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .radio-transcript {
+            background: rgba(255,255,255,0.9);
+            padding: var(--space-lg);
+            border-radius: var(--radius-soft);
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(70, 130, 180, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .command-center {
+                grid-template-columns: 1fr;
+                gap: var(--space-md);
+            }
+            
+            .activities-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                gap: var(--space-md);
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+        }
+
+        /* Natural Animations */
+        @keyframes leafSway {
+            0%, 100% { transform: rotate(-2deg) translateY(0px); }
+            50% { transform: rotate(2deg) translateY(-5px); }
+        }
+
+        @keyframes waterFlow {
+            0% { transform: translateX(-100%) scaleX(0); }
+            50% { transform: translateX(0%) scaleX(1); }
+            100% { transform: translateX(100%) scaleX(0); }
+        }
+
+        /* Organic scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(139, 69, 19, 0.1);
+            border-radius: var(--radius-soft);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, 
+                var(--forest-green), 
+                var(--sage-green));
+            border-radius: var(--radius-soft);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, 
+                var(--earth-brown), 
+                var(--warm-brown));
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navigation">
+        <div class="nav-container">
+            <div class="logo">🌿 Situ8</div>
+            <div class="nav-tabs">
+                <button class="nav-tab" onclick="showSection('command-center')">Command Center</button>
+                <button class="nav-tab active" onclick="showSection('activities')">Activities</button>
+                <button class="nav-tab" onclick="showSection('cases')">Cases</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Command Center Section -->
+        <section class="command-center" id="command-center">
+            <!-- Activities Panel -->
+            <div class="panel">
+                <h2 class="panel-header">🌱 Activity Stream</h2>
+                <div class="activity-stream">
+                    <div class="activity-item">
+                        <div class="activity-time">2 minutes ago</div>
+                        <div class="activity-content">Security badge access at North Entrance - John Smith</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-time">5 minutes ago</div>
+                        <div class="activity-content">Motion detected in Warehouse Zone B</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-time">8 minutes ago</div>
+                        <div class="activity-content">Temperature alert in Server Room</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-time">12 minutes ago</div>
+                        <div class="activity-content">Visitor check-in: Sarah Johnson (Conference Room A)</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-time">15 minutes ago</div>
+                        <div class="activity-content">Fire safety system test completed successfully</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Map Panel -->
+            <div class="panel">
+                <h2 class="panel-header">🗺️ Interactive Map</h2>
+                <div class="map-container">
+                    <div>Interactive Building Map<br><small>Real-time sensor data visualization</small></div>
+                </div>
+            </div>
+
+            <!-- Timeline Panel -->
+            <div class="panel">
+                <h2 class="panel-header">⏰ Timeline</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">14:30</div>
+                            <div>Security incident resolved - Parking Lot</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">13:45</div>
+                            <div>Maintenance completed - HVAC System</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">12:20</div>
+                            <div>Visitor group tour - 12 people</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">11:15</div>
+                            <div>Emergency drill completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activities Page -->
+        <section class="activities-page active" id="activities">
+            <div class="page-header">
+                <h1 class="page-title">🌿 Activity Management</h1>
+                <p class="page-subtitle">Monitor and manage all security activities with nature-inspired workflows</p>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="view-toggle">
+                    <button class="toggle-btn active">🍃 Card View</button>
+                    <button class="toggle-btn">🌾 List View</button>
+                </div>
+                
+                <div class="filters">
+                    <select class="filter-select">
+                        <option>All Activity Types</option>
+                        <option>Security Events</option>
+                        <option>Access Control</option>
+                        <option>Environmental</option>
+                        <option>Maintenance</option>
+                    </select>
+                    
+                    <select class="filter-select">
+                        <option>All Priorities</option>
+                        <option>High Priority</option>
+                        <option>Medium Priority</option>
+                        <option>Low Priority</option>
+                    </select>
+                    
+                    <select class="filter-select">
+                        <option>All Locations</option>
+                        <option>North Wing</option>
+                        <option>South Wing</option>
+                        <option>Warehouse</option>
+                        <option>Parking</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Activities Grid -->
+            <div class="activities-grid">
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Security</span>
+                        <span class="activity-timestamp">2:30 PM</span>
+                    </div>
+                    <h3 class="activity-title">Unauthorized Access Attempt</h3>
+                    <p class="activity-description">Failed badge scan detected at North Entrance. Multiple attempts logged from unknown credential.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot high"></div>
+                            <span>High Priority</span>
+                        </div>
+                        <span>North Wing</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Environmental</span>
+                        <span class="activity-timestamp">2:15 PM</span>
+                    </div>
+                    <h3 class="activity-title">Temperature Alert</h3>
+                    <p class="activity-description">Server room temperature exceeded threshold. HVAC system automatically adjusting cooling parameters.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot"></div>
+                            <span>Medium Priority</span>
+                        </div>
+                        <span>Server Room</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Access</span>
+                        <span class="activity-timestamp">1:45 PM</span>
+                    </div>
+                    <h3 class="activity-title">Visitor Check-in</h3>
+                    <p class="activity-description">Sarah Johnson checked in for scheduled meeting in Conference Room A. Escort assigned: Mike Davis.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot"></div>
+                            <span>Low Priority</span>
+                        </div>
+                        <span>Reception</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Maintenance</span>
+                        <span class="activity-timestamp">1:20 PM</span>
+                    </div>
+                    <h3 class="activity-title">Fire System Test</h3>
+                    <p class="activity-description">Monthly fire suppression system test completed successfully. All zones responding normally.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot"></div>
+                            <span>Low Priority</span>
+                        </div>
+                        <span>All Zones</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Security</span>
+                        <span class="activity-timestamp">12:50 PM</span>
+                    </div>
+                    <h3 class="activity-title">Motion Detected</h3>
+                    <p class="activity-description">Unexpected movement in Warehouse Zone B after hours. Security team dispatched for investigation.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot high"></div>
+                            <span>High Priority</span>
+                        </div>
+                        <span>Warehouse B</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <span class="activity-type">Access</span>
+                        <span class="activity-timestamp">12:30 PM</span>
+                    </div>
+                    <h3 class="activity-title">Group Entry</h3>
+                    <p class="activity-description">Tour group of 12 visitors entered main facility. Guided tour in progress with security escort.</p>
+                    <div class="activity-meta">
+                        <div class="priority-indicator">
+                            <div class="priority-dot"></div>
+                            <span>Medium Priority</span>
+                        </div>
+                        <span>Main Entrance</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Radio Communication Section -->
+            <div class="radio-section">
+                <h2 class="radio-header">📻 Radio Communication</h2>
+                <div class="radio-controls">
+                    <button class="radio-btn">🎙️ PTT</button>
+                    <button class="radio-btn">📞 Channel 1</button>
+                    <button class="radio-btn">📞 Channel 2</button>
+                    <button class="radio-btn">🔊 Emergency</button>
+                </div>
+                <div class="radio-transcript">
+                    <div><strong>14:30</strong> - Security Team Alpha: "North entrance clear, resuming patrol."</div>
+                    <div><strong>14:25</strong> - Control: "Alpha team, please investigate suspicious activity north entrance."</div>
+                    <div><strong>14:20</strong> - Maintenance: "HVAC system adjustment complete, temperatures normalizing."</div>
+                    <div><strong>14:15</strong> - Control: "All teams, be advised of temperature alert in server room."</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cases Section (Placeholder) -->
+        <section class="activities-page" id="cases">
+            <div class="page-header">
+                <h1 class="page-title">🌺 Investigation Cases</h1>
+                <p class="page-subtitle">Manage ongoing investigations with organic workflow patterns</p>
+            </div>
+            
+            <div class="panel" style="text-align: center; padding: 60px;">
+                <h3 style="color: var(--forest-green); margin-bottom: 20px;">🌱 Cases Interface</h3>
+                <p style="color: var(--warm-brown);">Organic case management interface would be implemented here with flowing, nature-inspired investigation workflows.</p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Natural animation effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add subtle parallax effect to cards
+            const cards = document.querySelectorAll('.activity-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mousemove', function(e) {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const rotateX = (y - centerY) / 20;
+                    const rotateY = (centerX - x) / 20;
+                    
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                });
+            });
+            
+            // Natural loading animation for activity stream
+            const activityItems = document.querySelectorAll('.activity-item');
+            activityItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    item.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+        });
+    </script>
+</body>
+</html>

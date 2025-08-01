@@ -1,0 +1,23 @@
+# Design and iteration folders
+design-iterations/**/*
+ui-ux-iterations/**/*
+command-center-design-styles/**/*
+
+# Documentation and chat logs
+claude-chats/**/*
+*.md
+
+# Future features (work in progress)
+future-features/**/*
+
+# Build outputs
+dist/**/*
+build/**/*
+
+# Node modules
+node_modules/**/*
+
+# Config files
+vite.config.ts
+*.config.js
+*.config.ts

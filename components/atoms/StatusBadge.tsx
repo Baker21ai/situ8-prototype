@@ -35,7 +35,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   const sizeClasses = badgeSizes[size as keyof typeof badgeSizes] || badgeSizes.sm;
   
   // Determine animation based on status
-  const shouldAnimate = animated && (status === 'active' || status === 'new');
+  const shouldAnimate = animated && (status === 'detecting' || status === 'responding');
   
   const variantClasses = {
     default: `${colors.background} ${colors.text} ${colors.border}`,
@@ -56,10 +56,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     >
       {showIcon && (
         <span className={cn('mr-1', sizeClasses.gap)}>
-          {status === 'active' ? '🔴' : 
-           status === 'new' ? '🔵' :
+          {status === 'detecting' ? '🔵' : 
            status === 'assigned' ? '🟠' :
-           status === 'investigating' ? '🟡' :
+           status === 'responding' ? '🟡' :
            status === 'resolved' ? '🟢' : '⚪'}
         </span>
       )}

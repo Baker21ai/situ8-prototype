@@ -119,12 +119,12 @@ const ClusterCard = memo<{
   }
 
   return (
-    <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-300'
-      }`}
-      onClick={() => onSelect?.(cluster)}
-    >
+      <Card 
+        className={`cursor-pointer transition-all hover:shadow-md max-w-full ${
+          isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-300'
+        }`}
+        onClick={() => onSelect?.(cluster)}
+      >
       <CardContent className="p-2 space-y-1">
         {/* Cluster Header */}
         <div className="flex items-center justify-between">
@@ -212,7 +212,7 @@ const EnterpriseStreamCard = memo<{
 }>(({ activity, onSelect, onAction, isSelected = false, compactMode = true }) => {
   return (
     <Card 
-      className={`cursor-pointer transition-all hover:shadow-md ${
+      className={`cursor-pointer transition-all hover:shadow-md max-w-full ${
         isSelected ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-300'
       } ${activity.isMassCasualty ? 'ring-2 ring-red-500' : ''} ${
         activity.isSecurityThreat ? 'ring-2 ring-orange-500' : ''
@@ -298,7 +298,7 @@ const SummaryCard = memo<{
 }>(({ activity, onSelect, isSelected = false }) => {
   return (
     <div 
-      className={`border-l-2 ${
+      className={`border-l-2 max-w-full ${
         activity.priority === 'critical' ? 'border-red-500 bg-red-50' :
         activity.priority === 'high' ? 'border-orange-500 bg-orange-50' :
         activity.priority === 'medium' ? 'border-yellow-500 bg-yellow-50' :

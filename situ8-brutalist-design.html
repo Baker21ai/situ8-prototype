@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITU8 SECURITY PLATFORM - BRUTALIST DESIGN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', Arial, sans-serif;
+            background: linear-gradient(45deg, #1A1A1A 25%, #2A2A2A 25%, #2A2A2A 50%, #1A1A1A 50%, #1A1A1A 75%, #2A2A2A 75%, #2A2A2A);
+            background-size: 40px 40px;
+            color: #FFFFFF;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        /* HEADER */
+        .header {
+            background: #000000;
+            border-bottom: 4px solid #FFD700;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px #000000;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item {
+            background: #3C3C3C;
+            border: 2px solid #5A5A5A;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .status-active { border-color: #00FF00; color: #00FF00; }
+        .status-warning { border-color: #FF8C00; color: #FF8C00; }
+        .status-critical { border-color: #DC143C; color: #DC143C; }
+
+        /* NAVIGATION */
+        .nav {
+            background: #3C3C3C;
+            border-bottom: 2px solid #5A5A5A;
+            padding: 0;
+        }
+
+        .nav-tabs {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-tab {
+            background: #3C3C3C;
+            border-right: 2px solid #5A5A5A;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .nav-tab:hover,
+        .nav-tab.active {
+            background: #FFD700;
+            color: #000000;
+        }
+
+        /* COMMAND CENTER LAYOUT */
+        .command-center {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            height: calc(100vh - 140px);
+            gap: 4px;
+            padding: 4px;
+        }
+
+        .panel {
+            background: #2A2A2A;
+            border: 4px solid #5A5A5A;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #000000;
+            border-bottom: 4px solid #FFD700;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* ACTIVITIES PANEL */
+        .activities-panel {
+            background: #3C3C3C;
+        }
+
+        .activity-stream {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .activity-card {
+            background: #1A1A1A;
+            border: 2px solid #5A5A5A;
+            margin-bottom: 16px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .activity-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: #FFD700;
+        }
+
+        .activity-card.medical::before { background: #DC143C; }
+        .activity-card.security::before { background: #FF8C00; }
+        .activity-card.bol::before { background: #00FF00; }
+
+        .activity-time {
+            font-size: 12px;
+            color: #FFD700;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .activity-title {
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .activity-description {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: 700;
+        }
+
+        .activity-tags {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #5A5A5A;
+            border: 1px solid #787878;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .tag.priority-high { background: #DC143C; border-color: #FF0000; }
+        .tag.priority-medium { background: #FF8C00; border-color: #FFA500; }
+
+        /* MAP PANEL */
+        .map-panel {
+            background: #1A1A1A;
+            position: relative;
+        }
+
+        .map-container {
+            height: calc(100% - 60px);
+            background: 
+                radial-gradient(circle at 30% 40%, #FFD700 2px, transparent 2px),
+                radial-gradient(circle at 70% 60%, #DC143C 2px, transparent 2px),
+                radial-gradient(circle at 50% 20%, #FF8C00 2px, transparent 2px),
+                linear-gradient(0deg, #2A2A2A 1px, transparent 1px),
+                linear-gradient(90deg, #2A2A2A 1px, transparent 1px);
+            background-size: 
+                100% 100%,
+                100% 100%,
+                100% 100%,
+                50px 50px,
+                50px 50px;
+            position: relative;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #000000;
+            border: 2px solid #FFD700;
+            padding: 16px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #000000;
+            border: 2px solid #5A5A5A;
+            padding: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+        }
+
+        /* TIMELINE PANEL */
+        .timeline-panel {
+            background: #2A2A2A;
+        }
+
+        .timeline-container {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .timeline-marker {
+            width: 20px;
+            height: 20px;
+            background: #FFD700;
+            border: 4px solid #000000;
+            margin-right: 16px;
+            flex-shrink: 0;
+            margin-top: 8px;
+        }
+
+        .timeline-marker.incident { background: #DC143C; }
+        .timeline-marker.resolved { background: #00FF00; }
+
+        .timeline-content {
+            background: #1A1A1A;
+            border: 2px solid #5A5A5A;
+            padding: 16px;
+            flex: 1;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #FFD700;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .timeline-description {
+            font-size: 14px;
+            color: #CCCCCC;
+            font-weight: 700;
+        }
+
+        /* ACTIVITIES PAGE */
+        .activities-page {
+            padding: 20px;
+            display: none;
+        }
+
+        .activities-page.active {
+            display: block;
+        }
+
+        .page-header {
+            background: #000000;
+            border: 4px solid #FFD700;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #3C3C3C;
+            border: 2px solid #5A5A5A;
+            color: #FFFFFF;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .btn:hover,
+        .btn.active {
+            background: #FFD700;
+            color: #000000;
+            border-color: #FFD700;
+        }
+
+        .btn-danger {
+            background: #DC143C;
+            border-color: #DC143C;
+        }
+
+        .btn-danger:hover {
+            background: #FF0000;
+            border-color: #FF0000;
+        }
+
+        .filters {
+            background: #2A2A2A;
+            border: 2px solid #5A5A5A;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #FFD700;
+        }
+
+        .filter-select {
+            background: #1A1A1A;
+            border: 2px solid #5A5A5A;
+            color: #FFFFFF;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .activity-card-large {
+            background: #1A1A1A;
+            border: 4px solid #5A5A5A;
+            padding: 20px;
+            position: relative;
+        }
+
+        .activity-card-large::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background: #FFD700;
+        }
+
+        .activity-card-large.medical::before { background: #DC143C; }
+        .activity-card-large.security::before { background: #FF8C00; }
+        .activity-card-large.bol::before { background: #00FF00; }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .activity-id {
+            font-size: 12px;
+            color: #FFD700;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .activity-status {
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 2px solid;
+        }
+
+        .status-active {
+            background: #00FF00;
+            color: #000000;
+            border-color: #00FF00;
+        }
+
+        .status-pending {
+            background: #FF8C00;
+            color: #000000;
+            border-color: #FF8C00;
+        }
+
+        .status-resolved {
+            background: #5A5A5A;
+            color: #FFFFFF;
+            border-color: #5A5A5A;
+        }
+
+        /* RADIO COMMUNICATION */
+        .radio-section {
+            background: #1A1A1A;
+            border: 4px solid #5A5A5A;
+            margin: 20px 0;
+            padding: 20px;
+        }
+
+        .radio-header {
+            background: #000000;
+            border: 2px solid #FFD700;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .radio-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .radio-btn {
+            background: #3C3C3C;
+            border: 4px solid #5A5A5A;
+            color: #FFFFFF;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .radio-btn.transmit {
+            background: #DC143C;
+            border-color: #DC143C;
+        }
+
+        .radio-btn.receive {
+            background: #00FF00;
+            color: #000000;
+            border-color: #00FF00;
+        }
+
+        .audio-visualizer {
+            background: #000000;
+            border: 2px solid #5A5A5A;
+            height: 60px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: end;
+            padding: 8px;
+            gap: 2px;
+        }
+
+        .audio-bar {
+            background: #FFD700;
+            width: 6px;
+            transition: height 0.1s;
+        }
+
+        .transcript {
+            background: #000000;
+            border: 2px solid #5A5A5A;
+            padding: 16px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .transcript-line {
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .transcript-time {
+            color: #FFD700;
+            min-width: 80px;
+        }
+
+        .transcript-speaker {
+            color: #00FF00;
+            min-width: 100px;
+            text-transform: uppercase;
+        }
+
+        .transcript-message {
+            color: #FFFFFF;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .command-center {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .activities-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* SCROLLBARS */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A;
+            border: 2px solid #3C3C3C;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #5A5A5A;
+            border: 1px solid #3C3C3C;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFD700;
+        }
+
+        /* ANIMATIONS */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">SITU8</div>
+        <div class="status-bar">
+            <div class="status-item status-active">SYSTEM ONLINE</div>
+            <div class="status-item status-warning">3 ALERTS</div>
+            <div class="status-item status-critical">1 CRITICAL</div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION -->
+    <nav class="nav">
+        <ul class="nav-tabs">
+            <li class="nav-tab active" onclick="showSection('command-center')">COMMAND CENTER</li>
+            <li class="nav-tab" onclick="showSection('activities')">ACTIVITIES</li>
+            <li class="nav-tab" onclick="showSection('cases')">CASES</li>
+        </ul>
+    </nav>
+
+    <!-- COMMAND CENTER -->
+    <div id="command-center" class="command-center">
+        <!-- ACTIVITIES PANEL -->
+        <div class="panel activities-panel">
+            <div class="panel-header">LIVE ACTIVITIES</div>
+            <div class="activity-stream">
+                <div class="activity-card medical">
+                    <div class="activity-time">14:32:15</div>
+                    <div class="activity-title">MEDICAL EMERGENCY</div>
+                    <div class="activity-description">Person down in Building A, Floor 3, Room 312. EMS notified.</div>
+                    <div class="activity-tags">
+                        <span class="tag priority-high">CRITICAL</span>
+                        <span class="tag">BUILDING-A</span>
+                        <span class="tag">FLOOR-3</span>
+                    </div>
+                </div>
+
+                <div class="activity-card security">
+                    <div class="activity-time">14:28:43</div>
+                    <div class="activity-title">SECURITY BREACH</div>
+                    <div class="activity-description">Unauthorized access detected at East Gate. Security team dispatched.</div>
+                    <div class="activity-tags">
+                        <span class="tag priority-high">HIGH</span>
+                        <span class="tag">EAST-GATE</span>
+                        <span class="tag">PERIMETER</span>
+                    </div>
+                </div>
+
+                <div class="activity-card bol">
+                    <div class="activity-time">14:25:11</div>
+                    <div class="activity-title">BOL PATTERN MATCH</div>
+                    <div class="activity-description">Subject matches BOL #2847 - Confidence 87%. Location: Main Lobby.</div>
+                    <div class="activity-tags">
+                        <span class="tag priority-medium">MATCH</span>
+                        <span class="tag">LOBBY</span>
+                        <span class="tag">87%</span>
+                    </div>
+                </div>
+
+                <div class="activity-card">
+                    <div class="activity-time">14:20:05</div>
+                    <div class="activity-title">ROUTINE PATROL</div>
+                    <div class="activity-description">Security patrol completed - North Wing. All clear.</div>
+                    <div class="activity-tags">
+                        <span class="tag">PATROL</span>
+                        <span class="tag">NORTH-WING</span>
+                        <span class="tag">CLEAR</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP PANEL -->
+        <div class="panel map-panel">
+            <div class="panel-header">FACILITY MAP</div>
+            <div class="map-container">
+                <div class="map-overlay">
+                    <div>ACTIVE INCIDENTS: 3</div>
+                    <div>SECURITY LEVEL: HIGH</div>
+                    <div>PERSONNEL: 247</div>
+                </div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #FFD700;"></div>
+                        <span>ACTIVITY</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #DC143C;"></div>
+                        <span>INCIDENT</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #FF8C00;"></div>
+                        <span>BOL MATCH</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIMELINE PANEL -->
+        <div class="panel timeline-panel">
+            <div class="panel-header">INCIDENT TIMELINE</div>
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-marker incident pulse"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">14:32:15</div>
+                        <div class="timeline-title">MEDICAL EMERGENCY</div>
+                        <div class="timeline-description">Person down in Building A, Floor 3. EMS dispatched.</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker incident pulse"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">14:28:43</div>
+                        <div class="timeline-title">SECURITY BREACH</div>
+                        <div class="timeline-description">Unauthorized access at East Gate. Team responding.</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">14:25:11</div>
+                        <div class="timeline-title">BOL MATCH DETECTED</div>
+                        <div class="timeline-description">Subject #2847 identified in Main Lobby - 87% confidence.</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker resolved"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">14:15:32</div>
+                        <div class="timeline-title">ALARM RESOLVED</div>
+                        <div class="timeline-description">Fire alarm in Building B cleared - false alarm.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVITIES PAGE -->
+    <div id="activities" class="activities-page">
+        <div class="page-header">
+            <div class="page-title">ACTIVITIES MANAGEMENT</div>
+            <div class="controls">
+                <button class="btn active">GRID VIEW</button>
+                <button class="btn">LIST VIEW</button>
+                <button class="btn btn-danger">CREATE INCIDENT</button>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label class="filter-label">TYPE</label>
+                <select class="filter-select">
+                    <option>ALL TYPES</option>
+                    <option>MEDICAL</option>
+                    <option>SECURITY</option>
+                    <option>BOL EVENT</option>
+                    <option>PATROL</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">STATUS</label>
+                <select class="filter-select">
+                    <option>ALL STATUS</option>
+                    <option>ACTIVE</option>
+                    <option>PENDING</option>
+                    <option>RESOLVED</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">PRIORITY</label>
+                <select class="filter-select">
+                    <option>ALL PRIORITY</option>
+                    <option>CRITICAL</option>
+                    <option>HIGH</option>
+                    <option>MEDIUM</option>
+                    <option>LOW</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">LOCATION</label>
+                <select class="filter-select">
+                    <option>ALL LOCATIONS</option>
+                    <option>BUILDING A</option>
+                    <option>BUILDING B</option>
+                    <option>PERIMETER</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="activities-grid">
+            <div class="activity-card-large medical">
+                <div class="activity-header">
+                    <div class="activity-id">ACT-2024-1547</div>
+                    <div class="activity-status status-active">ACTIVE</div>
+                </div>
+                <div class="activity-title">MEDICAL EMERGENCY</div>
+                <div class="activity-time">14:32:15 - ONGOING</div>
+                <div class="activity-description">
+                    Person down in Building A, Floor 3, Room 312. EMS has been notified and is en route. 
+                    Security team on scene providing assistance.
+                </div>
+                <div class="activity-tags">
+                    <span class="tag priority-high">CRITICAL</span>
+                    <span class="tag">BUILDING-A</span>
+                    <span class="tag">FLOOR-3</span>
+                    <span class="tag">EMS-NOTIFIED</span>
+                </div>
+            </div>
+
+            <div class="activity-card-large security">
+                <div class="activity-header">
+                    <div class="activity-id">ACT-2024-1546</div>
+                    <div class="activity-status status-pending">PENDING</div>
+                </div>
+                <div class="activity-title">SECURITY BREACH</div>
+                <div class="activity-time">14:28:43 - 6 MIN AGO</div>
+                <div class="activity-description">
+                    Unauthorized access detected at East Gate perimeter. Motion sensors triggered. 
+                    Security team dispatched to investigate.
+                </div>
+                <div class="activity-tags">
+                    <span class="tag priority-high">HIGH</span>
+                    <span class="tag">EAST-GATE</span>
+                    <span class="tag">PERIMETER</span>
+                    <span class="tag">TEAM-DISPATCHED</span>
+                </div>
+            </div>
+
+            <div class="activity-card-large bol">
+                <div class="activity-header">
+                    <div class="activity-id">ACT-2024-1545</div>
+                    <div class="activity-status status-pending">PENDING</div>
+                </div>
+                <div class="activity-title">BOL PATTERN MATCH</div>
+                <div class="activity-time">14:25:11 - 9 MIN AGO</div>
+                <div class="activity-description">
+                    Facial recognition system matched subject to BOL #2847. Confidence level: 87%. 
+                    Location: Main Lobby security checkpoint.
+                </div>
+                <div class="activity-tags">
+                    <span class="tag priority-medium">MATCH</span>
+                    <span class="tag">LOBBY</span>
+                    <span class="tag">BOL-2847</span>
+                    <span class="tag">87%</span>
+                </div>
+            </div>
+
+            <div class="activity-card-large">
+                <div class="activity-header">
+                    <div class="activity-id">ACT-2024-1544</div>
+                    <div class="activity-status status-resolved">RESOLVED</div>
+                </div>
+                <div class="activity-title">ROUTINE PATROL</div>
+                <div class="activity-time">14:20:05 - COMPLETED</div>
+                <div class="activity-description">
+                    Scheduled security patrol of North Wing completed successfully. 
+                    All areas checked, no anomalies detected.
+                </div>
+                <div class="activity-tags">
+                    <span class="tag">PATROL</span>
+                    <span class="tag">NORTH-WING</span>
+                    <span class="tag">ALL-CLEAR</span>
+                    <span class="tag">SCHEDULED</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RADIO COMMUNICATION SECTION -->
+        <div class="radio-section">
+            <div class="radio-header">RADIO COMMUNICATION SYSTEM</div>
+            
+            <div class="radio-controls">
+                <button class="radio-btn transmit">TRANSMIT</button>
+                <button class="radio-btn receive">RECEIVE</button>
+                <button class="radio-btn">CHANNEL 1</button>
+                <button class="radio-btn">CHANNEL 2</button>
+                <button class="radio-btn">EMERGENCY</button>
+            </div>
+
+            <div class="audio-visualizer">
+                <div class="audio-bar" style="height: 20px;"></div>
+                <div class="audio-bar" style="height: 35px;"></div>
+                <div class="audio-bar" style="height: 15px;"></div>
+                <div class="audio-bar" style="height: 45px;"></div>
+                <div class="audio-bar" style="height: 25px;"></div>
+                <div class="audio-bar" style="height: 40px;"></div>
+                <div class="audio-bar" style="height: 30px;"></div>
+                <div class="audio-bar" style="height: 20px;"></div>
+                <div class="audio-bar" style="height: 35px;"></div>
+                <div class="audio-bar" style="height: 15px;"></div>
+                <div class="audio-bar" style="height: 25px;"></div>
+                <div class="audio-bar" style="height: 40px;"></div>
+            </div>
+
+            <div class="transcript">
+                <div class="transcript-line">
+                    <span class="transcript-time">14:32:15</span>
+                    <span class="transcript-speaker">DISPATCH</span>
+                    <span class="transcript-message">All units, medical emergency Building A Floor 3 Room 312</span>
+                </div>
+                <div class="transcript-line">
+                    <span class="transcript-time">14:32:18</span>
+                    <span class="transcript-speaker">UNIT-7</span>
+                    <span class="transcript-message">Unit 7 responding, ETA 2 minutes</span>
+                </div>
+                <div class="transcript-line">
+                    <span class="transcript-time">14:32:25</span>
+                    <span class="transcript-speaker">DISPATCH</span>
+                    <span class="transcript-message">Copy Unit 7, EMS has been notified</span>
+                </div>
+                <div class="transcript-line">
+                    <span class="transcript-time">14:28:43</span>
+                    <span class="transcript-speaker">PERIMETER</span>
+                    <span class="transcript-message">East Gate breach detected, motion sensors active</span>
+                </div>
+                <div class="transcript-line">
+                    <span class="transcript-time">14:28:47</span>
+                    <span class="transcript-speaker">UNIT-3</span>
+                    <span class="transcript-message">Unit 3 en route to East Gate</span>
+                </div>
+                <div class="transcript-line">
+                    <span class="transcript-time">14:25:11</span>
+                    <span class="transcript-speaker">SYSTEM</span>
+                    <span class="transcript-message">BOL match detected Main Lobby confidence 87%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CASES PAGE PLACEHOLDER -->
+    <div id="cases" class="activities-page">
+        <div class="page-header">
+            <div class="page-title">INVESTIGATION CASES</div>
+            <div class="controls">
+                <button class="btn">OPEN CASES</button>
+                <button class="btn">CLOSED CASES</button>
+                <button class="btn btn-danger">NEW CASE</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; padding: 100px; background: #1A1A1A; border: 4px solid #5A5A5A; margin: 20px 0;">
+            <div style="font-size: 48px; font-weight: 900; color: #FFD700; margin-bottom: 20px;">CASES MODULE</div>
+            <div style="font-size: 24px; font-weight: 800; color: #FFFFFF;">INVESTIGATION MANAGEMENT SYSTEM</div>
+            <div style="font-size: 18px; font-weight: 700; color: #CCCCCC; margin-top: 20px;">EVIDENCE • DOCUMENTATION • CHAIN OF CUSTODY</div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // Hide all sections
+            document.getElementById('command-center').style.display = 'none';
+            document.getElementById('activities').style.display = 'none';
+            document.getElementById('cases').style.display = 'none';
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected section
+            if (sectionId === 'command-center') {
+                document.getElementById('command-center').style.display = 'grid';
+            } else {
+                document.getElementById(sectionId).classList.add('active');
+            }
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Animate audio visualizer
+        setInterval(() => {
+            document.querySelectorAll('.audio-bar').forEach(bar => {
+                bar.style.height = Math.random() * 40 + 10 + 'px';
+            });
+        }, 150);
+
+        // Simulate new activities
+        setInterval(() => {
+            const timeElements = document.querySelectorAll('.activity-time');
+            timeElements.forEach(element => {
+                if (element.textContent.includes('ONGOING')) {
+                    return;
+                }
+                const currentTime = new Date();
+                const hours = currentTime.getHours().toString().padStart(2, '0');
+                const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+                const seconds = currentTime.getSeconds().toString().padStart(2, '0');
+                if (Math.random() < 0.1) {
+                    element.textContent = `${hours}:${minutes}:${seconds}`;
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

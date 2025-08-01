@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITU8 Command Center - SaaS Professional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* SaaS Professional Color Palette */
+            --saas-primary: #2563EB;
+            --saas-primary-dark: #1D4ED8;
+            --saas-primary-light: #3B82F6;
+            --saas-secondary: #F8FAFC;
+            --saas-accent: #10B981;
+            --saas-accent-light: #D1FAE5;
+            
+            /* Neutral Palette */
+            --saas-white: #FFFFFF;
+            --saas-gray-50: #F9FAFB;
+            --saas-gray-100: #F3F4F6;
+            --saas-gray-200: #E5E7EB;
+            --saas-gray-300: #D1D5DB;
+            --saas-gray-400: #9CA3AF;
+            --saas-gray-500: #6B7280;
+            --saas-gray-600: #4B5563;
+            --saas-gray-700: #374151;
+            --saas-gray-800: #1F2937;
+            --saas-gray-900: #111827;
+            
+            /* Status Colors - Professional */
+            --saas-critical: #DC2626;
+            --saas-critical-bg: #FEF2F2;
+            --saas-critical-light: #FECACA;
+            --saas-warning: #D97706;
+            --saas-warning-bg: #FFFBEB;
+            --saas-warning-light: #FED7AA;
+            --saas-success: #059669;
+            --saas-success-bg: #ECFDF5;
+            --saas-success-light: #A7F3D0;
+            --saas-info: #0284C7;
+            --saas-info-bg: #F0F9FF;
+            --saas-info-light: #BAE6FD;
+            
+            /* Typography Scale */
+            --saas-text-xs: 0.75rem;
+            --saas-text-sm: 0.875rem;
+            --saas-text-base: 1rem;
+            --saas-text-lg: 1.125rem;
+            --saas-text-xl: 1.25rem;
+            --saas-text-2xl: 1.5rem;
+            --saas-text-3xl: 1.875rem;
+            
+            /* Spacing System */
+            --saas-space-1: 0.25rem;
+            --saas-space-2: 0.5rem;
+            --saas-space-3: 0.75rem;
+            --saas-space-4: 1rem;
+            --saas-space-5: 1.25rem;
+            --saas-space-6: 1.5rem;
+            --saas-space-8: 2rem;
+            --saas-space-10: 2.5rem;
+            --saas-space-12: 3rem;
+            
+            /* Border Radius */
+            --saas-radius-sm: 0.125rem;
+            --saas-radius: 0.25rem;
+            --saas-radius-md: 0.375rem;
+            --saas-radius-lg: 0.5rem;
+            --saas-radius-xl: 0.75rem;
+            
+            /* Shadows */
+            --saas-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --saas-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --saas-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background: var(--saas-gray-50);
+            color: var(--saas-gray-900);
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--saas-text-base);
+            line-height: 1.5;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Professional Components */
+        .saas-card {
+            background: var(--saas-white);
+            border-radius: var(--saas-radius-lg);
+            box-shadow: var(--saas-shadow);
+            border: 1px solid var(--saas-gray-200);
+            transition: all 0.2s ease;
+        }
+
+        .saas-card:hover {
+            box-shadow: var(--saas-shadow-md);
+            border-color: var(--saas-gray-300);
+        }
+
+        .saas-button {
+            background: var(--saas-primary);
+            color: var(--saas-white);
+            border: none;
+            border-radius: var(--saas-radius-md);
+            padding: var(--saas-space-2) var(--saas-space-4);
+            font-family: inherit;
+            font-size: var(--saas-text-sm);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--saas-space-2);
+        }
+
+        .saas-button:hover {
+            background: var(--saas-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--saas-shadow-sm);
+        }
+
+        .saas-button:active {
+            transform: translateY(0);
+        }
+
+        .saas-button.secondary {
+            background: var(--saas-white);
+            color: var(--saas-gray-700);
+            border: 1px solid var(--saas-gray-300);
+        }
+
+        .saas-button.secondary:hover {
+            background: var(--saas-gray-50);
+            border-color: var(--saas-gray-400);
+        }
+
+        .saas-badge {
+            background: var(--saas-gray-100);
+            color: var(--saas-gray-700);
+            padding: var(--saas-space-1) var(--saas-space-3);
+            border-radius: var(--saas-radius-xl);
+            font-size: var(--saas-text-xs);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .saas-badge.critical {
+            background: var(--saas-critical-bg);
+            color: var(--saas-critical);
+        }
+
+        .saas-badge.warning {
+            background: var(--saas-warning-bg);
+            color: var(--saas-warning);
+        }
+
+        .saas-badge.success {
+            background: var(--saas-success-bg);
+            color: var(--saas-success);
+        }
+
+        .saas-badge.info {
+            background: var(--saas-info-bg);
+            color: var(--saas-info);
+        }
+
+        /* Header */
+        .header {
+            background: var(--saas-white);
+            border-bottom: 1px solid var(--saas-gray-200);
+            padding: var(--saas-space-4) var(--saas-space-6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: var(--saas-shadow-sm);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-3);
+        }
+
+        .header h1 {
+            font-size: var(--saas-text-xl);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+            letter-spacing: -0.025em;
+        }
+
+        .header-subtitle {
+            font-size: var(--saas-text-sm);
+            color: var(--saas-gray-500);
+            font-weight: 400;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-3);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-2);
+            padding: var(--saas-space-2) var(--saas-space-3);
+            background: var(--saas-critical-bg);
+            border: 1px solid var(--saas-critical-light);
+            border-radius: var(--saas-radius-md);
+            color: var(--saas-critical);
+            font-size: var(--saas-text-sm);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--saas-critical);
+            border-radius: 50%;
+            animation: saassPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes saassPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            gap: var(--saas-space-6);
+            padding: var(--saas-space-6);
+            height: calc(100vh - 73px);
+        }
+
+        /* Panel Base */
+        .panel {
+            background: var(--saas-white);
+            border-radius: var(--saas-radius-lg);
+            box-shadow: var(--saas-shadow);
+            border: 1px solid var(--saas-gray-200);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--saas-gray-50);
+            border-bottom: 1px solid var(--saas-gray-200);
+            padding: var(--saas-space-4) var(--saas-space-5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: var(--saas-text-lg);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-2);
+        }
+
+        .panel-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-2);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: var(--saas-space-5);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--saas-space-4);
+        }
+
+        /* Activities Panel */
+        .activity-section {
+            margin-bottom: var(--saas-space-6);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--saas-space-3) 0;
+            border-bottom: 2px solid var(--saas-gray-100);
+            margin-bottom: var(--saas-space-4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .section-header:hover {
+            border-bottom-color: var(--saas-gray-200);
+        }
+
+        .section-title {
+            font-size: var(--saas-text-base);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-2);
+        }
+
+        .section-count {
+            background: var(--saas-gray-100);
+            color: var(--saas-gray-600);
+            padding: var(--saas-space-1) var(--saas-space-2);
+            border-radius: var(--saas-radius);
+            font-size: var(--saas-text-xs);
+            font-weight: 600;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--saas-space-3);
+        }
+
+        .activity-item {
+            background: var(--saas-white);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius-md);
+            padding: var(--saas-space-4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .activity-item:hover {
+            border-color: var(--saas-gray-300);
+            box-shadow: var(--saas-shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .activity-item.urgent {
+            border-left: 4px solid var(--saas-critical);
+            background: linear-gradient(to right, var(--saas-critical-bg), var(--saas-white));
+            animation: saassUrgentPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes saassUrgentPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+
+        .activity-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--saas-space-2);
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--saas-space-2);
+        }
+
+        .activity-title {
+            font-size: var(--saas-text-sm);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+        }
+
+        .activity-time {
+            font-size: var(--saas-text-xs);
+            color: var(--saas-gray-500);
+            font-weight: 500;
+        }
+
+        .activity-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--saas-space-3);
+        }
+
+        .activity-location {
+            font-size: var(--saas-text-xs);
+            color: var(--saas-gray-600);
+            background: var(--saas-gray-100);
+            padding: var(--saas-space-1) var(--saas-space-2);
+            border-radius: var(--saas-radius);
+        }
+
+        /* Map Panel */
+        .map-container {
+            background: var(--saas-gray-50);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius-md);
+            padding: var(--saas-space-4);
+            margin-bottom: var(--saas-space-6);
+            height: 240px;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: var(--saas-space-2);
+            height: 100%;
+        }
+
+        .zone {
+            background: var(--saas-white);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--saas-text-xs);
+            font-weight: 500;
+            color: var(--saas-gray-700);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .zone:hover {
+            background: var(--saas-primary-light);
+            color: var(--saas-white);
+            transform: scale(1.05);
+            z-index: 2;
+            box-shadow: var(--saas-shadow-md);
+        }
+
+        .zone.active {
+            background: var(--saas-critical);
+            color: var(--saas-white);
+            border-color: var(--saas-critical);
+        }
+
+        .zone.active::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: var(--saas-warning);
+            border: 2px solid var(--saas-white);
+            border-radius: 50%;
+            animation: saassBlink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes saassBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Guards Section */
+        .guards-section {
+            background: var(--saas-gray-50);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius-md);
+            padding: var(--saas-space-4);
+        }
+
+        .guards-header {
+            font-size: var(--saas-text-sm);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+            margin-bottom: var(--saas-space-4);
+            text-align: center;
+        }
+
+        .guards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--saas-space-3);
+        }
+
+        .guard-card {
+            background: var(--saas-white);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius);
+            padding: var(--saas-space-3);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .guard-card:hover {
+            border-color: var(--saas-primary);
+            box-shadow: var(--saas-shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .guard-card.active {
+            border-color: var(--saas-primary);
+            background: var(--saas-primary-light);
+            color: var(--saas-white);
+        }
+
+        .guard-name {
+            font-size: var(--saas-text-xs);
+            font-weight: 600;
+            color: var(--saas-gray-900);
+            margin-bottom: var(--saas-space-1);
+        }
+
+        .guard-card.active .guard-name {
+            color: var(--saas-white);
+        }
+
+        .guard-status {
+            font-size: var(--saas-text-xs);
+            padding: var(--saas-space-1) var(--saas-space-2);
+            border-radius: var(--saas-radius-sm);
+            font-weight: 500;
+        }
+
+        /* Timeline Panel */
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--saas-space-4);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: var(--saas-space-3);
+            padding: var(--saas-space-4);
+            background: var(--saas-white);
+            border: 1px solid var(--saas-gray-200);
+            border-radius: var(--saas-radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .timeline-item:hover {
+            border-color: var(--saas-gray-300);
+            box-shadow: var(--saas-shadow-sm);
+            transform: translateX(2px);
+        }
+
+        .timeline-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: var(--saas-space-1);
+            border: 2px solid var(--saas-white);
+            box-shadow: 0 0 0 2px currentColor;
+        }
+
+        .timeline-marker.critical {
+            color: var(--saas-critical);
+        }
+
+        .timeline-marker.warning {
+            color: var(--saas-warning);
+        }
+
+        .timeline-marker.success {
+            color: var(--saas-success);
+        }
+
+        .timeline-marker.info {
+            color: var(--saas-info);
+        }
+
+        .timeline-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--saas-space-1);
+        }
+
+        .timeline-time {
+            font-size: var(--saas-text-xs);
+            color: var(--saas-gray-500);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .timeline-event {
+            font-size: var(--saas-text-sm);
+            color: var(--saas-gray-900);
+            line-height: 1.4;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--saas-gray-100);
+            border-radius: var(--saas-radius);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--saas-gray-300);
+            border-radius: var(--saas-radius);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--saas-gray-400);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height: auto;
+                min-height: calc(100vh - 73px);
+            }
+            
+            .panel {
+                max-height: 400px;
+            }
+
+            .guards-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Animation Classes */
+        .saas-fade-in {
+            animation: saasFadeIn 0.3s ease-out;
+        }
+
+        @keyframes saasFadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        .saas-highlight {
+            animation: saasHighlight 0.6s ease-in-out;
+        }
+
+        @keyframes saasHighlight {
+            0%, 100% { 
+                background: var(--saas-white);
+            }
+            50% { 
+                background: var(--saas-info-bg);
+                border-color: var(--saas-info-light);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-brand">
+            <div>
+                <h1>💼 SITU8 Command Center</h1>
+                <div class="header-subtitle">Professional SaaS Interface - Enterprise Security Platform</div>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                3 Critical Alerts
+            </div>
+            <button class="saas-button secondary">📻 Radio</button>
+            <button class="saas-button secondary">⚙️ Settings</button>
+            <a href="index.html" class="saas-button" style="text-decoration: none;">← Back to Gallery</a>
+        </div>
+    </header>
+
+    <main class="main-layout">
+        <!-- Activities Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    🎯 Activity Stream
+                </div>
+                <div class="panel-actions">
+                    <div class="saas-badge critical">Live</div>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="activity-section">
+                    <div class="section-header" onclick="toggleSection('critical')">
+                        <div class="section-title">
+                            Critical Priority
+                        </div>
+                        <div class="section-count">3</div>
+                    </div>
+                    <div class="activity-list" id="critical-list">
+                        <div class="activity-item urgent">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Unauthorized Entry Detected</div>
+                                    <div class="activity-time">2 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Zone A-3</div>
+                                    <div class="saas-badge critical">Active</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Medical Emergency Response</div>
+                                    <div class="activity-time">5 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Building C - Floor 2</div>
+                                    <div class="saas-badge critical">In Progress</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Fire Alarm System Alert</div>
+                                    <div class="activity-time">8 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Zone B-1</div>
+                                    <div class="saas-badge warning">Investigating</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header" onclick="toggleSection('high')">
+                        <div class="section-title">
+                            High Priority
+                        </div>
+                        <div class="section-count">5</div>
+                    </div>
+                    <div class="activity-list" id="high-list">
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Suspicious Activity Report</div>
+                                    <div class="activity-time">12 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Parking Lot P-2</div>
+                                    <div class="saas-badge warning">Under Review</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Access Control Malfunction</div>
+                                    <div class="activity-time">15 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Main Entrance</div>
+                                    <div class="saas-badge success">Resolved</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header" onclick="toggleSection('medium')">
+                        <div class="section-title">
+                            Medium Priority
+                        </div>
+                        <div class="section-count">7</div>
+                    </div>
+                    <div class="activity-list" id="medium-list" style="display: none;">
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">Routine Security Patrol</div>
+                                    <div class="activity-time">20 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Zone A-1</div>
+                                    <div class="saas-badge success">Completed</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-header">
+                                    <div class="activity-title">System Maintenance Check</div>
+                                    <div class="activity-time">25 min ago</div>
+                                </div>
+                                <div class="activity-meta">
+                                    <div class="activity-location">Server Room</div>
+                                    <div class="saas-badge success">Completed</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map & Guards Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    🗺️ Facility Overview
+                </div>
+                <div class="panel-actions">
+                    <div class="saas-badge info">Real-time</div>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="map-container">
+                    <div class="map-grid">
+                        <div class="zone active" onclick="selectZone('A-1')">Zone A-1</div>
+                        <div class="zone" onclick="selectZone('A-2')">Zone A-2</div>
+                        <div class="zone active" onclick="selectZone('A-3')">Zone A-3</div>
+                        <div class="zone" onclick="selectZone('B-1')">Zone B-1</div>
+                        <div class="zone" onclick="selectZone('B-2')">Zone B-2</div>
+                        <div class="zone" onclick="selectZone('B-3')">Zone B-3</div>
+                        <div class="zone" onclick="selectZone('C-1')">Zone C-1</div>
+                        <div class="zone active" onclick="selectZone('C-2')">Zone C-2</div>
+                        <div class="zone" onclick="selectZone('P-1')">Parking P-1</div>
+                        <div class="zone" onclick="selectZone('P-2')">Parking P-2</div>
+                        <div class="zone" onclick="selectZone('MAIN')">Main Entrance</div>
+                        <div class="zone" onclick="selectZone('SERVER')">Server Room</div>
+                    </div>
+                </div>
+
+                <div class="guards-section">
+                    <div class="guards-header">Security Personnel Status</div>
+                    <div class="guards-grid">
+                        <div class="guard-card" onclick="selectGuard('Garcia')">
+                            <div class="guard-name">Garcia, M.</div>
+                            <div class="guard-status saas-badge critical">Responding</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Chen')">
+                            <div class="guard-name">Chen, L.</div>
+                            <div class="guard-status saas-badge info">Patrolling</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Davis')">
+                            <div class="guard-name">Davis, K.</div>
+                            <div class="guard-status saas-badge warning">On Break</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Wilson')">
+                            <div class="guard-name">Wilson, R.</div>
+                            <div class="guard-status saas-badge success">Available</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Martinez')">
+                            <div class="guard-name">Martinez, A.</div>
+                            <div class="guard-status saas-badge info">Patrolling</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Brown')">
+                            <div class="guard-name">Brown, T.</div>
+                            <div class="guard-status saas-badge success">Available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    ⏰ Event Timeline
+                </div>
+                <div class="panel-actions">
+                    <div class="saas-badge">Auto-refresh</div>
+                </div>
+            </div>
+            <div class="panel-content">
+                <div class="timeline-container">
+                    <div class="timeline-item">
+                        <div class="timeline-marker critical"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">2 minutes ago</div>
+                            <div class="timeline-event">Garcia responding to unauthorized entry in Zone A-3. Security breach protocol activated.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker critical"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">5 minutes ago</div>
+                            <div class="timeline-event">Medical emergency reported in Building C, Floor 2. Emergency services contacted.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker warning"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">8 minutes ago</div>
+                            <div class="timeline-event">Fire alarm triggered in Zone B-1. Investigation in progress, no smoke detected.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker warning"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">12 minutes ago</div>
+                            <div class="timeline-event">Suspicious activity reported in Parking Lot P-2. Patrol dispatched for assessment.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker success"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">15 minutes ago</div>
+                            <div class="timeline-event">Access control malfunction at Main Entrance successfully resolved. System restored.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker info"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">18 minutes ago</div>
+                            <div class="timeline-event">Chen completed routine patrol round in Zone A-2. All clear, no issues detected.</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker success"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">25 minutes ago</div>
+                            <div class="timeline-event">Scheduled maintenance completed in Server Room. All systems operational.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Professional interaction system
+        function toggleSection(priority) {
+            const list = document.getElementById(priority + '-list');
+            const isHidden = list.style.display === 'none';
+            
+            if (isHidden) {
+                list.style.display = 'flex';
+                list.classList.add('saas-fade-in');
+                setTimeout(() => list.classList.remove('saas-fade-in'), 300);
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function selectZone(zoneName) {
+            const zones = document.querySelectorAll('.zone');
+            zones.forEach(zone => {
+                if (zone.textContent === zoneName) {
+                    zone.classList.toggle('active');
+                    zone.classList.add('saas-highlight');
+                    setTimeout(() => {
+                        zone.classList.remove('saas-highlight');
+                    }, 600);
+                }
+            });
+            console.log('SaaS zone selected:', zoneName);
+        }
+
+        function selectGuard(guardName) {
+            const guardCards = document.querySelectorAll('.guard-card');
+            guardCards.forEach(card => {
+                if (card.querySelector('.guard-name').textContent.includes(guardName)) {
+                    // Toggle active state
+                    const isActive = card.classList.contains('active');
+                    guardCards.forEach(c => c.classList.remove('active'));
+                    if (!isActive) {
+                        card.classList.add('active');
+                    }
+                    card.classList.add('saas-highlight');
+                    setTimeout(() => {
+                        card.classList.remove('saas-highlight');
+                    }, 600);
+                }
+            });
+            console.log('SaaS guard selected:', guardName);
+        }
+
+        // Professional update system
+        function professionalUpdate() {
+            const activities = document.querySelectorAll('.activity-item');
+            const currentUrgent = document.querySelector('.activity-item.urgent');
+            
+            // Remove current urgency
+            if (currentUrgent) {
+                currentUrgent.classList.remove('urgent');
+            }
+            
+            // Professionally select next urgent item
+            const criticalItems = document.querySelectorAll('#critical-list .activity-item');
+            if (criticalItems.length > 0 && Math.random() > 0.6) {
+                const nextIndex = Math.floor(Math.random() * criticalItems.length);
+                criticalItems[nextIndex].classList.add('urgent');
+            }
+        }
+
+        // Add professional timeline entries
+        function addProfessionalTimelineEntry() {
+            const events = [
+                'Security patrol cycle initiated in Zone B-3 with standard protocols.',
+                'Access verification completed at secondary entrance with ID scan.',
+                'System health check completed successfully across all modules.',
+                'Personnel shift transition completed with proper handoff procedures.',
+                'Routine security sweep finished in designated areas with clear status.'
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            const timelineContainer = document.querySelector('.timeline-container');
+            const newItem = document.createElement('div');
+            newItem.classList.add('timeline-item', 'saas-fade-in');
+            newItem.innerHTML = `
+                <div class="timeline-marker info"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">Just now</div>
+                    <div class="timeline-event">${randomEvent}</div>
+                </div>
+            `;
+            
+            const firstItem = timelineContainer.querySelector('.timeline-item');
+            timelineContainer.insertBefore(newItem, firstItem);
+            
+            // Maintain professional limit
+            const items = timelineContainer.querySelectorAll('.timeline-item');
+            if (items.length > 10) {
+                items[items.length - 1].remove();
+            }
+        }
+
+        // Start professional operations
+        setInterval(professionalUpdate, 7000);
+        setInterval(addProfessionalTimelineEntry, 16000);
+
+        // Professional interaction effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const professionalElements = document.querySelectorAll('.saas-button, .activity-item, .guard-card, .zone, .timeline-item');
+            
+            professionalElements.forEach(element => {
+                element.addEventListener('click', function() {
+                    this.classList.add('saas-highlight');
+                    setTimeout(() => {
+                        this.classList.remove('saas-highlight');
+                    }, 600);
+                });
+
+                // Professional hover states
+                element.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.2s ease';
+                });
+            });
+
+            // Professional keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    // Clear all active states - professional UX
+                    document.querySelectorAll('.active').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                }
+            });
+
+            // Professional loading state simulation
+            document.querySelectorAll('.saas-badge').forEach(badge => {
+                if (badge.textContent.includes('Live') || badge.textContent.includes('Real-time')) {
+                    setInterval(() => {
+                        badge.style.opacity = badge.style.opacity === '0.7' ? '1' : '0.7';
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

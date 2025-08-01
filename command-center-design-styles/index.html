@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITU8 Command Center - Design Style Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            color: #F1F5F9;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 2rem 0;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60A5FA, #34D399, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: #94A3B8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .styles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .style-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .style-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(148, 163, 184, 0.3);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .style-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent, linear-gradient(90deg, #60A5FA, #34D399));
+        }
+
+        .style-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .style-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            background: var(--accent, linear-gradient(135deg, #60A5FA, #34D399));
+        }
+
+        .style-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .style-subtitle {
+            color: #94A3B8;
+            font-size: 0.875rem;
+        }
+
+        .style-description {
+            color: #CBD5E1;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .style-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .style-features li {
+            color: #94A3B8;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .style-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #34D399;
+            font-weight: bold;
+        }
+
+        .style-link {
+            display: inline-block;
+            background: var(--accent, linear-gradient(135deg, #60A5FA, #34D399));
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .style-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(96, 165, 250, 0.3);
+        }
+
+        /* Specific accent colors for each style */
+        .style-card:nth-child(1) { --accent: linear-gradient(135deg, #D4A574, #E8C4A0); }
+        .style-card:nth-child(2) { --accent: linear-gradient(135deg, #FF6B6B, #4ECDC4, #45B7D1); }
+        .style-card:nth-child(3) { --accent: linear-gradient(135deg, #96CEB4, #FFEAA7); }
+        .style-card:nth-child(4) { --accent: linear-gradient(135deg, #2D3748, #4A5568); }
+        .style-card:nth-child(5) { --accent: linear-gradient(135deg, #E53E3E, #3182CE, #FBD38D); }
+        .style-card:nth-child(6) { --accent: linear-gradient(135deg, #667EEA, #764BA2); }
+        .style-card:nth-child(7) { --accent: linear-gradient(135deg, #00D2FF, #3A7BD5); }
+        .style-card:nth-child(8) { --accent: linear-gradient(135deg, #4A90E2, #7B68EE); }
+        .style-card:nth-child(9) { --accent: linear-gradient(135deg, #2193B0, #6DD5ED); }
+
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            color: #64748B;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 2rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #60A5FA;
+        }
+
+        .stat-label {
+            color: #94A3B8;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .styles-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>SITU8 Command Center</h1>
+            <p>Design Style Gallery - Explore 9 unique visual approaches to security command center interfaces</p>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">9</div>
+                    <div class="stat-label">Design Styles</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Core Panels</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Functional</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="styles-grid">
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">🏺</div>
+                    <div>
+                        <h3 class="style-title">Claymorphism</h3>
+                        <p class="style-subtitle">Soft 3D Elements</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Soft, clay-like 3D elements with subtle shadows and extruded effects. Creates a tactile, approachable interface with matte textures and organic depth.
+                </p>
+                <ul class="style-features">
+                    <li>Soft extruded/inset effects</li>
+                    <li>Matte color palettes</li>
+                    <li>Tactile interaction feedback</li>
+                    <li>Organic depth perception</li>
+                </ul>
+                <a href="01-claymorphism-command-center.html" class="style-link">View Claymorphism</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">📐</div>
+                    <div>
+                        <h3 class="style-title">Memphis Design</h3>
+                        <p class="style-subtitle">Bold & Geometric</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Bold geometric shapes, clashing colors, and playful patterns inspired by the 1980s Memphis Group design movement. Asymmetrical layouts with vibrant energy.
+                </p>
+                <ul class="style-features">
+                    <li>Bold geometric patterns</li>
+                    <li>Vibrant color clashes</li>
+                    <li>Asymmetrical compositions</li>
+                    <li>Playful visual elements</li>
+                </ul>
+                <a href="02-memphis-command-center.html" class="style-link">View Memphis Design</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">🍃</div>
+                    <div>
+                        <h3 class="style-title">Organic/Blob Shapes</h3>
+                        <p class="style-subtitle">Nature-Inspired Forms</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Curved, nature-inspired forms with flowing shapes and organic boundaries. Soft color palettes reminiscent of natural elements and biomorphic design.
+                </p>
+                <ul class="style-features">
+                    <li>Flowing organic curves</li>
+                    <li>Natural color palettes</li>
+                    <li>Biomorphic shapes</li>
+                    <li>Soft visual boundaries</li>
+                </ul>
+                <a href="03-organic-blob-command-center.html" class="style-link">View Organic Design</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">⛩️</div>
+                    <div>
+                        <h3 class="style-title">Japanese Minimalism</h3>
+                        <p class="style-subtitle">Wabi-Sabi Principles</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Clean aesthetics inspired by Japanese design philosophy, emphasizing negative space, natural materials, and the beauty of imperfection (wabi-sabi).
+                </p>
+                <ul class="style-features">
+                    <li>Abundant negative space</li>
+                    <li>Natural material textures</li>
+                    <li>Subtle imperfections</li>
+                    <li>Zen-like tranquility</li>
+                </ul>
+                <a href="04-japanese-minimalist-command-center.html" class="style-link">View Japanese Style</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">🏗️</div>
+                    <div>
+                        <h3 class="style-title">Bauhaus</h3>
+                        <p class="style-subtitle">Form Follows Function</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Geometric forms, primary colors, and grid-based layouts following the "form follows function" philosophy. Clean, systematic approach to interface design.
+                </p>
+                <ul class="style-features">
+                    <li>Strict grid systems</li>
+                    <li>Primary color scheme</li>
+                    <li>Geometric typography</li>
+                    <li>Functional aesthetics</li>
+                </ul>
+                <a href="05-bauhaus-command-center.html" class="style-link">View Bauhaus Design</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">💼</div>
+                    <div>
+                        <h3 class="style-title">SaaS Professional</h3>
+                        <p class="style-subtitle">Clean & Trustworthy</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Clean, professional interface optimized for trust and conversion. Features clear hierarchies, consistent spacing, and enterprise-grade visual polish.
+                </p>
+                <ul class="style-features">
+                    <li>Professional aesthetics</li>
+                    <li>Clear visual hierarchy</li>
+                    <li>Consistent spacing</li>
+                    <li>Trust-building elements</li>
+                </ul>
+                <a href="06-saas-command-center.html" class="style-link">View SaaS Design</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">🎮</div>
+                    <div>
+                        <h3 class="style-title">Pixel Art</h3>
+                        <p class="style-subtitle">Retro Gaming Aesthetic</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    8-bit inspired interface with pixelated graphics, retro color palettes, and nostalgic gaming aesthetics. Chunky pixels and limited color schemes.
+                </p>
+                <ul class="style-features">
+                    <li>Pixelated graphics</li>
+                    <li>Retro color palettes</li>
+                    <li>8-bit iconography</li>
+                    <li>Gaming-inspired UI</li>
+                </ul>
+                <a href="07-pixel-art-command-center.html" class="style-link">View Pixel Art</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">👁️</div>
+                    <div>
+                        <h3 class="style-title">Gestalt Principles</h3>
+                        <p class="style-subtitle">Visual Psychology</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Interface design based on visual perception psychology principles: proximity, similarity, closure, and figure-ground relationships for optimal UX.
+                </p>
+                <ul class="style-features">
+                    <li>Visual grouping effects</li>
+                    <li>Proximity relationships</li>
+                    <li>Perceptual closure</li>
+                    <li>Figure-ground contrast</li>
+                </ul>
+                <a href="08-gestalt-command-center.html" class="style-link">View Gestalt Design</a>
+            </div>
+
+            <div class="style-card">
+                <div class="style-header">
+                    <div class="style-icon">🗂️</div>
+                    <div>
+                        <h3 class="style-title">Information Architecture</h3>
+                        <p class="style-subtitle">Structured Content</p>
+                    </div>
+                </div>
+                <p class="style-description">
+                    Systematic approach to content organization with clear hierarchies, logical navigation structures, and optimized information flow patterns.
+                </p>
+                <ul class="style-features">
+                    <li>Clear content hierarchy</li>
+                    <li>Logical navigation</li>
+                    <li>Structured layouts</li>
+                    <li>Information flow optimization</li>
+                </ul>
+                <a href="09-info-architecture-command-center.html" class="style-link">View Architecture Style</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>SITU8 Security Platform - Command Center Design Explorations</p>
+            <p style="margin-top: 0.5rem; font-size: 0.875rem;">Each design maintains the core three-panel layout while exploring unique visual approaches</p>
+        </footer>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        document.querySelectorAll('.style-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Add loading states for links
+        document.querySelectorAll('.style-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const originalText = this.textContent;
+                this.textContent = 'Loading...';
+                this.style.opacity = '0.7';
+                
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.style.opacity = '1';
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>

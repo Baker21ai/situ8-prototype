@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITU8 Command Center - Pixel Art Retro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Retro Gaming Color Palette - 8-bit Inspired */
+            --pixel-black: #000000;
+            --pixel-white: #FFFFFF;
+            --pixel-gray-dark: #2C2C2C;
+            --pixel-gray: #5C5C5C;
+            --pixel-gray-light: #9C9C9C;
+            --pixel-blue-dark: #0039A6;
+            --pixel-blue: #0066FF;
+            --pixel-blue-light: #3399FF;
+            --pixel-green-dark: #006600;
+            --pixel-green: #00CC00;
+            --pixel-green-light: #66FF66;
+            --pixel-red-dark: #990000;
+            --pixel-red: #FF0000;
+            --pixel-red-light: #FF6666;
+            --pixel-yellow-dark: #CC6600;
+            --pixel-yellow: #FFCC00;
+            --pixel-yellow-light: #FFFF66;
+            --pixel-purple: #9900CC;
+            --pixel-cyan: #00CCCC;
+            --pixel-magenta: #CC0099;
+            
+            /* Status Colors - Retro Game Style */
+            --pixel-critical: var(--pixel-red);
+            --pixel-critical-bg: var(--pixel-red-dark);
+            --pixel-high: var(--pixel-yellow);
+            --pixel-high-bg: var(--pixel-yellow-dark);
+            --pixel-medium: var(--pixel-blue);
+            --pixel-medium-bg: var(--pixel-blue-dark);
+            --pixel-low: var(--pixel-green);
+            --pixel-low-bg: var(--pixel-green-dark);
+            --pixel-info: var(--pixel-cyan);
+            --pixel-info-bg: var(--pixel-blue-dark);
+            
+            /* Pixel Grid */
+            --pixel-unit: 4px;
+            --pixel-border: 2px;
+        }
+
+        @font-face {
+            font-family: 'PixelFont';
+            src: url('data:application/font-woff2;charset=utf-8;base64,') format('woff2');
+            /* Using system monospace as fallback */
+        }
+
+        body {
+            font-family: 'Courier New', 'Monaco', monospace;
+            background: var(--pixel-black);
+            color: var(--pixel-white);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+            line-height: 1.2;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            text-rendering: optimizeSpeed;
+            background-image: 
+                radial-gradient(circle at 25% 25%, var(--pixel-gray-dark) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, var(--pixel-gray-dark) 1px, transparent 1px);
+            background-size: 20px 20px, 10px 10px;
+        }
+
+        /* Pixel Art Base Classes */
+        .pixel-box {
+            border: var(--pixel-border) solid var(--pixel-white);
+            background: var(--pixel-black);
+            position: relative;
+            image-rendering: pixelated;
+        }
+
+        .pixel-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid var(--pixel-gray);
+            pointer-events: none;
+        }
+
+        .pixel-button {
+            background: var(--pixel-gray);
+            border: var(--pixel-border) solid var(--pixel-white);
+            color: var(--pixel-white);
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: calc(var(--pixel-unit) * 2) calc(var(--pixel-unit) * 3);
+            cursor: pointer;
+            transition: none;
+            position: relative;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        .pixel-button:hover {
+            background: var(--pixel-blue);
+            box-shadow: 
+                inset -2px -2px 0 var(--pixel-blue-dark),
+                inset 2px 2px 0 var(--pixel-blue-light);
+        }
+
+        .pixel-button:active {
+            background: var(--pixel-blue-dark);
+            box-shadow: 
+                inset 2px 2px 0 var(--pixel-black);
+        }
+
+        .pixel-button.critical {
+            background: var(--pixel-red);
+            animation: pixelBlink 1s infinite;
+        }
+
+        @keyframes pixelBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.7; }
+        }
+
+        /* Retro Screen Effect */
+        .crt-effect {
+            position: relative;
+        }
+
+        .crt-effect::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                transparent 50%, 
+                rgba(0, 255, 0, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Header */
+        .header {
+            background: var(--pixel-gray-dark);
+            border-bottom: var(--pixel-border) solid var(--pixel-white);
+            padding: calc(var(--pixel-unit) * 3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: 
+                inset -2px -2px 0 var(--pixel-black),
+                inset 2px 2px 0 var(--pixel-gray);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: calc(var(--pixel-unit) * 8);
+            height: 100%;
+            background: var(--pixel-red);
+            border-right: var(--pixel-border) solid var(--pixel-white);
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--pixel-white);
+            text-shadow: 2px 2px 0 var(--pixel-black);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-left: calc(var(--pixel-unit) * 10);
+        }
+
+        .header-subtitle {
+            font-size: 8px;
+            color: var(--pixel-green);
+            margin-top: calc(var(--pixel-unit) * 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: calc(var(--pixel-unit) * 2);
+            align-items: center;
+        }
+
+        .pixel-indicator {
+            background: var(--pixel-red);
+            color: var(--pixel-white);
+            padding: calc(var(--pixel-unit) * 1) calc(var(--pixel-unit) * 2);
+            border: var(--pixel-border) solid var(--pixel-white);
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            animation: pixelPulse 2s infinite;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        @keyframes pixelPulse {
+            0%, 100% { 
+                background: var(--pixel-red);
+                box-shadow: 0 0 0 var(--pixel-red);
+            }
+            50% { 
+                background: var(--pixel-red-light);
+                box-shadow: 0 0 8px var(--pixel-red);
+            }
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: calc(var(--pixel-unit) * 2);
+            padding: calc(var(--pixel-unit) * 2);
+            height: calc(100vh - 50px);
+        }
+
+        /* Panel Base */
+        .panel {
+            background: var(--pixel-gray-dark);
+            border: var(--pixel-border) solid var(--pixel-white);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 
+                inset -2px -2px 0 var(--pixel-black),
+                inset 2px 2px 0 var(--pixel-gray);
+        }
+
+        .panel-header {
+            background: var(--pixel-blue);
+            color: var(--pixel-white);
+            padding: calc(var(--pixel-unit) * 2);
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+            border-bottom: var(--pixel-border) solid var(--pixel-white);
+            position: relative;
+        }
+
+        .panel:nth-child(1) .panel-header {
+            background: var(--pixel-red);
+        }
+
+        .panel:nth-child(2) .panel-header {
+            background: var(--pixel-blue);
+        }
+
+        .panel:nth-child(3) .panel-header {
+            background: var(--pixel-green);
+        }
+
+        .panel-header::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .panel-content {
+            padding: calc(var(--pixel-unit) * 2);
+            overflow-y: auto;
+            flex: 1;
+            background: var(--pixel-black);
+        }
+
+        /* Activities Panel */
+        .activity-section {
+            margin-bottom: calc(var(--pixel-unit) * 4);
+        }
+
+        .section-header {
+            background: var(--pixel-gray);
+            color: var(--pixel-white);
+            padding: calc(var(--pixel-unit) * 2);
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border: 1px solid var(--pixel-white);
+            margin-bottom: calc(var(--pixel-unit) * 2);
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        .section-header:hover {
+            background: var(--pixel-blue);
+        }
+
+        .section-header.critical {
+            background: var(--pixel-red);
+            animation: pixelFlash 0.5s infinite;
+        }
+
+        .section-header.high {
+            background: var(--pixel-yellow-dark);
+            color: var(--pixel-black);
+        }
+
+        .section-header.medium {
+            background: var(--pixel-blue-dark);
+        }
+
+        @keyframes pixelFlash {
+            0%, 50% { background: var(--pixel-red); }
+            51%, 100% { background: var(--pixel-red-dark); }
+        }
+
+        .section-count {
+            background: var(--pixel-white);
+            color: var(--pixel-black);
+            padding: calc(var(--pixel-unit) * 1);
+            font-size: 8px;
+            font-weight: bold;
+            min-width: calc(var(--pixel-unit) * 4);
+            text-align: center;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--pixel-unit) * 1);
+        }
+
+        .activity-item {
+            background: var(--pixel-gray-dark);
+            border: 1px solid var(--pixel-gray);
+            padding: calc(var(--pixel-unit) * 2);
+            cursor: pointer;
+            transition: none;
+            position: relative;
+        }
+
+        .activity-item:hover {
+            background: var(--pixel-blue-dark);
+            border-color: var(--pixel-blue);
+        }
+
+        .activity-item.urgent {
+            border-color: var(--pixel-red);
+            background: var(--pixel-red-dark);
+            animation: pixelUrgent 1s infinite;
+        }
+
+        @keyframes pixelUrgent {
+            0%, 100% { 
+                border-color: var(--pixel-red);
+                box-shadow: inset 0 0 0 1px var(--pixel-red);
+            }
+            50% { 
+                border-color: var(--pixel-red-light);
+                box-shadow: inset 0 0 0 1px var(--pixel-red-light);
+            }
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            top: calc(var(--pixel-unit) * 1);
+            left: calc(var(--pixel-unit) * 1);
+            width: calc(var(--pixel-unit) * 1);
+            height: calc(var(--pixel-unit) * 1);
+            background: var(--pixel-green);
+            border: 1px solid var(--pixel-white);
+        }
+
+        .activity-item.urgent::before {
+            background: var(--pixel-red);
+            animation: pixelBlink 0.5s infinite;
+        }
+
+        .activity-content {
+            margin-left: calc(var(--pixel-unit) * 3);
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--pixel-unit) * 1);
+        }
+
+        .activity-title {
+            font-size: 9px;
+            font-weight: bold;
+            color: var(--pixel-white);
+            text-transform: uppercase;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        .activity-meta {
+            font-size: 8px;
+            color: var(--pixel-gray-light);
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+        }
+
+        /* Map Panel */
+        .map-container {
+            background: var(--pixel-black);
+            border: var(--pixel-border) solid var(--pixel-white);
+            margin-bottom: calc(var(--pixel-unit) * 4);
+            height: 160px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(90deg, transparent 0%, var(--pixel-green) 1px, transparent 1px),
+                linear-gradient(0deg, transparent 0%, var(--pixel-green) 1px, transparent 1px);
+            background-size: 8px 8px;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            height: 100%;
+            padding: calc(var(--pixel-unit) * 2);
+            background: var(--pixel-black);
+        }
+
+        .zone {
+            background: var(--pixel-gray);
+            border: 1px solid var(--pixel-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            font-weight: bold;
+            color: var(--pixel-white);
+            cursor: pointer;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+            position: relative;
+        }
+
+        .zone:hover {
+            background: var(--pixel-blue);
+            animation: pixelZoom 0.2s ease-out;
+        }
+
+        @keyframes pixelZoom {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .zone.active {
+            background: var(--pixel-red);
+            animation: pixelAlert 1s infinite;
+        }
+
+        @keyframes pixelAlert {
+            0%, 100% { 
+                background: var(--pixel-red);
+                border-color: var(--pixel-white);
+            }
+            50% { 
+                background: var(--pixel-red-light);
+                border-color: var(--pixel-yellow);
+            }
+        }
+
+        .zone.active::after {
+            content: '!';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: calc(var(--pixel-unit) * 2);
+            height: calc(var(--pixel-unit) * 2);
+            background: var(--pixel-yellow);
+            color: var(--pixel-black);
+            border: 1px solid var(--pixel-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6px;
+            font-weight: bold;
+            animation: pixelBlink 0.5s infinite;
+        }
+
+        /* Guards Section */
+        .guards-section {
+            background: var(--pixel-gray-dark);
+            border: var(--pixel-border) solid var(--pixel-white);
+            padding: calc(var(--pixel-unit) * 2);
+        }
+
+        .guards-header {
+            font-size: 9px;
+            font-weight: bold;
+            color: var(--pixel-white);
+            margin-bottom: calc(var(--pixel-unit) * 2);
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        .guards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: calc(var(--pixel-unit) * 2);
+        }
+
+        .guard-card {
+            background: var(--pixel-black);
+            border: 1px solid var(--pixel-gray);
+            padding: calc(var(--pixel-unit) * 2);
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .guard-card:hover {
+            border-color: var(--pixel-white);
+            background: var(--pixel-gray-dark);
+        }
+
+        .guard-card.active {
+            border-color: var(--pixel-green);
+            background: var(--pixel-green-dark);
+        }
+
+        .guard-card::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: calc(var(--pixel-unit) * 2);
+            height: calc(var(--pixel-unit) * 2);
+            background: var(--pixel-green);
+            border: 1px solid var(--pixel-white);
+        }
+
+        .guard-card.active::before {
+            background: var(--pixel-yellow);
+            animation: pixelBlink 1s infinite;
+        }
+
+        .guard-name {
+            font-size: 8px;
+            font-weight: bold;
+            color: var(--pixel-white);
+            margin-bottom: calc(var(--pixel-unit) * 1);
+            text-transform: uppercase;
+            margin-left: calc(var(--pixel-unit) * 3);
+        }
+
+        .guard-status {
+            font-size: 7px;
+            padding: calc(var(--pixel-unit) * 1);
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid var(--pixel-white);
+            margin-left: calc(var(--pixel-unit) * 3);
+        }
+
+        .status-available { 
+            background: var(--pixel-green); 
+            color: var(--pixel-black);
+        }
+        .status-patrolling { 
+            background: var(--pixel-blue); 
+            color: var(--pixel-white);
+        }
+        .status-responding { 
+            background: var(--pixel-red); 
+            color: var(--pixel-white);
+            animation: pixelBlink 1s infinite;
+        }
+        .status-break { 
+            background: var(--pixel-yellow); 
+            color: var(--pixel-black);
+        }
+
+        /* Timeline Panel */
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--pixel-unit) * 2);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: calc(var(--pixel-unit) * 2);
+            padding: calc(var(--pixel-unit) * 2);
+            background: var(--pixel-gray-dark);
+            border: 1px solid var(--pixel-gray);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .timeline-item:hover {
+            border-color: var(--pixel-white);
+            background: var(--pixel-blue-dark);
+        }
+
+        .timeline-marker {
+            width: calc(var(--pixel-unit) * 2);
+            height: calc(var(--pixel-unit) * 2);
+            flex-shrink: 0;
+            margin-top: calc(var(--pixel-unit) * 1);
+            border: 1px solid var(--pixel-white);
+            position: relative;
+        }
+
+        .timeline-marker::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(var(--pixel-unit) * 1);
+            height: calc(var(--pixel-unit) * 1);
+            background: currentColor;
+        }
+
+        .timeline-marker.critical {
+            background: var(--pixel-red);
+            color: var(--pixel-red);
+        }
+
+        .timeline-marker.warning {
+            background: var(--pixel-yellow);
+            color: var(--pixel-yellow);
+        }
+
+        .timeline-marker.success {
+            background: var(--pixel-green);
+            color: var(--pixel-green);
+        }
+
+        .timeline-marker.info {
+            background: var(--pixel-blue);
+            color: var(--pixel-blue);
+        }
+
+        .timeline-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--pixel-unit) * 1);
+        }
+
+        .timeline-time {
+            font-size: 7px;
+            color: var(--pixel-gray-light);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-event {
+            font-size: 8px;
+            color: var(--pixel-white);
+            line-height: 1.3;
+            text-shadow: 1px 1px 0 var(--pixel-black);
+        }
+
+        /* Scrollbar - Pixel Style */
+        ::-webkit-scrollbar {
+            width: calc(var(--pixel-unit) * 3);
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--pixel-black);
+            border: 1px solid var(--pixel-gray);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--pixel-gray);
+            border: 1px solid var(--pixel-white);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--pixel-blue);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height: auto;
+                min-height: calc(100vh - 50px);
+            }
+            
+            .panel {
+                max-height: 300px;
+            }
+
+            .guards-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Animation Classes */
+        .pixel-spawn {
+            animation: pixelSpawn 0.3s ease-out;
+        }
+
+        @keyframes pixelSpawn {
+            from { 
+                opacity: 0; 
+                transform: scale(0.5);
+            }
+            to { 
+                opacity: 1; 
+                transform: scale(1);
+            }
+        }
+
+        .pixel-glitch {
+            animation: pixelGlitch 0.2s ease-in-out;
+        }
+
+        @keyframes pixelGlitch {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+    </style>
+</head>
+<body class="crt-effect">
+    <header class="header">
+        <div>
+            <h1>🎮 SITU8 Command Center</h1>
+            <div class="header-subtitle">Pixel Art Retro - 8-Bit Security Interface</div>
+        </div>
+        <div class="header-controls">
+            <div class="pixel-indicator">3 ALERTS</div>
+            <button class="pixel-button">RADIO</button>
+            <button class="pixel-button">CONFIG</button>
+            <a href="index.html" class="pixel-button" style="text-decoration: none;">EXIT</a>
+        </div>
+    </header>
+
+    <main class="main-layout">
+        <!-- Activities Panel -->
+        <section class="panel">
+            <div class="panel-header">ACTIVITY LOG</div>
+            <div class="panel-content">
+                <div class="activity-section">
+                    <div class="section-header critical" onclick="toggleSection('critical')">
+                        <span>CRITICAL</span>
+                        <div class="section-count">3</div>
+                    </div>
+                    <div class="activity-list" id="critical-list">
+                        <div class="activity-item urgent">
+                            <div class="activity-content">
+                                <div class="activity-title">BREACH DETECTED</div>
+                                <div class="activity-meta">
+                                    <span>ZONE A-3</span>
+                                    <span>02:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">MEDICAL ALERT</div>
+                                <div class="activity-meta">
+                                    <span>BLDG C</span>
+                                    <span>05:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">FIRE ALARM</div>
+                                <div class="activity-meta">
+                                    <span>ZONE B-1</span>
+                                    <span>08:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header high" onclick="toggleSection('high')">
+                        <span>HIGH</span>
+                        <div class="section-count">5</div>
+                    </div>
+                    <div class="activity-list" id="high-list">
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">SUSPICIOUS</div>
+                                <div class="activity-meta">
+                                    <span>PARK P-2</span>
+                                    <span>12:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">ACCESS FAIL</div>
+                                <div class="activity-meta">
+                                    <span>MAIN GATE</span>
+                                    <span>15:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <div class="section-header medium" onclick="toggleSection('medium')">
+                        <span>MEDIUM</span>
+                        <div class="section-count">7</div>
+                    </div>
+                    <div class="activity-list" id="medium-list" style="display: none;">
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">PATROL DONE</div>
+                                <div class="activity-meta">
+                                    <span>ZONE A-1</span>
+                                    <span>20:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-content">
+                                <div class="activity-title">MAINTENANCE</div>
+                                <div class="activity-meta">
+                                    <span>SERVER</span>
+                                    <span>25:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map & Guards Panel -->
+        <section class="panel">
+            <div class="panel-header">FACILITY MAP</div>
+            <div class="panel-content">
+                <div class="map-container">
+                    <div class="map-grid">
+                        <div class="zone active" onclick="selectZone('A-1')">A-1</div>
+                        <div class="zone" onclick="selectZone('A-2')">A-2</div>
+                        <div class="zone active" onclick="selectZone('A-3')">A-3</div>
+                        <div class="zone" onclick="selectZone('B-1')">B-1</div>
+                        <div class="zone" onclick="selectZone('B-2')">B-2</div>
+                        <div class="zone" onclick="selectZone('B-3')">B-3</div>
+                        <div class="zone" onclick="selectZone('C-1')">C-1</div>
+                        <div class="zone active" onclick="selectZone('C-2')">C-2</div>
+                        <div class="zone" onclick="selectZone('P-1')">P-1</div>
+                        <div class="zone" onclick="selectZone('P-2')">P-2</div>
+                        <div class="zone" onclick="selectZone('MAIN')">MAIN</div>
+                        <div class="zone" onclick="selectZone('SRV')">SRV</div>
+                    </div>
+                </div>
+
+                <div class="guards-section">
+                    <div class="guards-header">GUARD STATUS</div>
+                    <div class="guards-grid">
+                        <div class="guard-card" onclick="selectGuard('Garcia')">
+                            <div class="guard-name">GARCIA</div>
+                            <div class="guard-status status-responding">ALERT</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Chen')">
+                            <div class="guard-name">CHEN</div>
+                            <div class="guard-status status-patrolling">PATROL</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Davis')">
+                            <div class="guard-name">DAVIS</div>
+                            <div class="guard-status status-break">BREAK</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Wilson')">
+                            <div class="guard-name">WILSON</div>
+                            <div class="guard-status status-available">READY</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Martinez')">
+                            <div class="guard-name">MARTINEZ</div>
+                            <div class="guard-status status-patrolling">PATROL</div>
+                        </div>
+                        <div class="guard-card" onclick="selectGuard('Brown')">
+                            <div class="guard-name">BROWN</div>
+                            <div class="guard-status status-available">READY</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Panel -->
+        <section class="panel">
+            <div class="panel-header">EVENT LOG</div>
+            <div class="panel-content">
+                <div class="timeline-container">
+                    <div class="timeline-item">
+                        <div class="timeline-marker critical"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">02:00 AGO</div>
+                            <div class="timeline-event">GARCIA RESPONDING ZONE A-3 BREACH</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker critical"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">05:00 AGO</div>
+                            <div class="timeline-event">MEDICAL EMERGENCY BUILDING C</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker critical"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">08:00 AGO</div>
+                            <div class="timeline-event">FIRE ALARM ZONE B-1 CLEARED</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker warning"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">12:00 AGO</div>
+                            <div class="timeline-event">SUSPICIOUS ACTIVITY PARKING P-2</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker warning"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">15:00 AGO</div>
+                            <div class="timeline-event">ACCESS CARD ISSUE RESOLVED</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker info"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">18:00 AGO</div>
+                            <div class="timeline-event">CHEN PATROL ROUND COMPLETE</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker success"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">25:00 AGO</div>
+                            <div class="timeline-event">SERVER MAINTENANCE FINISHED</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Retro gaming interaction system
+        function toggleSection(priority) {
+            const list = document.getElementById(priority + '-list');
+            if (list.style.display === 'none') {
+                list.style.display = 'flex';
+                list.classList.add('pixel-spawn');
+                // Retro sound effect simulation
+                playPixelSound();
+                setTimeout(() => list.classList.remove('pixel-spawn'), 300);
+            } else {
+                list.style.display = 'none';
+                playPixelSound();
+            }
+        }
+
+        function selectZone(zoneName) {
+            const zones = document.querySelectorAll('.zone');
+            zones.forEach(zone => {
+                if (zone.textContent === zoneName) {
+                    zone.classList.toggle('active');
+                    zone.classList.add('pixel-glitch');
+                    playRetroBeep();
+                    setTimeout(() => {
+                        zone.classList.remove('pixel-glitch');
+                    }, 200);
+                }
+            });
+            console.log('Pixel zone selected:', zoneName);
+        }
+
+        function selectGuard(guardName) {
+            const guardCards = document.querySelectorAll('.guard-card');
+            guardCards.forEach(card => {
+                if (card.querySelector('.guard-name').textContent.includes(guardName)) {
+                    // Toggle active state with retro effect
+                    const isActive = card.classList.contains('active');
+                    guardCards.forEach(c => c.classList.remove('active'));
+                    if (!isActive) {
+                        card.classList.add('active');
+                    }
+                    card.classList.add('pixel-glitch');
+                    playRetroBeep();
+                    setTimeout(() => {
+                        card.classList.remove('pixel-glitch');
+                    }, 200);
+                }
+            });
+            console.log('Pixel guard selected:', guardName);
+        }
+
+        // Retro update system with 8-bit style
+        function pixelUpdate() {
+            const activities = document.querySelectorAll('.activity-item');
+            const currentUrgent = document.querySelector('.activity-item.urgent');
+            
+            // Remove current urgency with glitch effect
+            if (currentUrgent) {
+                currentUrgent.classList.add('pixel-glitch');
+                setTimeout(() => {
+                    currentUrgent.classList.remove('urgent', 'pixel-glitch');
+                }, 200);
+            }
+            
+            // Randomly select new urgent item
+            const criticalItems = document.querySelectorAll('#critical-list .activity-item');
+            if (criticalItems.length > 0 && Math.random() > 0.5) {
+                const nextIndex = Math.floor(Math.random() * criticalItems.length);
+                setTimeout(() => {
+                    criticalItems[nextIndex].classList.add('urgent');
+                    playAlarmBeep();
+                }, 300);
+            }
+        }
+
+        // Add retro timeline entries
+        function addPixelTimelineEntry() {
+            const events = [
+                'NEW PATROL CYCLE ZONE B-3 STARTED',
+                'ACCESS GRANTED SECONDARY GATE OK',
+                'SYSTEM CHECK COMPLETE ALL GREEN',
+                'GUARD SHIFT CHANGE IN PROGRESS',
+                'SECURITY SWEEP FINISHED NO ISSUES'
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            const timelineContainer = document.querySelector('.timeline-container');
+            const newItem = document.createElement('div');
+            newItem.classList.add('timeline-item', 'pixel-spawn');
+            newItem.innerHTML = `
+                <div class="timeline-marker info"></div>
+                <div class="timeline-content">
+                    <div class="timeline-time">NOW</div>
+                    <div class="timeline-event">${randomEvent}</div>
+                </div>
+            `;
+            
+            const firstItem = timelineContainer.querySelector('.timeline-item');
+            timelineContainer.insertBefore(newItem, firstItem);
+            
+            // Retro limit
+            const items = timelineContainer.querySelectorAll('.timeline-item');
+            if (items.length > 10) {
+                const lastItem = items[items.length - 1];
+                lastItem.classList.add('pixel-glitch');
+                setTimeout(() => {
+                    lastItem.remove();
+                }, 200);
+            }
+
+            playPixelSound();
+        }
+
+        // Retro sound effect simulation (visual feedback)
+        function playPixelSound() {
+            // Visual feedback for sound
+            document.body.style.filter = 'brightness(1.1)';
+            setTimeout(() => {
+                document.body.style.filter = 'brightness(1)';
+            }, 50);
+        }
+
+        function playRetroBeep() {
+            // Visual feedback for beep
+            const header = document.querySelector('.header');
+            header.style.backgroundColor = 'var(--pixel-blue)';
+            setTimeout(() => {
+                header.style.backgroundColor = '';
+            }, 100);
+        }
+
+        function playAlarmBeep() {
+            // Visual feedback for alarm
+            document.body.style.borderTop = '4px solid var(--pixel-red)';
+            setTimeout(() => {
+                document.body.style.borderTop = '';
+            }, 200);
+        }
+
+        // Start retro operations
+        setInterval(pixelUpdate, 6000);
+        setInterval(addPixelTimelineEntry, 14000);
+
+        // Retro interaction effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const pixelElements = document.querySelectorAll('.pixel-button, .activity-item, .guard-card, .zone, .timeline-item');
+            
+            pixelElements.forEach(element => {
+                element.addEventListener('click', function() {
+                    this.classList.add('pixel-glitch');
+                    playPixelSound();
+                    setTimeout(() => {
+                        this.classList.remove('pixel-glitch');
+                    }, 200);
+                });
+
+                // Pixel hover effects
+                element.addEventListener('mouseenter', function() {
+                    if (Math.random() > 0.8) {
+                        this.classList.add('pixel-glitch');
+                        setTimeout(() => {
+                            this.classList.remove('pixel-glitch');
+                        }, 100);
+                    }
+                });
+            });
+
+            // Retro startup sequence
+            setTimeout(() => {
+                const panels = document.querySelectorAll('.panel');
+                panels.forEach((panel, index) => {
+                    setTimeout(() => {
+                        panel.classList.add('pixel-spawn');
+                        playPixelSound();
+                        setTimeout(() => {
+                            panel.classList.remove('pixel-spawn');
+                        }, 300);
+                    }, index * 200);
+                });
+            }, 500);
+
+            // Random screen effects
+            setInterval(() => {
+                if (Math.random() > 0.95) {
+                    document.body.classList.add('pixel-glitch');
+                    setTimeout(() => {
+                        document.body.classList.remove('pixel-glitch');
+                    }, 100);
+                }
+            }, 2000);
+        });
+
+        // Konami code easter egg
+        let konamiCode = [];
+        const correctCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+        
+        document.addEventListener('keydown', function(e) {
+            konamiCode.push(e.code);
+            if (konamiCode.length > correctCode.length) {
+                konamiCode.shift();
+            }
+            
+            if (konamiCode.join(',') === correctCode.join(',')) {
+                // Activate retro mode
+                document.body.style.filter = 'hue-rotate(180deg) saturate(2)';
+                setTimeout(() => {
+                    document.body.style.filter = '';
+                    alert('RETRO MODE ACTIVATED! 🎮');
+                }, 1000);
+                konamiCode = [];
+            }
+        });
+    </script>
+</body>
+</html>

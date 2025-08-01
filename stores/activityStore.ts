@@ -223,24 +223,29 @@ const sortActivities = (
 // Create the store
 export const useActivityStore = create<ActivityStore>()(
   persist(
-    (set, get) => ({
-      // Initial state
-      activities: [],
-      filteredActivities: [],
-      selectedActivity: null,
-      activityService: null,
-      auditService: null,
-      bolService: null,
-      realtimeEnabled: false,
-      lastActivityId: 0,
-      filters: defaultFilters,
-      pagination: defaultPagination,
-      sorting: defaultSorting,
-      loading: false,
-      error: null,
+    (set, get) => {
+      // Generate initial activities immediately if store is empty
+      const initialActivities = generateEnterpriseActivities(5000);
+      const initialLastId = Math.max(...initialActivities.map(a => parseInt(a.id.split('-')[1]) || 0));
       
-      // Service initialization
-      initializeServices: () => {
+      return {
+        // Initial state with immediate data
+        activities: initialActivities,
+        filteredActivities: initialActivities,
+        selectedActivity: null,
+        activityService: null,
+        auditService: null,
+        bolService: null,
+        realtimeEnabled: false,
+        lastActivityId: initialLastId,
+        filters: defaultFilters,
+        pagination: { ...defaultPagination, total: initialActivities.length },
+        sorting: defaultSorting,
+        loading: false,
+        error: null,
+        
+        // Service initialization
+        initializeServices: () => {
         const activityService = new ActivityService();
         const auditService = new AuditService();
         const bolService = new BOLService();
@@ -736,12 +741,13 @@ export const useActivityStore = create<ActivityStore>()(
       
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
-    }),
+      };
+    },
     {
       name: 'situ8-activity-store',
       // Only persist essential data, not derived state or service instances
       partialize: (state) => ({
-        activities: state.activities,
+        // Don't persist activities - always load fresh mock data
         filters: state.filters,
         pagination: state.pagination,
         sorting: state.sorting,

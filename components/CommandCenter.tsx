@@ -14,6 +14,7 @@ import { CommunicationsPage } from './CommunicationsPage';
 import { ActivityCard } from './organisms/ActivityCard';
 import { ActivityData } from '../lib/types/activity';
 import { ActivityDetail } from './ActivityDetail';
+import { CreateActivityModal } from './CreateActivityModal';
 import { useActivityStore } from '../stores';
 import { useServices, createAuditContext } from '../services/ServiceProvider';
 import { 
@@ -26,7 +27,8 @@ import {
   ChevronDown,
   ChevronRight,
   AlertCircle,
-  Info
+  Info,
+  Plus
 } from 'lucide-react';
 
 // Enhanced activities using enterprise-scale data system from Zustand store
@@ -499,6 +501,13 @@ export function CommandCenter() {
     return guards.filter(g => g.status === 'available').length;
   }, [guards]);
 
+  // Handle activity creation
+  const handleActivityCreated = useCallback(() => {
+    // Refresh activities or show success message
+    console.log('Activity created successfully from Command Center');
+    // The activity store will automatically update with the new activity
+  }, []);
+
   const getCriticalIncidents = useCallback(() => {
     return activities.filter(activity => 
       activity.priority === 'critical' && 
@@ -700,6 +709,19 @@ export function CommandCenter() {
             )}
             
             <div className="flex items-center gap-2">
+              <CreateActivityModal
+                onActivityCreated={handleActivityCreated}
+                trigger={
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Activity
+                  </Button>
+                }
+              />
               <Button
                 variant="outline"
                 size="sm"
@@ -744,7 +766,7 @@ export function CommandCenter() {
       <div className="flex-1 grid grid-cols-12 gap-2 p-2 min-h-0">
         {/* Left Panel - Activity Stream (25%) */}
         <div className="col-span-3">
-          <Card className="h-full flex flex-col">
+          <Card className="h-full flex flex-col max-w-full">
             <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="flex items-center justify-between text-lg">
                 Activity Stream
@@ -758,9 +780,9 @@ export function CommandCenter() {
                 </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 min-h-0">
+            <CardContent className="p-0 flex-1 min-h-0 max-w-full">
               <ScrollArea className="h-full">
-                <div className="p-2">
+                <div className="p-2 max-w-full">
                   {Object.entries(getActivitiesByPriority()).map(([priority, priorityActivities]) => {
                     const config = getPriorityConfig(priority);
                     const IconComponent = config.icon;
@@ -840,8 +862,8 @@ export function CommandCenter() {
         <div className="col-span-6 flex flex-col gap-2">
           {/* Map View - Responsive sizing based on content */}
           <div className="flex-1 min-h-0">
-            <Card className="h-full">
-              <CardContent className="p-0 h-full">
+            <Card className="h-full max-w-full">
+              <CardContent className="p-0 h-full max-w-full">
                 <InteractiveMap onZoneClick={handleZoneClick} onGuardClick={handleGuardClick} />
               </CardContent>
             </Card>
@@ -849,7 +871,7 @@ export function CommandCenter() {
 
           {/* Guard Management - Compact footer section */}
           <div className="flex-shrink-0 h-48">
-            <Card className="h-full">
+            <Card className="h-full max-w-full">
               <GuardManagement
                 guards={guards as any}
                 onGuardUpdate={handleGuardUpdate}
@@ -863,8 +885,8 @@ export function CommandCenter() {
 
         {/* Right Panel - Timeline (25%) */}
         <div className="col-span-3">
-          <Card className="h-full">
-            <CardContent className="p-0 h-full">
+          <Card className="h-full max-w-full">
+            <CardContent className="p-0 h-full max-w-full">
               <Timeline 
                 className="h-full"
                 onOpenModal={() => setShowRadioModal(true)}

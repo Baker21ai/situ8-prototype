@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Activity Card Iterations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        
+        .header p {
+            font-size: 18px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+        
+        .iterations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 40px;
+        }
+        
+        /* Iteration 1: Timeline Flow */
+        .timeline-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .timeline-card::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+        }
+        
+        .timeline-content {
+            margin-left: 40px;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .timeline-trigger {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 8px 0;
+        }
+        
+        .timeline-location {
+            font-size: 14px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Iteration 2: Neumorphic */
+        .neumorphic-card {
+            background: #e0e5ec;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 9px 9px 16px #a3b1c6, -9px -9px 16px #ffffff;
+        }
+        
+        .neumorphic-content {
+            text-align: center;
+        }
+        
+        .neumorphic-icon {
+            width: 60px;
+            height: 60px;
+            background: #e0e5ec;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 6px 6px 12px #a3b1c6, -6px -6px 12px #ffffff;
+            font-size: 24px;
+        }
+        
+        /* Iteration 3: Glass Morphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: white;
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        }
+        
+        /* Iteration 4: Circular Progress */
+        .circular-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .circular-progress {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#3b82f6 0deg 270deg, #e5e7eb 270deg 360deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .circular-progress::before {
+            content: '';
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        /* Iteration 5: Card Stack */
+        .stack-card {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+        
+        .stack-layer {
+            position: absolute;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .stack-layer:nth-child(1) { top: 0; transform: translateY(0px); }
+        .stack-layer:nth-child(2) { top: 0; transform: translateY(4px) scale(0.98); opacity: 0.8; }
+        .stack-layer:nth-child(3) { top: 0; transform: translateY(8px) scale(0.96); opacity: 0.6; }
+        
+        /* Iteration 6: Interactive Flip */
+        .flip-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            height: 180px;
+        }
+        
+        .flip-card:hover {
+            transform: rotateY(180deg);
+        }
+        
+        .flip-front, .flip-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .flip-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        /* Iteration 7: Animated Bars */
+        .bars-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        }
+        
+        .activity-bars {
+            display: flex;
+            align-items: end;
+            gap: 4px;
+            height: 60px;
+            margin-bottom: 16px;
+        }
+        
+        .bar {
+            background: linear-gradient(to top, #3b82f6, #60a5fa);
+            border-radius: 2px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        /* Iteration 8: Gradient Flow */
+        .gradient-card {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 300% 300%;
+            animation: gradientFlow 3s ease infinite;
+            border-radius: 20px;
+            padding: 28px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Iteration 9: Micro-interactions */
+        .micro-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .micro-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+        
+        .micro-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            transition: left 0.5s;
+        }
+        
+        .micro-card:hover::before {
+            left: 100%;
+        }
+        
+        /* Iteration 10: Split View */
+        .split-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        }
+        
+        .split-left {
+            padding: 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .split-right {
+            padding: 28px;
+            background: #f8fafc;
+        }
+        
+        /* Iteration 11: Badge System */
+        .badge-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        
+        .floating-badges {
+            position: absolute;
+            top: -8px;
+            right: 16px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .badge {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Iteration 12: Expandable */
+        .expandable-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            max-height: 120px;
+        }
+        
+        .expandable-card:hover {
+            max-height: 300px;
+        }
+        
+        .expandable-header {
+            padding: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .expandable-content {
+            padding: 0 24px 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .expandable-card:hover .expandable-content {
+            opacity: 1;
+        }
+        
+        .card {
+            margin-bottom: 32px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Creative Activity Card Iterations</h1>
+            <p>12 innovative ways to display activity information intuitively</p>
+        </div>
+        
+        <div class="iterations">
+            <!-- Iteration 1: Timeline Flow -->
+            <div class="card">
+                <div class="card-title">1. Timeline Flow</div>
+                <div class="card-subtitle">Vertical timeline with smooth progression</div>
+                <div class="timeline-card">
+                    <div class="timeline-content">
+                        <div class="timeline-time">14:23:45</div>
+                        <div class="timeline-trigger">Unauthorized access attempt detected</div>
+                        <div class="timeline-location">📍 Loading Dock A, North Gate</div>
+                        <div style="margin-top: 12px;">
+                            <span style="background: #ef4444; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">Critical</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 2: Neumorphic -->
+            <div class="card">
+                <div class="card-title">2. Neumorphic Design</div>
+                <div class="card-subtitle">Soft 3D shadows for tactile feel</div>
+                <div class="neumorphic-card">
+                    <div class="neumorphic-content">
+                        <div class="neumorphic-icon">🚨</div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">Security Alert</div>
+                        <div style="font-size: 14px; color: #4b5563; margin-bottom: 4px;">Motion detected in restricted area</div>
+                        <div style="font-size: 12px; color: #6b7280;">📍 Zone 3 • 13:45:22</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 3: Glass Morphism -->
+            <div class="card">
+                <div class="card-title">3. Glass Morphism</div>
+                <div class="card-subtitle">Transparent layers with backdrop blur</div>
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 20px;">
+                    <div class="glass-card">
+                        <div style="font-weight: 600; margin-bottom: 8px;">AI Detection</div>
+                        <div style="font-size: 14px; margin-bottom: 4px;">Face recognition activated</div>
+                        <div style="font-size: 12px; opacity: 0.8;">📍 Main Lobby • 09:15:30</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 4: Circular Progress -->
+            <div class="card">
+                <div class="card-title">4. Circular Progress</div>
+                <div class="card-subtitle">Visual progress indicators</div>
+                <div class="circular-card">
+                    <div class="circular-progress">
+                        <span style="font-size: 24px; font-weight: bold; color: #3b82f6;">75%</span>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">Processing Complete</div>
+                        <div style="font-size: 14px; color: #6b7280;">Video analysis • 11:30:45</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 5: Card Stack -->
+            <div class="card">
+                <div class="card-title">5. Card Stack</div>
+                <div class="card-subtitle">Layered depth with hover effects</div>
+                <div class="stack-card">
+                    <div class="stack-layer">
+                        <div style="font-weight: 600;">Recent Activity</div>
+                        <div style="font-size: 14px; color: #6b7280; margin-top: 8px;">📍 Gate 2 • 08:20:15</div>
+                    </div>
+                    <div class="stack-layer"></div>
+                    <div class="stack-layer"></div>
+                </div>
+            </div>
+            
+            <!-- Iteration 6: Interactive Flip -->
+            <div class="card">
+                <div class="card-title">6. Interactive Flip</div>
+                <div class="card-subtitle">3D card flip on hover</div>
+                <div class="flip-card">
+                    <div class="flip-front">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Security Alert</div>
+                        <div style="font-size: 14px; color: #6b7280;">Hover to see details</div>
+                    </div>
+                    <div class="flip-back">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Full Details</div>
+                        <div style="font-size: 14px;">📍 Loading Dock • 15:23:45</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 7: Animated Bars -->
+            <div class="card">
+                <div class="card-title">7. Animated Bars</div>
+                <div class="card-subtitle">Real-time activity visualization</div>
+                <div class="bars-card">
+                    <div class="activity-bars">
+                        <div class="bar" style="width: 8px; height: 20px;"></div>
+                        <div class="bar" style="width: 8px; height: 35px; animation-delay: 0.1s;"></div>
+                        <div class="bar" style="width: 8px; height: 45px; animation-delay: 0.2s;"></div>
+                        <div class="bar" style="width: 8px; height: 30px; animation-delay: 0.3s;"></div>
+                        <div class="bar" style="width: 8px; height: 50px; animation-delay: 0.4s;"></div>
+                    </div>
+                    <div style="font-weight: 600;">Activity Spikes Detected</div>
+                    <div style="font-size: 14px; color: #6b7280;">📍 Camera Zone 3 • 14:23:45</div>
+                </div>
+            </div>
+            
+            <!-- Iteration 8: Gradient Flow -->
+            <div class="card">
+                <div class="card-title">8. Gradient Flow</div>
+                <div class="card-subtitle">Animated color transitions</div>
+                <div class="gradient-card">
+                    <div style="font-weight: 600; margin-bottom: 8px;">System Online</div>
+                    <div style="font-size: 14px; margin-bottom: 4px;">All sensors operational</div>
+                    <div style="font-size: 12px; opacity: 0.9;">📍 All zones • 12:00:00</div>
+                </div>
+            </div>
+            
+            <!-- Iteration 9: Micro-interactions -->
+            <div class="card">
+                <div class="card-title">9. Micro-interactions</div>
+                <div class="card-subtitle">Subtle hover animations</div>
+                <div class="micro-card">
+                    <div style="font-weight: 600; margin-bottom: 8px;">New Alert</div>
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">Motion detected</div>
+                    <div style="font-size: 12px; color: #6b7280;">📍 Building A • 10:15:30</div>
+                </div>
+            </div>
+            
+            <!-- Iteration 10: Split View -->
+            <div class="card">
+                <div class="card-title">10. Split View</div>
+                <div class="card-subtitle">Dual-color information display</div>
+                <div class="split-card">
+                    <div class="split-left">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Status</div>
+                        <div style="font-size: 14px;">Active</div>
+                    </div>
+                    <div class="split-right">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Details</div>
+                        <div style="font-size: 14px; color: #6b7280;">📍 Zone 1 • 09:45:12</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Iteration 11: Floating Badges -->
+            <div class="card">
+                <div class="card-title">11. Floating Badges</div>
+                <div class="card-subtitle">Dynamic status indicators</div>
+                <div class="badge-card">
+                    <div class="floating-badges">
+                        <div class="badge">Live</div>
+                        <div class="badge">High</div>
+                    </div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">Security Breach</div>
+                    <div style="font-size: 14px; color: #6b7280;">📍 Main Gate • 16:30:45</div>
+                </div>
+            </div>
+            
+            <!-- Iteration 12: Expandable -->
+            <div class="card">
+                <div class="card-title">12. Expandable Card</div>
+                <div class="card-subtitle">Hover to reveal full details</div>
+                <div class="expandable-card">
+                    <div class="expandable-header">
+                        <div>
+                            <div style="font-weight: 600;">Quick View</div>
+                            <div style="font-size: 14px; color: #6b7280;">📍 Zone 2 • 11:20:15</div>
+                        </div>
+                        <div style="color: #6b7280;">↕</div>
+                    </div>
+                    <div class="expandable-content">
+                        <div style="font-size: 14px; margin-bottom: 8px;">Full activity log available</div>
+                        <div style="font-size: 12px; color: #6b7280;">Camera: CAM-003 • Duration: 2min</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

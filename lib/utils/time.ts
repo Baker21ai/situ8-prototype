@@ -169,3 +169,13 @@ export function formatDuration(milliseconds: number): string {
   
   return `${seconds}s`;
 }
+
+/**
+ * Format distance to now - alias for formatTimeAgo for compatibility
+ * @param date - The date to format
+ * @param options - Formatting options
+ * @returns Formatted relative time string
+ */
+export function formatDistanceToNow(date: Date, options: TimeFormatOptions = {}): string {
+  return formatTimeAgo(date, options);
+}

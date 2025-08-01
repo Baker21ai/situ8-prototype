@@ -126,12 +126,12 @@ export const ActivityCard = memo<ActivityCardProps>(({
         layoutStyles[layout],
         isSelected && 'border-blue-500 bg-blue-50',
         specialStyles,
-        'transition-all duration-200',
+        'transition-all duration-200 max-w-full',
         className
       )}
       onClick={handleClick}
     >
-      <CardContent className={cn(variantPadding[variant], cardSpacing.sm)}>
+      <CardContent className={cn(variantPadding[variant], cardSpacing.sm, 'max-w-full')}>
         {/* Checkbox if enabled */}
         {features.showCheckbox && (
           <div className="float-left mr-3">

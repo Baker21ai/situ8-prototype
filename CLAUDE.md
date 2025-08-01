@@ -1,417 +1,383 @@
-# Task Master AI - Claude Code Integration Guide
+# CLAUDE.md
 
-## Essential Commands
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### Core Workflow Commands
+## 🛠️ Essential Development Commands
 
 ```bash
-# Project Setup
-task-master init                                    # Initialize Task Master in current project
-task-master parse-prd .taskmaster/docs/prd.txt      # Generate tasks from PRD document
-task-master models --setup                        # Configure AI models interactively
+# Install dependencies
+npm install
 
-# Daily Development Workflow
-task-master list                                   # Show all tasks with status
-task-master next                                   # Get next available task to work on
-task-master show <id>                             # View detailed task information (e.g., task-master show 1.2)
-task-master set-status --id=<id> --status=done    # Mark task complete
+# Development server (Vite)
+npm run dev
 
-# Task Management
-task-master add-task --prompt="description" --research        # Add new task with AI assistance
-task-master expand --id=<id> --research --force              # Break task into subtasks
-task-master update-task --id=<id> --prompt="changes"         # Update specific task
-task-master update --from=<id> --prompt="changes"            # Update multiple tasks from ID onwards
-task-master update-subtask --id=<id> --prompt="notes"        # Add implementation notes to subtask
+# Production build
+npm run build
 
-# Analysis & Planning
-task-master analyze-complexity --research          # Analyze task complexity
-task-master complexity-report                      # View complexity analysis
-task-master expand --all --research               # Expand all eligible tasks
+# Preview production build
+npm run preview
 
-# Dependencies & Organization
-task-master add-dependency --id=<id> --depends-on=<id>       # Add task dependency
-task-master move --from=<id> --to=<id>                       # Reorganize task hierarchy
-task-master validate-dependencies                            # Check for dependency issues
-task-master generate                                         # Update task markdown files (usually auto-called)
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
 ```
 
-## Key Files & Project Structure
+## 🏗️ Project Architecture
 
-### Core Files
+### Tech Stack
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **State Management**: Zustand stores with service layer
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
 
-- `.taskmaster/tasks/tasks.json` - Main task data file (auto-managed)
-- `.taskmaster/config.json` - AI model configuration (use `task-master models` to modify)
-- `.taskmaster/docs/prd.txt` - Product Requirements Document for parsing
-- `.taskmaster/tasks/*.txt` - Individual task files (auto-generated from tasks.json)
-- `.env` - API keys for CLI usage
-
-### Claude Code Integration Files
-
-- `CLAUDE.md` - Auto-loaded context for Claude Code (this file)
-- `.claude/settings.json` - Claude Code tool allowlist and preferences
-- `.claude/commands/` - Custom slash commands for repeated workflows
-- `.mcp.json` - MCP server configuration (project-specific)
-
-### Directory Structure
-
+### Three-Tier Security Architecture
 ```
-project/
-├── .taskmaster/
-│   ├── tasks/              # Task files directory
-│   │   ├── tasks.json      # Main task database
-│   │   ├── task-1.md      # Individual task files
-│   │   └── task-2.md
-│   ├── docs/              # Documentation directory
-│   │   ├── prd.txt        # Product requirements
-│   ├── reports/           # Analysis reports directory
-│   │   └── task-complexity-report.json
-│   ├── templates/         # Template files
-│   │   └── example_prd.txt  # Example PRD template
-│   └── config.json        # AI models & settings
-├── .claude/
-│   ├── settings.json      # Claude Code configuration
-│   └── commands/         # Custom slash commands
-├── .env                  # API keys
-├── .mcp.json            # MCP configuration
-└── CLAUDE.md            # This file - auto-loaded by Claude Code
+Activities (Foundation) → Incidents (Operational Response) → Cases (Strategic Investigation)
 ```
 
-## MCP Integration
+### Service Layer Pattern
+All business logic is centralized in the service layer (`services/`):
+- **BaseService**: Common functionality (validation, audit, error handling)
+- **ActivityService**: Activity logic, auto-tagging, BOL integration
+- **IncidentService**: Incident auto-creation rules and workflows
+- **CaseService**: Investigation management, evidence tracking
+- **AuditService**: Compliance and change tracking
+- **ServiceProvider**: React context for dependency injection
 
-Task Master provides an MCP server that Claude Code can connect to. Configure in `.mcp.json`:
+### Store Pattern (Zustand)
+Stores handle UI state and delegate business logic to services:
+- Immutable state updates
+- Service integration via `useServices()`
+- Audit trail for all operations
+- Soft delete pattern (never hard delete)
 
-```json
-{
-  "mcpServers": {
-    "task-master-ai": {
-      "command": "npx",
-      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
-      "env": {
-        "ANTHROPIC_API_KEY": "your_key_here",
-        "PERPLEXITY_API_KEY": "your_key_here",
-        "OPENAI_API_KEY": "OPENAI_API_KEY_HERE",
-        "GOOGLE_API_KEY": "GOOGLE_API_KEY_HERE",
-        "XAI_API_KEY": "XAI_API_KEY_HERE",
-        "OPENROUTER_API_KEY": "OPENROUTER_API_KEY_HERE",
-        "MISTRAL_API_KEY": "MISTRAL_API_KEY_HERE",
-        "AZURE_OPENAI_API_KEY": "AZURE_OPENAI_API_KEY_HERE",
-        "OLLAMA_API_KEY": "OLLAMA_API_KEY_HERE"
-      }
-    }
-  }
+## 🚀 Recent Updates (July 30, 2025)
+
+### ✅ Completed Work
+1. **Cases Page Implementation**
+   - Created comprehensive Cases.tsx component with investigation management UI
+   - Added case list/grid views, filters, creation dialog, and detail view
+   - Implemented evidence management interface with chain of custody
+   - Connected to case store for state management
+
+2. **Navigation Integration**
+   - Added Cases route to App.tsx navigation
+   - Cases page is now accessible as a separate module
+   - Updated navigation to show Cases as implemented
+
+3. **Timeline-Incident Integration**
+   - Connected Timeline component to real incident store
+   - Replaced mock data with actual incident data from store
+   - Added pending incident validation UI
+   - Implemented real-time incident display with proper status indicators
+
+4. **Type System Updates**
+   - Added missing formatDistanceToNow utility function
+   - Updated incident store mock data to match Incident interface
+   - Fixed StatusBadge component to use new status values
+   - Partially resolved type mismatches between stores and components
+
+### ⚠️ Remaining Issues
+1. **Type Mismatches**
+   - Cases component expects full Case type but store provides SimpleCase
+   - Need to either update store to use full types or create adapter layer
+   - ActivityType and Status values in mockActivityData.tsx still use old values
+
+2. **Missing UI Components**
+   - IncidentPanel for detailed incident management
+   - BOL management interface
+   - Full activity type migration in UI components
+
+3. **Service Layer Integration**
+   - Cases component references caseService but it's not fully implemented
+   - Need to complete service layer for all entities
+
+### 📝 Immediate Next Steps
+1. Fix mockActivityData.tsx to use new ActivityType values (medical, security-breach, etc.)
+2. Update case store to handle full Case type or create adapter
+3. Complete service layer implementation for cases
+4. Create IncidentPanel component for Timeline
+
+# Situ8 Security Platform - Development Guide
+
+## 🏗️ Architecture Overview
+
+### Three-Tier Security Workflow
+```
+Activities (Foundation) → Incidents (Operational Response) → Cases (Strategic Investigation)
+```
+
+### Current Implementation State
+
+| Component | Backend | Frontend | Status |
+|-----------|---------|----------|---------|
+| **Activities** | ✅ Complete | ✅ Complete | Fully functional |
+| **Incidents** | ✅ Complete | ✅ Timeline | Connected to Timeline |
+| **Cases** | ✅ Complete | ✅ Basic UI | Cases page implemented |
+| **BOL** | ✅ Complete | ❌ Missing | Needs Activities integration |
+| **Audit** | ✅ Complete | ✅ Integrated | Working |
+
+### Application Structure
+```
+┌─────────────────────────────────────────────────────┐
+│ Navigation: Activities │ Command Center │ Cases │    │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  Command Center (Three Panels):                     │
+│  ┌────────────┬───────────────┬─────────────────┐ │
+│  │ Activities │ Interactive   │ Timeline        │ │
+│  │ Stream     │ Map           │ (Incidents)     │ │
+│  └────────────┴───────────────┴─────────────────┘ │
+│                                                     │
+│  Activities Page: Full activity management          │
+│  Cases Page: Investigation management (TO BUILD)    │
+└─────────────────────────────────────────────────────┘
+```
+
+## 📁 Key Files & Directories
+
+### Service Layer (Business Logic) ✅
+```
+services/
+├── base.service.ts          # Base service class with audit
+├── activity.service.ts      # Activity logic, auto-tagging
+├── incident.service.ts      # Incident auto-creation
+├── case.service.ts          # Case & evidence management
+├── bol.service.ts           # BOL pattern matching
+├── audit.service.ts         # Audit trail
+└── ServiceProvider.tsx      # React context provider
+```
+
+### State Management (Zustand) ✅
+```
+stores/
+├── activityStore.ts         # Activity state & operations
+├── incidentStore.ts         # Incident state
+├── caseStore.ts             # Case state
+├── bolStore.ts              # BOL state
+├── auditStore.ts            # Audit log state
+└── index.ts                 # Store exports
+```
+
+### Type Definitions ✅
+```
+lib/types/
+├── activity.ts              # EnterpriseActivity interface
+├── incident.ts              # Incident interface
+├── case.ts                  # Case & Evidence interfaces
+├── bol.ts                   # BOL interfaces
+├── audit.ts                 # Audit trail types
+└── common.ts                # Shared types
+```
+
+### UI Components
+```
+components/
+├── Activities.tsx           ✅ Activity management page
+├── CommandCenter.tsx        ✅ Three-panel layout
+├── Timeline.tsx             ⚠️  Has mock incidents, needs real data
+├── Cases.tsx                ❌ TO BUILD - Investigation page
+├── IncidentPanel.tsx        ❌ TO BUILD - For Timeline
+└── BOLManager.tsx           ❌ TO BUILD - For Activities
+```
+
+## 🚨 What's Left to Build
+
+### 1. Cases Page (High Priority)
+**File to create**: `components/Cases.tsx`
+```typescript
+// Route: /cases
+// Full-page investigation management interface
+// Features needed:
+- Case list/grid with filters (status, priority, type)
+- Case creation from incidents or activities
+- Case detail view with:
+  - Evidence management & chain of custody
+  - Team assignment (lead, investigators)
+  - Timeline of case events
+  - Linked incidents/activities
+  - Documentation & notes
+```
+
+### 2. Timeline Incident UI (High Priority)
+**File to update**: `components/Timeline.tsx`
+**New file**: `components/IncidentPanel.tsx`
+```typescript
+// Replace mock data with real incidents
+// Features needed:
+- Connect to incidentStore
+- Pending incident validation (5/15 min timers)
+- Incident creation from activities
+- Quick actions (assign, escalate, resolve)
+- Multi-location incident support
+```
+
+### 3. BOL Integration (Medium Priority)
+**Files to update**: `components/Activities.tsx`, `components/EnterpriseActivityManager.tsx`
+```typescript
+// BOL creates activities automatically
+// Features needed:
+- BOL management section in Activities
+- Confidence score display (70%, 85%, 95%)
+- Pattern matching results
+- Multi-site BOL distribution
+```
+
+### 4. Navigation Updates (High Priority)
+**File to update**: `App.tsx`
+```typescript
+// Add Cases to main navigation
+// Update routes:
+- /activities (existing)
+- /command-center (existing)
+- /cases (new)
+```
+
+## 🛠️ Development Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Start development
+npm run dev
+
+# Build for production
+npm run build
+
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
+```
+
+## 🔧 Implementation Guide
+
+### Adding the Cases Page
+
+1. **Create the Cases component**:
+```typescript
+// components/Cases.tsx
+import { useCaseStore } from '../stores/caseStore';
+import { useServices } from '../services/ServiceProvider';
+
+export function Cases() {
+  const { cases, loading, error } = useCaseStore();
+  const { caseService } = useServices();
+  
+  // Implement case list, filters, and detail views
 }
 ```
 
-### Essential MCP Tools
-
-```javascript
-help; // = shows available taskmaster commands
-// Project setup
-initialize_project; // = task-master init
-parse_prd; // = task-master parse-prd
-
-// Daily workflow
-get_tasks; // = task-master list
-next_task; // = task-master next
-get_task; // = task-master show <id>
-set_task_status; // = task-master set-status
-
-// Task management
-add_task; // = task-master add-task
-expand_task; // = task-master expand
-update_task; // = task-master update-task
-update_subtask; // = task-master update-subtask
-update; // = task-master update
-
-// Analysis
-analyze_project_complexity; // = task-master analyze-complexity
-complexity_report; // = task-master complexity-report
+2. **Add route in App.tsx**:
+```typescript
+<Route path="/cases" element={<Cases />} />
 ```
 
-## Claude Code Workflow Integration
+3. **Update navigation**:
+```typescript
+const navItems = [
+  { path: '/activities', label: 'Activities', icon: Activity },
+  { path: '/command-center', label: 'Command Center', icon: LayoutGrid },
+  { path: '/cases', label: 'Cases', icon: Briefcase }, // NEW
+];
+```
 
-### Standard Development Workflow
+### Connecting Timeline to Real Incidents
 
-#### 1. Project Initialization
+1. **Update Timeline.tsx**:
+```typescript
+import { useIncidentStore } from '../stores/incidentStore';
 
+// Replace mock data with:
+const { incidents, loading } = useIncidentStore();
+```
+
+2. **Create IncidentPanel component** for incident management within Timeline
+
+### Business Logic Requirements
+
+#### Activity Auto-Tagging
+- System tags: `trigger:human|integration`, `location:building-zone`, `time:business-hours|after-hours`
+- User tags: Manual, role-limited
+
+#### Incident Auto-Creation Rules
+| Activity Type | Creates Incident | Validation Required |
+|--------------|------------------|---------------------|
+| medical | ALWAYS | No - Direct to active |
+| security-breach | ALWAYS | Yes - 5 min pending |
+| bol-event | ALWAYS | Yes - 5 min pending |
+| alert | IF confidence >80% | Yes - 5 min pending |
+| property-damage | IF confidence >75% | Yes - 5 min pending |
+
+#### Case Creation
+- From incidents: Any status
+- From activities: Direct creation allowed
+- Evidence: Requires chain of custody tracking
+
+## 🧪 Testing & Debugging
+
+### Check Service Status
+```typescript
+// In browser console
+window.__SITU8_SERVICES__ = useServices.getState();
+console.log(window.__SITU8_SERVICES__.isInitialized);
+```
+
+### Verify Store Data
+```typescript
+// Check activities
+useActivityStore.getState().activities
+
+// Check incidents  
+useIncidentStore.getState().incidents
+
+// Check cases
+useCaseStore.getState().cases
+```
+
+### Common Issues
+
+1. **Services not initialized**: Ensure ServiceProvider wraps App
+2. **Mock data showing**: Check Timeline uses real stores
+3. **Types mismatch**: Run `npm run typecheck`
+
+## 📊 Performance Considerations
+
+- Activities: Handles 5000+ entries
+- Virtual scrolling implemented in activity lists
+- Pagination ready in all stores
+- Use filters to reduce rendered items
+
+## 🚀 Next Steps Priority
+
+1. **Build Cases page** - Critical for investigation workflow
+2. **Connect Timeline to incidents** - Replace mock data
+3. **Add navigation** - Update App.tsx routes
+4. **Test workflows** - Activities → Incidents → Cases
+5. **BOL integration** - Pattern matching UI
+
+## 📝 Important Notes
+
+- Never directly modify store state - use service methods
+- All operations must create audit entries
+- No hard deletes - soft delete only
+- Mock data generators exist for testing
+- Business logic is in services, not components
+
+## 🌤️ AWS Migration
+
+For complete AWS migration guide and step-by-step tasks, see: **`AWS_MIGRATION_IMPLEMENTATION_TASKS.md`**
+
+### Quick Reference
 ```bash
-# Initialize Task Master
-task-master init
+# AWS setup validation
+aws bedrock list-foundation-models --region us-west-2
 
-# Create or obtain PRD, then parse it
-task-master parse-prd .taskmaster/docs/prd.txt
-
-# Analyze complexity and expand tasks
-task-master analyze-complexity --research
-task-master expand --all --research
+# Cost monitoring
+aws cloudwatch get-metric-statistics --namespace AWS/DynamoDB
 ```
-
-If tasks already exist, another PRD can be parsed (with new information only!) using parse-prd with --append flag. This will add the generated tasks to the existing list of tasks..
-
-#### 2. Daily Development Loop
-
-```bash
-# Start each session
-task-master next                           # Find next available task
-task-master show <id>                     # Review task details
-
-# During implementation, check in code context into the tasks and subtasks
-task-master update-subtask --id=<id> --prompt="implementation notes..."
-
-# Complete tasks
-task-master set-status --id=<id> --status=done
-```
-
-#### 3. Multi-Claude Workflows
-
-For complex projects, use multiple Claude Code sessions:
-
-```bash
-# Terminal 1: Main implementation
-cd project && claude
-
-# Terminal 2: Testing and validation
-cd project-test-worktree && claude
-
-# Terminal 3: Documentation updates
-cd project-docs-worktree && claude
-```
-
-### Custom Slash Commands
-
-Create `.claude/commands/taskmaster-next.md`:
-
-```markdown
-Find the next available Task Master task and show its details.
-
-Steps:
-
-1. Run `task-master next` to get the next task
-2. If a task is available, run `task-master show <id>` for full details
-3. Provide a summary of what needs to be implemented
-4. Suggest the first implementation step
-```
-
-Create `.claude/commands/taskmaster-complete.md`:
-
-```markdown
-Complete a Task Master task: $ARGUMENTS
-
-Steps:
-
-1. Review the current task with `task-master show $ARGUMENTS`
-2. Verify all implementation is complete
-3. Run any tests related to this task
-4. Mark as complete: `task-master set-status --id=$ARGUMENTS --status=done`
-5. Show the next available task with `task-master next`
-```
-
-## Tool Allowlist Recommendations
-
-Add to `.claude/settings.json`:
-
-```json
-{
-  "allowedTools": [
-    "Edit",
-    "Bash(task-master *)",
-    "Bash(git commit:*)",
-    "Bash(git add:*)",
-    "Bash(npm run *)",
-    "mcp__task_master_ai__*"
-  ]
-}
-```
-
-## Configuration & Setup
-
-### API Keys Required
-
-At least **one** of these API keys must be configured:
-
-- `ANTHROPIC_API_KEY` (Claude models) - **Recommended**
-- `PERPLEXITY_API_KEY` (Research features) - **Highly recommended**
-- `OPENAI_API_KEY` (GPT models)
-- `GOOGLE_API_KEY` (Gemini models)
-- `MISTRAL_API_KEY` (Mistral models)
-- `OPENROUTER_API_KEY` (Multiple models)
-- `XAI_API_KEY` (Grok models)
-
-An API key is required for any provider used across any of the 3 roles defined in the `models` command.
-
-### Model Configuration
-
-```bash
-# Interactive setup (recommended)
-task-master models --setup
-
-# Set specific models
-task-master models --set-main claude-3-5-sonnet-20241022
-task-master models --set-research perplexity-llama-3.1-sonar-large-128k-online
-task-master models --set-fallback gpt-4o-mini
-```
-
-## Task Structure & IDs
-
-### Task ID Format
-
-- Main tasks: `1`, `2`, `3`, etc.
-- Subtasks: `1.1`, `1.2`, `2.1`, etc.
-- Sub-subtasks: `1.1.1`, `1.1.2`, etc.
-
-### Task Status Values
-
-- `pending` - Ready to work on
-- `in-progress` - Currently being worked on
-- `done` - Completed and verified
-- `deferred` - Postponed
-- `cancelled` - No longer needed
-- `blocked` - Waiting on external factors
-
-### Task Fields
-
-```json
-{
-  "id": "1.2",
-  "title": "Implement user authentication",
-  "description": "Set up JWT-based auth system",
-  "status": "pending",
-  "priority": "high",
-  "dependencies": ["1.1"],
-  "details": "Use bcrypt for hashing, JWT for tokens...",
-  "testStrategy": "Unit tests for auth functions, integration tests for login flow",
-  "subtasks": []
-}
-```
-
-## Claude Code Best Practices with Task Master
-
-### Context Management
-
-- Use `/clear` between different tasks to maintain focus
-- This CLAUDE.md file is automatically loaded for context
-- Use `task-master show <id>` to pull specific task context when needed
-
-### Iterative Implementation
-
-1. `task-master show <subtask-id>` - Understand requirements
-2. Explore codebase and plan implementation
-3. `task-master update-subtask --id=<id> --prompt="detailed plan"` - Log plan
-4. `task-master set-status --id=<id> --status=in-progress` - Start work
-5. Implement code following logged plan
-6. `task-master update-subtask --id=<id> --prompt="what worked/didn't work"` - Log progress
-7. `task-master set-status --id=<id> --status=done` - Complete task
-
-### Complex Workflows with Checklists
-
-For large migrations or multi-step processes:
-
-1. Create a markdown PRD file describing the new changes: `touch task-migration-checklist.md` (prds can be .txt or .md)
-2. Use Taskmaster to parse the new prd with `task-master parse-prd --append` (also available in MCP)
-3. Use Taskmaster to expand the newly generated tasks into subtasks. Consdier using `analyze-complexity` with the correct --to and --from IDs (the new ids) to identify the ideal subtask amounts for each task. Then expand them.
-4. Work through items systematically, checking them off as completed
-5. Use `task-master update-subtask` to log progress on each task/subtask and/or updating/researching them before/during implementation if getting stuck
-
-### Git Integration
-
-Task Master works well with `gh` CLI:
-
-```bash
-# Create PR for completed task
-gh pr create --title "Complete task 1.2: User authentication" --body "Implements JWT auth system as specified in task 1.2"
-
-# Reference task in commits
-git commit -m "feat: implement JWT auth (task 1.2)"
-```
-
-### Parallel Development with Git Worktrees
-
-```bash
-# Create worktrees for parallel task development
-git worktree add ../project-auth feature/auth-system
-git worktree add ../project-api feature/api-refactor
-
-# Run Claude Code in each worktree
-cd ../project-auth && claude    # Terminal 1: Auth work
-cd ../project-api && claude     # Terminal 2: API work
-```
-
-## Troubleshooting
-
-### AI Commands Failing
-
-```bash
-# Check API keys are configured
-cat .env                           # For CLI usage
-
-# Verify model configuration
-task-master models
-
-# Test with different model
-task-master models --set-fallback gpt-4o-mini
-```
-
-### MCP Connection Issues
-
-- Check `.mcp.json` configuration
-- Verify Node.js installation
-- Use `--mcp-debug` flag when starting Claude Code
-- Use CLI as fallback if MCP unavailable
-
-### Task File Sync Issues
-
-```bash
-# Regenerate task files from tasks.json
-task-master generate
-
-# Fix dependency issues
-task-master fix-dependencies
-```
-
-DO NOT RE-INITIALIZE. That will not do anything beyond re-adding the same Taskmaster core files.
-
-## Important Notes
-
-### AI-Powered Operations
-
-These commands make AI calls and may take up to a minute:
-
-- `parse_prd` / `task-master parse-prd`
-- `analyze_project_complexity` / `task-master analyze-complexity`
-- `expand_task` / `task-master expand`
-- `expand_all` / `task-master expand --all`
-- `add_task` / `task-master add-task`
-- `update` / `task-master update`
-- `update_task` / `task-master update-task`
-- `update_subtask` / `task-master update-subtask`
-
-### File Management
-
-- Never manually edit `tasks.json` - use commands instead
-- Never manually edit `.taskmaster/config.json` - use `task-master models`
-- Task markdown files in `tasks/` are auto-generated
-- Run `task-master generate` after manual changes to tasks.json
-
-### Claude Code Session Management
-
-- Use `/clear` frequently to maintain focused context
-- Create custom slash commands for repeated Task Master workflows
-- Configure tool allowlist to streamline permissions
-- Use headless mode for automation: `claude -p "task-master next"`
-
-### Multi-Task Updates
-
-- Use `update --from=<id>` to update multiple future tasks
-- Use `update-task --id=<id>` for single task updates
-- Use `update-subtask --id=<id>` for implementation logging
-
-### Research Mode
-
-- Add `--research` flag for research-based AI enhancement
-- Requires a research model API key like Perplexity (`PERPLEXITY_API_KEY`) in environment
-- Provides more informed task creation and updates
-- Recommended for complex technical tasks
-
----
-
-_This guide ensures Claude Code has immediate access to Task Master's essential functionality for agentic development workflows._

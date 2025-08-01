@@ -8,8 +8,11 @@ import { Toaster } from './components/ui/sonner';
 import { CommandCenter } from './components/CommandCenter';
 import { Activities } from './components/Activities';
 import { CommunicationsPage } from './components/CommunicationsPage';
+import { VisitorManagementDashboard } from './components/VisitorManagementDashboard';
+import { Cases } from './components/Cases';
 import { ServiceProvider } from './services/ServiceProvider';
 import { initializeStores } from './stores';
+import { AIAssistantPanel } from './components/ai/AIAssistantPanel';
 import { 
   Shield, 
   Activity, 
@@ -20,15 +23,18 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  MapPin
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 
-type Module = 'command-center' | 'activities' | 'communications' | 'design-showcase' | 'incidents' | 'cases' | 'bol' | 'passdowns' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings';
+type Module = 'command-center' | 'activities' | 'communications' | 'visitors' | 'incidents' | 'cases' | 'bol' | 'passdowns' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings';
 
 const navigationItems = [
   { id: 'command-center', label: 'Command Center', icon: Shield, implemented: true },
   { id: 'activities', label: 'Activities', icon: Activity, implemented: true },
+  { id: 'cases', label: 'Cases', icon: Briefcase, implemented: true },
   { id: 'communications', label: 'Communications', icon: MessageSquare, implemented: true },
+  { id: 'visitors', label: 'Visitor Management', icon: Users, implemented: true },
   { id: 'guards', label: 'Guard Management', icon: Users, implemented: false },
   { id: 'map', label: 'Interactive Map', icon: MapPin, implemented: false },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, implemented: false },
@@ -56,8 +62,12 @@ export default function App() {
         return <CommandCenter />;
       case 'activities':
         return <Activities />;
+      case 'cases':
+        return <Cases />;
       case 'communications':
         return <CommunicationsPage onBackToCommandCenter={() => setActiveModule('command-center')} />;
+      case 'visitors':
+        return <VisitorManagementDashboard />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -264,6 +274,9 @@ export default function App() {
       
         {/* Toast Notifications */}
         <Toaster />
+
+        {/* AI Assistant - Floating Panel */}
+        <AIAssistantPanel />
       </div>
     </ServiceProvider>
   );

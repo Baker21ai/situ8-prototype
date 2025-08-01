@@ -287,10 +287,10 @@ const PrioritySegmentedList = React.memo(({ items, onSelect, onAction, selectedI
         
         <div className="p-3">
           {layoutMode === 'horizontal' ? (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full">
               <div className="flex gap-3" style={{ width: 'max-content' }}>
                 {items.map((item: any, index: number) => (
-                  <div key={item.id} className="w-72 flex-shrink-0">
+                  <div key={item.id} className="w-72 flex-shrink-0 max-w-full">
                     <EnterpriseActivityCard
                       activity={item}
                       variant={variant}
@@ -306,15 +306,15 @@ const PrioritySegmentedList = React.memo(({ items, onSelect, onAction, selectedI
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 max-w-full">
               {items.map((item: any, index: number) => (
-                <div key={item.id} className="w-full">
+                <div key={item.id} className="w-full max-w-full">
                   <EnterpriseActivityCard
                     activity={item}
                     variant={variant}
                     onSelect={onSelect}
                     onAction={onAction}
-                    isSelected={selectedItems.has('type' in item && item.type === 'cluster' ? item.id : item.id)}
+                    isSelected={selectedItems.has('type' in item && item.clusterType === 'cluster' ? item.id : item.id)}
                     index={index}
                     isVisible={true}
                     compactMode={true}

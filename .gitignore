@@ -66,4 +66,16 @@ dev-debug.log
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# Binary installers and packages
+*.pkg
+*.dmg
+*.exe
+*.msi
+*.deb
+*.rpm
+
+# Large documentation folders (optional - uncomment if needed)
+# ai-research/**/*
+# aws-setup/**/* 

@@ -5,13 +5,13 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-TAILGATE-001',
     timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-    type: 'TAILGATE',
+    type: 'alert',
     title: 'Tailgating Detected',
     location: 'Main Entrance Door A',
     zone: 'Main Entrance Door A',
     building: 'Building A',
     priority: 'critical',
-    status: 'active',
+    status: 'assigned',
     confidence: 95,
     description: '2 people detected entering together, only 1 badge scan recorded',
     detectedObjects: ['2 people detected', '1 badge scan'],
@@ -36,13 +36,13 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-BREACH-002',
     timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-    type: 'BREACH',
+    type: 'security-breach',
     title: 'Unauthorized Door Access',
     location: 'Server Room B - Floor 2',
     zone: 'Server Room B',
     building: 'Building B',
     priority: 'high',
-    status: 'investigating',
+    status: 'responding',
     confidence: 87,
     description: 'Door opened without valid badge access during non-business hours',
     detectedObjects: ['Door breach', 'No badge detected'],
@@ -62,7 +62,7 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-MEDICAL-003',
     timestamp: new Date(Date.now() - 23 * 60 * 1000), // 23 minutes ago
-    type: 'MEDICAL',
+    type: 'medical',
     title: 'Medical Emergency Response',
     location: 'Building C - Floor 1 - Lobby',
     zone: 'Building C Lobby',
@@ -90,7 +90,7 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-PATROL-004',
     timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-    type: 'PATROL',
+    type: 'patrol',
     title: 'Routine Security Round',
     location: 'Building A - Parking Garage',
     zone: 'Parking Level B1',
@@ -110,13 +110,13 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-ACCESS-005',
     timestamp: new Date(Date.now() - 52 * 60 * 1000), // 52 minutes ago
-    type: 'ACCESS_DENIED',
+    type: 'alert',
     title: 'Badge Reader Malfunction',
     location: 'Building A - Main Entrance',
     zone: 'Main Entrance',
     building: 'Building A',
     priority: 'medium',
-    status: 'investigating',
+    status: 'responding',
     confidence: 92,
     description: 'Multiple badge read failures reported by employees',
     detectedObjects: ['Badge reader error', '5 failed attempts'],
@@ -135,7 +135,7 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-FIRE-006',
     timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000), // 1.5 hours ago
-    type: 'FIRE',
+    type: 'alert',
     title: 'Smoke Detection Alert',
     location: 'Building B - Kitchen Area',
     zone: 'Kitchen',
@@ -158,7 +158,7 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-ARMED-007',
     timestamp: new Date(Date.now() - 2.2 * 60 * 60 * 1000), // 2.2 hours ago
-    type: 'ARMED_PERSON',
+    type: 'bol-event',
     title: 'Weapon Detection Alert',
     location: 'Building A - Security Checkpoint',
     zone: 'Security Checkpoint',
@@ -188,7 +188,7 @@ export const mockActivities: ActivityData[] = [
   {
     id: 'INC-BREACH-008',
     timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-    type: 'BREACH',
+    type: 'security-breach',
     title: 'Perimeter Fence Alert',
     location: 'North Perimeter - Section 7',
     zone: 'North Perimeter',
@@ -246,7 +246,7 @@ export const getActivitiesByType = (activities: ActivityData[], type?: string) =
 export const getCriticalActivities = (activities: ActivityData[]) => {
   return activities.filter(activity => 
     activity.priority === 'critical' && 
-    (activity.status === 'new' || activity.status === 'active')
+    (activity.status === 'detecting' || activity.status === 'assigned')
   );
 };
 

@@ -1,7 +1,8 @@
 /**
  * Activity Service
  * Implements business logic for Activities including auto-tagging, status progression,
- * and auto-incident creation rules per the Situ8 business logic specification
+ * and human-in-the-loop incident creation. ALL activities that create incidents require
+ * human validation and start in PENDING status for supervisor review.
  */
 
 import { BaseService } from './base.service';
@@ -33,18 +34,18 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
   private incidentStore: ReturnType<typeof useIncidentStore.getState>;
   private auditStore: ReturnType<typeof useAuditStore.getState>;
 
-  // Business logic configuration
+  // Business logic configuration - Human-in-the-loop validation for all incidents
   private readonly autoIncidentRules: AutoCreationRule[] = [
     {
       sourceEntityType: 'activity',
       targetEntityType: 'incident',
       condition: { type: 'always' },
       configuration: {
-        skipPending: true,
-        requiresValidation: false,
-        dismissible: false,
-        defaultPriority: 'critical',
-        defaultStatus: 'active'
+        skipPending: false,
+        requiresValidation: true,
+        dismissible: true,
+        defaultPriority: 'medium',
+        defaultStatus: 'pending'
       }
     }
   ];
@@ -287,94 +288,39 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
   }
 
   private getAutoIncidentRules(activityType: ActivityType): AutoCreationRule[] {
-    const ruleMap: Record<ActivityType, AutoCreationRule> = {
-      'medical': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: { type: 'always' },
-        configuration: {
-          skipPending: true,
-          requiresValidation: false,
-          dismissible: false,
-          defaultPriority: 'critical',
-          defaultStatus: 'active'
-        }
-      },
-      'security-breach': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: { type: 'always' },
-        configuration: {
-          skipPending: false,
-          requiresValidation: true,
-          dismissible: true,
-          defaultPriority: 'high',
-          defaultStatus: 'pending'
-        }
-      },
-      'bol-event': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: { type: 'always' },
-        configuration: {
-          skipPending: false,
-          requiresValidation: true,
-          dismissible: false,
-          defaultPriority: 'high',
-          defaultStatus: 'pending'
-        }
-      },
-      'alert': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: {
-          type: 'conditional',
-          rules: [
-            { field: 'confidence', operator: 'gt', value: 80 },
-            { field: 'timestamp', operator: 'regex', value: 'after-hours' }
-          ]
-        },
-        configuration: {
-          skipPending: false,
-          requiresValidation: true,
-          dismissible: true,
-          defaultPriority: 'medium',
-          defaultStatus: 'pending'
-        }
-      },
-      'property-damage': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: {
-          type: 'conditional',
-          rules: [
-            { field: 'confidence', operator: 'gt', value: 75 }
-          ]
-        },
-        configuration: {
-          skipPending: false,
-          requiresValidation: true,
-          dismissible: true,
-          defaultPriority: 'medium',
-          defaultStatus: 'pending'
-        }
-      },
-      'patrol': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: { type: 'never' },
-        configuration: {}
-      },
-      'evidence': {
-        sourceEntityType: 'activity',
-        targetEntityType: 'incident',
-        condition: { type: 'never' },
-        configuration: {}
+    // ALL activity types now create PENDING incidents requiring human validation
+    const universalRule: AutoCreationRule = {
+      sourceEntityType: 'activity',
+      targetEntityType: 'incident',
+      condition: { type: 'always' },
+      configuration: {
+        skipPending: false,
+        requiresValidation: true,
+        dismissible: true,
+        defaultPriority: this.getActivityPriority(activityType),
+        defaultStatus: 'pending'
       }
     };
 
-    const rule = ruleMap[activityType];
-    return rule ? [rule] : [];
+    // Only patrol and evidence activities don't create incidents
+    if (activityType === 'patrol' || activityType === 'evidence') {
+      return [];
+    }
+
+    return [universalRule];
+  }
+
+  private getActivityPriority(activityType: ActivityType): Priority {
+    const priorityMap: Record<ActivityType, Priority> = {
+      'medical': 'critical',
+      'security-breach': 'high',
+      'bol-event': 'high',
+      'alert': 'medium',
+      'property-damage': 'medium',
+      'patrol': 'low',
+      'evidence': 'low'
+    };
+    return priorityMap[activityType] || 'medium';
   }
 
   private async shouldCreateIncident(activity: EnterpriseActivity, rule: AutoCreationRule): Promise<boolean> {

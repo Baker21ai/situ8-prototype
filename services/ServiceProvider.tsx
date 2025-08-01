@@ -9,6 +9,7 @@ import { IncidentService } from './incident.service';
 import { CaseService } from './case.service';
 import { BOLService } from './bol.service';
 import { AuditService } from './audit.service';
+import { VisitorService } from './visitor.service';
 import { useActivityStore } from '../stores/activityStore';
 
 // Service context interface
@@ -18,6 +19,7 @@ interface ServiceContextType {
   caseService: CaseService;
   bolService: BOLService;
   auditService: AuditService;
+  visitorService: VisitorService;
   isInitialized: boolean;
 }
 
@@ -40,6 +42,139 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
     const caseService = new CaseService();
     const bolService = new BOLService();
     const auditService = new AuditService();
+    
+    // Default visitor management config
+    const visitorConfig = {
+      enabled: true,
+      integration_type: 'lenel_onguard' as const,
+      providers: [
+        {
+          id: 'lenel',
+          name: 'Lenel OnGuard',
+          type: 'lenel_onguard',
+          enabled: true,
+          api_config: {
+            base_url: 'https://lenel-api.example.com',
+            api_key: 'mock-key',
+            username: 'api_user',
+            password: 'mock_password',
+            timeout_ms: 30000,
+            retry_count: 3,
+            webhook_url: 'https://situ8.local/webhooks/lenel',
+            custom_headers: {
+              'X-API-Version': 'v2.0'
+            }
+          },
+          features: ['card_activation', 'access_control', 'real_time_sync'],
+          priority: 1
+        }
+      ],
+      workflows: [
+        {
+          id: 'standard_check_in',
+          name: 'Standard Check-in',
+          enabled: true,
+          triggers: [
+            {
+              type: 'visitor_check_in' as const,
+              source: 'manual',
+              event: 'visitor_check_in'
+            }
+          ],
+          actions: [
+            {
+              type: 'activate_card' as const,
+              target: 'lenel_integration',
+              parameters: {
+                access_level: 'visitor',
+                duration_hours: 8
+              }
+            }
+          ],
+          conditions: [
+            {
+              field: 'status',
+              operator: 'equals',
+              value: 'pre_registered'
+            }
+          ]
+        }
+      ],
+      access_control: {
+        lenel_config: {
+          base_url: 'https://lenel-api.example.com',
+          api_key: 'mock-key',
+          timeout: 30000
+        },
+        access_levels: [
+          { id: 'lobby_access', name: 'Lobby Access', description: 'Access to lobby areas only' },
+          { id: 'building_access', name: 'Building Access', description: 'Access to building interior' },
+          { id: 'secure_access', name: 'Secure Access', description: 'Access to secure areas' }
+        ]
+      },
+      notifications: {
+        channels: [
+          { id: 'email', type: 'email' as const, enabled: true, config: {} },
+          { id: 'sms', type: 'sms' as const, enabled: false, config: {} }
+        ],
+        templates: [
+          { id: 'check_in', name: 'Check-in Confirmation', type: 'check_in' as const, body: 'Welcome!', variables: ['name'] }
+        ],
+        rules: [
+          { id: 'host_notification', event_type: 'visitor_check_in', recipients: ['host'] as const, channels: ['email'], delay_minutes: 0 }
+        ]
+      },
+      compliance: {
+        data_retention_days: 365,
+        privacy_settings: {
+          mask_visitor_data: false,
+          retention_period_days: 365,
+          anonymize_after_days: 30,
+          allowed_data_sharing: ['host_notification', 'security_alerts']
+        },
+        audit_requirements: [
+          { event_type: 'visitor_check_in' as const, required_fields: ['visitor_id', 'timestamp', 'location'], retention_period: '7_years' as const },
+          { event_type: 'visitor_check_out' as const, required_fields: ['visitor_id', 'timestamp', 'location'], retention_period: '7_years' as const }
+        ],
+        document_requirements: [
+          { type: 'identification' as const, required: true, max_age_days: 365, verification_required: true },
+          { type: 'nda' as const, required: false, max_age_days: 365, verification_required: false }
+        ]
+      },
+      ui_settings: {
+        check_in_flow: {
+          steps: [
+            { id: 'registration', name: 'Registration', required: true, type: 'form' as const },
+            { id: 'screening', name: 'Security Screening', required: true, type: 'form' as const },
+            { id: 'badge_assignment', name: 'Badge Assignment', required: true, type: 'form' as const }
+          ],
+          require_photo: true,
+          require_signature: true,
+          require_documents: ['identification'],
+          allow_pre_check_in: true
+        },
+        kiosk_config: {
+          enabled: true,
+          locations: ['main_lobby', 'security_desk'],
+          idle_timeout_seconds: 300,
+          require_assistance: false,
+          print_badges: true
+        },
+        mobile_config: {
+          enabled: true,
+          app_required: false,
+          qr_code_check_in: true,
+          geofencing: false
+        },
+        branding: {
+          primary_color: '#0066CC',
+          welcome_message: 'Welcome to our facility',
+          company_name: 'Situ8 Security'
+        }
+      }
+    };
+    
+    const visitorService = new VisitorService(visitorConfig);
 
     // Initialize stores with services
     initializeServices();
@@ -51,6 +186,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       caseService,
       bolService,
       auditService,
+      visitorService,
       isInitialized: true
     };
 
@@ -62,7 +198,8 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       incidentService.healthCheck(),
       caseService.healthCheck(),
       bolService.healthCheck(),
-      auditService.healthCheck()
+      auditService.healthCheck(),
+      visitorService.healthCheck()
     ]).then(results => {
       const unhealthyServices = results
         .map((result, index) => ({ 
@@ -133,6 +270,11 @@ export const useAuditService = () => {
   return auditService;
 };
 
+export const useVisitorService = () => {
+  const { visitorService } = useServices();
+  return visitorService;
+};
+
 // Audit context helper for creating consistent audit contexts
 export const createAuditContext = (
   userId: string = 'current-user',
@@ -157,22 +299,24 @@ export const ServiceStatus: React.FC = () => {
   const [healthChecks, setHealthChecks] = useState<Record<string, any>>({});
 
   const runHealthChecks = async () => {
-    const services = useServices();
-    const checks = await Promise.allSettled([
-      services.activityService.healthCheck(),
-      services.incidentService.healthCheck(),
-      services.caseService.healthCheck(),
-      services.bolService.healthCheck(),
-      services.auditService.healthCheck()
-    ]);
+      const services = useServices();
+      const checks = await Promise.allSettled([
+        services.activityService.healthCheck(),
+        services.incidentService.healthCheck(),
+        services.caseService.healthCheck(),
+        services.bolService.healthCheck(),
+        services.auditService.healthCheck(),
+        services.visitorService.healthCheck()
+      ]);
 
-    const results = {
-      activity: checks[0].status === 'fulfilled' ? checks[0].value : { status: 'error' },
-      incident: checks[1].status === 'fulfilled' ? checks[1].value : { status: 'error' },
-      case: checks[2].status === 'fulfilled' ? checks[2].value : { status: 'error' },
-      bol: checks[3].status === 'fulfilled' ? checks[3].value : { status: 'error' },
-      audit: checks[4].status === 'fulfilled' ? checks[4].value : { status: 'error' }
-    };
+      const results = {
+        activity: checks[0].status === 'fulfilled' ? checks[0].value : { status: 'error' },
+        incident: checks[1].status === 'fulfilled' ? checks[1].value : { status: 'error' },
+        case: checks[2].status === 'fulfilled' ? checks[2].value : { status: 'error' },
+        bol: checks[3].status === 'fulfilled' ? checks[3].value : { status: 'error' },
+        audit: checks[4].status === 'fulfilled' ? checks[4].value : { status: 'error' },
+        visitor: checks[5].status === 'fulfilled' ? checks[5].value : { status: 'error' }
+      };
 
     setHealthChecks(results);
   };

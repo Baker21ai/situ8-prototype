@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Card Visual Guide - Container Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card-container {
+            transition: all 0.2s ease;
+        }
+        .card-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .intensity-critical { border-left: 4px solid #DC2626; }
+        .intensity-high { border-left: 4px solid #EA580C; }
+        .intensity-medium { border-left: 4px solid #CA8A04; }
+        .intensity-low { border-left: 4px solid #2563EB; }
+        .intensity-info { border-left: 4px solid #6B7280; }
+        .source-camera { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .source-ai { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .source-human { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .source-sensor { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .gif-placeholder {
+            background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Activity Card Visual Guide</h1>
+            <p class="text-lg text-gray-600">Complete container-based design system for all activity card types</p>
+        </header>
+
+        <!-- Universal Container Structure -->
+        <section class="mb-12 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Universal Container Structure</h2>
+            <div class="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+                <div class="text-gray-700">
+                    ┌─────────────────────────────────────────┐<br>
+                    │ Card Container (border + shadow)        │<br>
+                    │ ┌─────────────────────────────────────┐ │<br>
+                    │ │ Header Zone (flex row)              │ │<br>
+                    │ │ • Integration Source [left]        │ │<br>
+                    │ │ • Time [right]                     │ │<br>
+                    │ ├─────────────────────────────────────┤ │<br>
+                    │ │ Content Zone (main flow)            │ │<br>
+                    │ │ • Trigger/Event Description         │ │<br>
+                    │ │ • Location Information             │ │<br>
+                    │ │ • Intensity Level Indicator         │ │<br>
+                    │ ├─────────────────────────────────────┤ │<br>
+                    │ │ Media Zone (conditional)          │ │<br>
+                    │ │ • GIF/Video/Images                 │ │<br>
+                    │ ├─────────────────────────────────────┤ │<br>
+                    │ │ Actions Zone (flex row)            │ │<br>
+                    │ │ • Primary Actions [left]           │ │<br>
+                    │ │ • Secondary [right]                │ │<br>
+                    │ └─────────────────────────────────────┘ │<br>
+                    └─────────────────────────────────────────┘
+                </div>
+            </div>
+        </section>
+
+        <!-- Card Type Gallery -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            
+            <!-- Stream Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Stream Card</h3>
+                <div class="intensity-high bg-white border rounded-lg p-4">
+                    <!-- Header Zone -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="source-ai text-white px-2 py-1 rounded text-xs font-bold">AI</div>
+                            <span class="text-sm font-medium text-gray-900">Vision Detection</span>
+                        </div>
+                        <div class="text-sm text-gray-500">2:34 PM</div>
+                    </div>
+                    
+                    <!-- Content Zone -->
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-900 mb-2">Unauthorized person detected in restricted area</p>
+                        <div class="flex items-center space-x-4 text-xs text-gray-600">
+                            <span>📍 Loading Dock A</span>
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded">High Risk</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Media Zone -->
+                    <div class="gif-placeholder h-32 rounded mb-3 flex items-center justify-center">
+                        <span class="text-gray-500 text-sm">🎥 Motion GIF</span>
+                    </div>
+                    
+                    <!-- Actions Zone -->
+                    <div class="flex space-x-2">
+                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">View</button>
+                        <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">Assign</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Timeline Card</h3>
+                <div class="intensity-medium bg-white border rounded-lg p-4">
+                    <!-- Header Zone -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="source-camera text-white px-2 py-1 rounded text-xs font-bold">CAM</div>
+                            <span class="text-sm font-medium text-gray-900">Camera Alert</span>
+                        </div>
+                        <div class="text-sm text-gray-500">11:15 AM</div>
+                    </div>
+                    
+                    <!-- Content Zone -->
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-900 mb-2">Vehicle stopped in no-parking zone</p>
+                        <div class="text-xs text-gray-600 mb-2">📍 Main Entrance, Zone 3</div>
+                        <div class="text-xs text-gray-600">Duration: 5 minutes</div>
+                    </div>
+                    
+                    <!-- Media Zone -->
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <div class="bg-gray-200 h-16 rounded"></div>
+                        <div class="bg-gray-200 h-16 rounded"></div>
+                        <div class="bg-gray-200 h-16 rounded"></div>
+                    </div>
+                    
+                    <!-- Actions Zone -->
+                    <div class="flex space-x-2">
+                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Details</button>
+                        <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm">Archive</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">List Card</h3>
+                <div class="intensity-low bg-white border rounded-lg p-3">
+                    <!-- Header Zone -->
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" class="rounded">
+                            <div class="source-sensor text-white px-2 py-1 rounded text-xs">SEN</div>
+                        </div>
+                        <div class="text-xs text-gray-500">9:45 AM</div>
+                    </div>
+                    
+                    <!-- Content Zone -->
+                    <div class="mb-2">
+                        <p class="text-sm font-medium text-gray-900">Door held open too long</p>
+                        <div class="text-xs text-gray-600">📍 Office Building B</div>
+                    </div>
+                    
+                    <!-- Actions Zone (compact) -->
+                    <div class="flex justify-between items-center">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Low</span>
+                        <button class="text-blue-600 text-xs hover:underline">View</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidence Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Evidence Card</h3>
+                <div class="intensity-critical bg-white border-2 border-red-200 rounded-lg p-4">
+                    <!-- Header Zone -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="source-human text-white px-2 py-1 rounded text-xs font-bold">SEC</div>
+                            <span class="text-sm font-medium text-gray-900">Security Report</span>
+                        </div>
+                        <div class="text-sm text-gray-500">8:20 AM</div>
+                    </div>
+                    
+                    <!-- Content Zone -->
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-900 mb-2">Theft incident captured on camera</p>
+                        <div class="text-xs text-gray-600 mb-2">📍 Warehouse Loading Bay</div>
+                        <div class="text-xs text-gray-600">Case #2024-001</div>
+                    </div>
+                    
+                    <!-- Media Zone -->
+                    <div class="bg-gray-900 rounded mb-3">
+                        <div class="aspect-video bg-gray-800 rounded flex items-center justify-center">
+                            <span class="text-white text-sm">📹 Security Footage</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions Zone -->
+                    <div class="flex space-x-2">
+                        <button class="bg-red-600 text-white px-3 py-1 rounded text-sm">Urgent</button>
+                        <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Evidence</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Mobile Card</h3>
+                <div class="intensity-high bg-white border rounded-lg">
+                    <!-- Full-width touch target -->
+                    <div class="p-4">
+                        <!-- Header Zone -->
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="source-ai text-white px-2 py-1 rounded text-xs font-bold">AI</div>
+                            <div class="text-sm text-gray-500">1:15 PM</div>
+                        </div>
+                        
+                        <!-- Content Zone -->
+                        <div class="mb-3">
+                            <p class="text-sm font-medium text-gray-900 mb-1">Suspicious activity detected</p>
+                            <p class="text-xs text-gray-600">📍 Parking Lot C</p>
+                        </div>
+                        
+                        <!-- Swipe actions hint -->
+                        <div class="text-xs text-gray-500 text-center">← Swipe for actions →</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 card-container">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Dashboard Card</h3>
+                <div class="bg-white border rounded-lg p-4">
+                    <!-- Header Zone -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="text-sm font-medium text-gray-900">Today's Alerts</div>
+                        <div class="source-ai text-white px-2 py-1 rounded text-xs">AI</div>
+                    </div>
+                    
+                    <!-- Content Zone -->
+                    <div class="text-center mb-3">
+                        <div class="text-3xl font-bold text-gray-900">47</div>
+                        <div class="text-sm text-gray-600">Active incidents</div>
+                    </div>
+                    
+                    <!-- Mini trend -->
+                    <div class="h-8 bg-gray-100 rounded mb-3">
+                        <div class="bg-blue-600 h-full rounded" style="width: 65%"></div>
+                    </div>
+                    
+                    <!-- Actions Zone -->
+                    <button class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm">View All</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Responsive Behavior -->
+        <section class="mt-12 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Responsive Container Behavior</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-50 p-4 rounded">
+                    <h3 class="font-bold text-gray-900 mb-2">Mobile (< 768px)</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Single column layout</li>
+                        <li>• Full-width containers</li>
+                        <li>• Touch-friendly spacing</li>
+                        <li>• Swipe gestures enabled</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded">
+                    <h3 class="font-bold text-gray-900 mb-2">Tablet (768px - 1024px)</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• 2-column grid</li>
+                        <li>• Compact containers</li>
+                        <li>• Hover states enabled</li>
+                        <li>• Medium spacing</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded">
+                    <h3 class="font-bold text-gray-900 mb-2">Desktop (> 1024px)</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• 3+ column grid</li>
+                        <li>• Full feature set</li>
+                        <li>• Advanced interactions</li>
+                        <li>• Rich media support</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Color & Intensity Legend -->
+        <section class="mt-12 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Intensity & Source Legend</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-4">Intensity Levels</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 bg-red-600 rounded"></div>
+                            <span class="text-sm">Critical - Immediate action required</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 bg-orange-600 rounded"></div>
+                            <span class="text-sm">High - Priority attention needed</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 bg-yellow-600 rounded"></div>
+                            <span class="text-sm">Medium - Monitor closely</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 bg-blue-600 rounded"></div>
+                            <span class="text-sm">Low - Standard processing</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-4">Integration Sources</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="source-camera text-white px-2 py-1 rounded text-xs">CAM</div>
+                            <span class="text-sm">Camera System</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="source-ai text-white px-2 py-1 rounded text-xs">AI</div>
+                            <span class="text-sm">AI Detection</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="source-sensor text-white px-2 py-1 rounded text-xs">SEN</div>
+                            <span class="text-sm">IoT Sensors</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="source-human text-white px-2 py-1 rounded text-xs">SEC</div>
+                            <span class="text-sm">Security Report</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

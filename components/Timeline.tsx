@@ -6,6 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator as _Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useIncidentStore } from '../stores/incidentStore';
+import { useActivityStore } from '../stores/activityStore';
+import { useServices } from '../services/ServiceProvider';
+import { formatDistanceToNow } from '../lib/utils/time';
+import { Incident } from '../lib/types/incident';
 import { 
   Radio,
   Shield,
@@ -30,7 +35,11 @@ import {
   CheckCircle,
   XCircle as _XCircle,
   AlertCircle,
-  Info
+  Info,
+  Clock,
+  AlertOctagon,
+  FileText,
+  ShieldAlert
 } from 'lucide-react';
 
 // Enhanced data interfaces
@@ -186,28 +195,42 @@ const generateCommunicationData = (): CommunicationEntry[] => [
 ];
 
 export function Timeline({ className = '', onOpenModal, onOpenFullPage, activities = [] }: TimelineProps) {
-  // Convert enterprise activities to timeline format
-  const [incidentData, setIncidentData] = useState<TimelineEntry[]>(() => {
-    if (activities.length > 0) {
-      return activities.slice(0, 50).map((activity: any) => ({
-        id: activity.id,
-        timestamp: activity.timestamp,
-        type: 'incident',
-        source: 'system',
-        priority: activity.priority,
-        title: activity.title,
-        description: activity.description || '',
-        location: activity.location,
-        confidence: activity.confidence || 85,
-        metadata: activity.metadata || {}
-      }));
-    }
-    return generateIncidentData();
-  });
+  // Get real incident data from store
+  const { incidents, loading: incidentsLoading, error: incidentsError } = useIncidentStore();
+  const { incidentService } = useServices();
+  
+  // Convert incidents to timeline format
+  const [incidentData, setIncidentData] = useState<TimelineEntry[]>([]);
   const [communicationData, setCommunicationData] = useState<CommunicationEntry[]>(generateCommunicationData());
   const [activeTab, setActiveTab] = useState<'incidents' | 'communications'>('incidents');
   const [_expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [timeFilter, setTimeFilter] = useState<'15m' | '1h' | '4h' | '24h'>('1h');
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
+  
+  // Convert real incidents to timeline entries
+  useEffect(() => {
+    const timelineEntries = incidents.map((incident: Incident): TimelineEntry => ({
+      id: incident.id,
+      timestamp: new Date(incident.created_at),
+      type: 'incident',
+      source: incident.auto_created ? 'ambient_ai' : 'system',
+      priority: incident.priority,
+      title: incident.title,
+      description: incident.description || '',
+      location: incident.site_name || 'Unknown Location',
+      confidence: incident.confidence,
+      metadata: {
+        status: incident.status,
+        assignedTo: incident.assigned_to,
+        autoCreated: incident.auto_created,
+        requiresValidation: incident.requires_validation,
+        dismissible: incident.dismissible,
+        triggerActivityId: incident.trigger_activity_id,
+        linkedActivities: incident.related_activities?.length || 0
+      }
+    }));
+    setIncidentData(timelineEntries);
+  }, [incidents]);
 
   // Real-time data simulation
   useEffect(() => {
@@ -239,7 +262,7 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
     return () => clearInterval(interval);
   }, []);
 
-  // Filter data based on time range
+  // Filter data based on time range and pending status
   const filteredIncidents = useMemo(() => {
     const timeRanges = {
       '15m': 15 * 60 * 1000,
@@ -248,8 +271,14 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
       '24h': 24 * 60 * 60 * 1000
     };
     const cutoff = new Date(Date.now() - timeRanges[timeFilter]);
-    return incidentData.filter(item => item.timestamp >= cutoff);
-  }, [incidentData, timeFilter]);
+    let filtered = incidentData.filter(item => item.timestamp >= cutoff);
+    
+    if (showPendingOnly) {
+      filtered = filtered.filter(item => item.metadata?.status === 'pending');
+    }
+    
+    return filtered;
+  }, [incidentData, timeFilter, showPendingOnly]);
 
   const filteredCommunications = useMemo(() => {
     const timeRanges = {
@@ -313,110 +342,140 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
     }
   };
 
-  const renderIncidentCard = (incident: TimelineEntry) => (
-    <div key={incident.id} className={`relative border-l-4 ${getPriorityColor(incident.priority)} rounded-r-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 bg-white`}>
-      {/* Priority stripe */}
-      <div className={`absolute top-0 right-0 w-1 h-full ${incident.priority === 'critical' ? 'bg-red-500' : incident.priority === 'high' ? 'bg-orange-500' : incident.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
-      
-      {/* Header with source badge */}
-      <div className="p-4 pb-3">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-lg ${incident.priority === 'critical' ? 'bg-red-100' : incident.priority === 'high' ? 'bg-orange-100' : incident.priority === 'medium' ? 'bg-yellow-100' : 'bg-green-100'}`}>
-              {getSourceIcon(incident.source, incident.type)}
+  const renderIncidentCard = (incident: TimelineEntry) => {
+    const isPending = incident.metadata?.status === 'pending';
+    const isAutoCreated = incident.metadata?.autoCreated;
+    const requiresValidation = incident.metadata?.requiresValidation;
+    const isDismissible = incident.metadata?.dismissible;
+    
+    return (
+      <div key={incident.id} className={`relative border-l-4 ${getPriorityColor(incident.priority)} rounded-r-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 bg-white`}>
+        {/* Pending validation banner */}
+        {isPending && requiresValidation && (
+          <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
+              <span className="text-sm font-medium text-yellow-800">Pending Validation</span>
+              <span className="text-xs text-yellow-600">(5 min timer)</span>
             </div>
-            <div className="flex-1">
-              <div className="font-semibold text-base mb-1">{incident.title}</div>
-              <div className="flex items-center gap-2 mb-1">
-                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                  {incident.source.replace('_', ' ').toUpperCase()}
-                </Badge>
-                {incident.metadata?.site && (
-                  <Badge className="text-xs px-2 py-0.5 bg-purple-50 border-purple-200 text-purple-800">
-                    {incident.metadata.site}
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" className="h-7 text-xs">
+                Validate
+              </Button>
+              {isDismissible && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-red-600 hover:text-red-700">
+                  Dismiss
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Priority stripe */}
+        <div className={`absolute top-0 right-0 w-1 h-full ${incident.priority === 'critical' ? 'bg-red-500' : incident.priority === 'high' ? 'bg-orange-500' : incident.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
+        
+        {/* Header with source badge */}
+        <div className="p-4 pb-3">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${incident.priority === 'critical' ? 'bg-red-100' : incident.priority === 'high' ? 'bg-orange-100' : incident.priority === 'medium' ? 'bg-yellow-100' : 'bg-green-100'}`}>
+                {getSourceIcon(incident.source, incident.type)}
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-base mb-1">{incident.title}</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="outline" className="text-xs px-2 py-0.5">
+                    {incident.source.replace('_', ' ').toUpperCase()}
                   </Badge>
-                )}
-                <span className="text-xs text-gray-500 uppercase tracking-wide">
-                  {incident.type}
+                  {isAutoCreated && (
+                    <Badge className="text-xs px-2 py-0.5 bg-blue-50 border-blue-200 text-blue-700">
+                      Auto-Created
+                    </Badge>
+                  )}
+                  <Badge className={`text-xs px-2 py-0.5 ${
+                    incident.metadata?.status === 'active' ? 'bg-green-50 border-green-200 text-green-700' :
+                    incident.metadata?.status === 'pending' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                    incident.metadata?.status === 'investigating' ? 'bg-purple-50 border-purple-200 text-purple-700' :
+                    'bg-gray-50 border-gray-200 text-gray-700'
+                  }`}>
+                    {incident.metadata?.status || 'Unknown'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1 mb-1">
+                {getPriorityIcon(incident.priority)}
+                <span className="text-xs font-medium text-gray-600 uppercase">
+                  {incident.priority}
                 </span>
               </div>
+              <span className="text-xs text-gray-500">{formatTime(incident.timestamp)}</span>
+              <span className="text-xs text-gray-400">{formatTimeAgo(incident.timestamp)}</span>
             </div>
           </div>
-          
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1 mb-1">
-              {getPriorityIcon(incident.priority)}
-              <span className="text-xs font-medium text-gray-600 uppercase">
-                {incident.priority}
-              </span>
+
+          <p className="text-sm text-gray-700 mb-3 leading-relaxed">{incident.description}</p>
+
+          {/* Enhanced metadata section */}
+          <div className="space-y-2">
+            {/* Location and Assignment */}
+            <div className="flex items-center flex-wrap gap-4 text-xs text-gray-600">
+              {incident.location && (
+                <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded">
+                  <MapPin className="h-3 w-3" />
+                  <span className="font-medium">{incident.location}</span>
+                </div>
+              )}
+              {incident.metadata?.assignedTo && (
+                <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded">
+                  <User className="h-3 w-3" />
+                  <span className="font-medium">{incident.metadata.assignedTo}</span>
+                </div>
+              )}
+              {incident.confidence && (
+                <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
+                  <Zap className="h-3 w-3" />
+                  <span className="font-medium">{incident.confidence}% Confidence</span>
+                </div>
+              )}
             </div>
-            <span className="text-xs text-gray-500">{formatTime(incident.timestamp)}</span>
-            <span className="text-xs text-gray-400">{formatTimeAgo(incident.timestamp)}</span>
+
+            {/* Activity linkage */}
+            {incident.metadata?.linkedActivities > 0 && (
+              <div className="flex items-center gap-2">
+                <Activity className="h-3 w-3 text-gray-500" />
+                <span className="text-xs text-gray-600">
+                  {incident.metadata.linkedActivities} linked {incident.metadata.linkedActivities === 1 ? 'activity' : 'activities'}
+                </span>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 pt-2">
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <Eye className="h-3 w-3 mr-1" />
+                View Details
+              </Button>
+              {incident.metadata?.status === 'pending' && (
+                <Button variant="default" size="sm" className="h-7 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Assign Guard
+                </Button>
+              )}
+              {incident.metadata?.status === 'active' && (
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <AlertOctagon className="h-3 w-3 mr-1" />
+                  Escalate
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-
-        <p className="text-sm text-gray-700 mb-3 leading-relaxed">{incident.description}</p>
-
-        {/* Enhanced metadata section */}
-        <div className="space-y-2">
-          {/* Location and Actor */}
-          <div className="flex items-center flex-wrap gap-4 text-xs text-gray-600">
-            {incident.location && (
-              <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded">
-                <MapPin className="h-3 w-3" />
-                <span className="font-medium">{incident.location}</span>
-              </div>
-            )}
-            {incident.actor && (
-              <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded">
-                <User className="h-3 w-3" />
-                <span className="font-medium">{incident.actor}</span>
-              </div>
-            )}
-            {incident.confidence && (
-              <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
-                <Zap className="h-3 w-3" />
-                <span className="font-medium">{incident.confidence}% Confidence</span>
-              </div>
-            )}
-          </div>
-
-          {/* Evidence */}
-          {incident.evidence && incident.evidence.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-medium">Evidence:</span>
-              <div className="flex gap-1">
-                {incident.evidence.map((evidence, idx) => (
-                  <Button key={idx} variant="ghost" size="sm" className="h-7 px-2 text-xs bg-blue-50 hover:bg-blue-100">
-                    {evidence.type === 'video' && <Play className="h-3 w-3 mr-1" />}
-                    {evidence.type === 'audio' && <Volume2 className="h-3 w-3 mr-1" />}
-                    {evidence.type === 'image' && <Camera className="h-3 w-3 mr-1" />}
-                    {evidence.type}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Technical details */}
-          {incident.metadata && Object.keys(incident.metadata).length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-3 text-xs border">
-              <div className="grid grid-cols-1 gap-1.5">
-                {Object.entries(incident.metadata).slice(0, 3).map(([key, value]) => (
-                  <div key={key} className="flex justify-between items-center">
-                    <span className="text-gray-600 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                    </span>
-                    <span className="font-medium text-gray-900">{String(value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCommunicationCard = (comm: CommunicationEntry) => (
     <div key={comm.id} className={`relative border-l-4 ${getPriorityColor(comm.priority)} rounded-r-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 bg-white`}>
@@ -562,6 +621,20 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
               {period}
             </Button>
           ))}
+          {activeTab === 'incidents' && (
+            <>
+              <_Separator orientation="vertical" className="h-6 mx-2" />
+              <Button
+                variant={showPendingOnly ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowPendingOnly(!showPendingOnly)}
+                className="h-7 px-3 text-xs"
+              >
+                <Clock className="h-3 w-3 mr-1" />
+                Pending Only
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -598,13 +671,28 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
           
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-0">
-              {filteredIncidents.length > 0 ? (
+              {incidentsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                  <div className="text-sm text-muted-foreground">Loading incidents...</div>
+                </div>
+              ) : incidentsError ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500 opacity-50" />
+                  <div className="font-medium text-red-600">Failed to load incidents</div>
+                  <div className="text-sm text-red-500">{incidentsError}</div>
+                </div>
+              ) : filteredIncidents.length > 0 ? (
                 filteredIncidents.map(renderIncidentCard)
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <div className="font-medium">No incidents in selected timeframe</div>
-                  <div className="text-sm">All systems operating normally</div>
+                  <div className="font-medium">
+                    {showPendingOnly ? 'No pending incidents' : 'No incidents in selected timeframe'}
+                  </div>
+                  <div className="text-sm">
+                    {showPendingOnly ? 'All incidents have been validated' : 'All systems operating normally'}
+                  </div>
                 </div>
               )}
             </div>

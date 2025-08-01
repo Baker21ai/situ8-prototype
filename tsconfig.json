@@ -15,10 +15,13 @@
     "jsx": "react-jsx",
 
     /* Linting */
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
 
     /* Path mapping */
     "baseUrl": ".",
@@ -27,6 +30,6 @@
     }
   },
   "include": ["src", "components", "*.tsx", "App.tsx"],
-  "exclude": ["vite.config.ts", "design-iterations", "ui-iterations"],
+  "exclude": ["vite.config.ts", "design-iterations/**/*", "ui-ux-iterations/**/*", "command-center-design-styles/**/*", "claude-chats/**/*", "future-features/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

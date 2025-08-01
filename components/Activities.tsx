@@ -4,6 +4,7 @@ import { ResponsiveActivityDetail } from './ResponsiveActivityDetail';
 import { CommunicationsPanel } from './CommunicationsPanel';
 import { RadioModal } from './RadioModal';
 import { CommunicationsPage } from './CommunicationsPage';
+import { CreateActivityModal } from './CreateActivityModal';
 import { useActivityStore } from '../stores';
 import { useServices } from '../services/ServiceProvider';
 import { Card, CardContent } from './ui/card';
@@ -20,8 +21,11 @@ import {
   Shield,
   Zap,
   Radio,
-  Headphones
+  Headphones,
+  Plus
 } from 'lucide-react';
+import { ActivityType } from '../lib/utils/security';
+import { Priority, Status } from '../lib/utils/status';
 
 export function Activities() {
   // Use Zustand store for activities and stats with service integration
@@ -29,7 +33,8 @@ export function Activities() {
     getActivityStats, 
     filteredActivities, 
     loading: activitiesLoading,
-    error: activitiesError 
+    error: activitiesError,
+    createActivity
   } = useActivityStore();
   
   // Use services for business logic operations
@@ -53,24 +58,26 @@ export function Activities() {
     securityPersonnel: 23
   };
   
-  const [selectedActivityDetail, setSelectedActivityDetail] = useState<any>(null);
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [showRadioModal, setShowRadioModal] = useState(false);
   const [showCommunicationsPage, setShowCommunicationsPage] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Handle activity selection - open modal
   const handleActivitySelect = (activity: any) => {
-    console.log('Selected activity:', activity);
-    setSelectedActivityDetail(activity);
+    setSelectedActivity(activity);
   };
 
-  // Handle activity actions
-  const handleActivityAction = (action: string, activity: any) => {
-    console.log(`Activity action: ${action}`, activity);
+  // Handle closing activity detail modal
+  const handleCloseActivityDetail = () => {
+    setSelectedActivity(null);
   };
 
-  // Handle bulk actions
-  const handleBulkAction = (action: string, activities: any[]) => {
-    console.log(`Bulk action: ${action} on ${activities.length} activities`);
+  // Handle creating new activity
+  const handleActivityCreated = () => {
+    // Refresh activities or show success message
+    console.log('Activity created successfully');
   };
 
   return (
@@ -112,6 +119,21 @@ export function Activities() {
               </Badge>
               
               <div className="flex items-center gap-2">
+                {/* Create Activity Button */}
+                <CreateActivityModal
+                  onActivityCreated={handleActivityCreated}
+                  trigger={
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex items-center gap-1 h-8 px-3 text-sm bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Create Activity
+                    </Button>
+                  }
+                />
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -173,27 +195,27 @@ export function Activities() {
       </div>
 
       {/* Main Content Area - Optimized for Content Density */}
-      <div className="flex-1 min-h-0 flex gap-3 p-3">
+      <div className="flex-1 min-h-0 flex gap-3 p-3 overflow-hidden">
         {/* Left Panel - Enterprise Activity Manager (80% on desktop, responsive) */}
-        <div className="flex-[4] lg:flex-[5]">
-          <Card className="h-full shadow-lg border-0 bg-white">
-            <CardContent className="p-0 h-full">
+        <div className="flex-[4] lg:flex-[5] min-w-0">
+          <Card className="h-full shadow-lg border-0 bg-white max-w-full">
+            <CardContent className="p-0 h-full max-w-full">
               <EnterpriseActivityManager
                 activities={filteredActivities}
                 onActivitySelect={handleActivitySelect}
-                onActivityAction={handleActivityAction}
-                onBulkAction={handleBulkAction}
+                onActivityAction={(action: string, activity: any) => console.log(`Activity action: ${action}`, activity)}
+            onBulkAction={(action: string, activities: any[]) => console.log(`Bulk action: ${action} on ${activities.length} activities`)}
                 realTimeMode={true}
-                className="h-full"
+                className="h-full max-w-full"
               />
             </CardContent>
           </Card>
         </div>
 
         {/* Right Panel - Communications Hub (20% on desktop, responsive) */}
-        <div className="flex-[1] lg:flex-[1] xl:flex-[1] min-w-[300px]">
-          <Card className="h-full shadow-lg border-0 bg-white">
-            <CardContent className="p-0 h-full">
+        <div className="flex-[1] lg:flex-[1] xl:flex-[1] min-w-[300px] max-w-full">
+          <Card className="h-full shadow-lg border-0 bg-white max-w-full">
+            <CardContent className="p-0 h-full max-w-full">
               <CommunicationsPanel 
                 onOpenModal={() => setShowRadioModal(true)}
                 onOpenFullPage={() => setShowCommunicationsPage(true)}
@@ -208,29 +230,29 @@ export function Activities() {
       </div>
 
       {/* Responsive Modern Activity Detail Modal */}
-      {selectedActivityDetail && (
+      {selectedActivity && (
         <ResponsiveActivityDetail
           activity={{
-            id: parseInt(selectedActivityDetail.id.toString()),
-            type: selectedActivityDetail.type,
-            title: selectedActivityDetail.title,
-            description: selectedActivityDetail.description || '',
-            location: selectedActivityDetail.location,
-            time: selectedActivityDetail.timestamp,
-            priority: selectedActivityDetail.priority,
-            status: selectedActivityDetail.status,
-            assignedTo: selectedActivityDetail.assignedTo || '',
+            id: parseInt(selectedActivity.id.toString()),
+            type: selectedActivity.type,
+            title: selectedActivity.title,
+            description: selectedActivity.description || '',
+            location: selectedActivity.location,
+            time: selectedActivity.timestamp,
+            priority: selectedActivity.priority,
+            status: selectedActivity.status,
+            assignedTo: selectedActivity.assignedTo || '',
             evidence: [],
             tags: []
           }}
-          isOpen={!!selectedActivityDetail}
-          onClose={() => setSelectedActivityDetail(null)}
+          isOpen={!!selectedActivity}
+          onClose={handleCloseActivityDetail}
           onUpdate={(activityId, updates) => {
             // Handle activity updates with real-time state management
             console.log('Activity update:', activityId, updates);
             
             // Update local state to reflect changes immediately
-            setSelectedActivityDetail((prev: any) => prev ? { ...prev, ...updates } : null);
+            setSelectedActivity((prev: any) => prev ? { ...prev, ...updates } : null);
           }}
         />
       )}

@@ -1,0 +1,287 @@
+/**
+ * Gentle, Non-Anxiety-Inducing Animations
+ * Soft animations for activity cards and notifications
+ * Designed to be calming rather than alarming
+ */
+
+/* Gentle pop-up animation for new activities */
+@keyframes gentle-pop-up {
+  0% {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-5px) scale(1.02);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Soft breathing animation for pending items */
+@keyframes soft-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.08);
+  }
+}
+
+/* Gentle glow for urgent items */
+@keyframes gentle-glow {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.25), 0 0 0 1px rgba(249, 115, 22, 0.1);
+  }
+}
+
+/* Soft slide-in for notifications */
+@keyframes gentle-slide-in {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Subtle fade-in for content */
+@keyframes soft-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle bounce for confirmations */
+@keyframes gentle-bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+/* Soft ripple effect for interactions */
+@keyframes soft-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Animation utility classes */
+.animate-gentle-pop-up {
+  animation: gentle-pop-up 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) both;
+}
+
+.animate-soft-breathe {
+  animation: soft-breathe 3s ease-in-out infinite;
+}
+
+.animate-gentle-glow {
+  animation: gentle-glow 2s ease-in-out infinite;
+}
+
+.animate-gentle-slide-in {
+  animation: gentle-slide-in 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.animate-soft-fade-in {
+  animation: soft-fade-in 0.5s ease-out both;
+}
+
+.animate-gentle-bounce {
+  animation: gentle-bounce 1s ease-in-out;
+}
+
+.animate-soft-ripple {
+  animation: soft-ripple 0.6s linear;
+}
+
+/* Activity card states */
+.activity-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.activity-card.new {
+  @apply animate-gentle-pop-up;
+}
+
+.activity-card.pending {
+  @apply animate-soft-breathe;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.activity-card.urgent {
+  @apply animate-gentle-glow;
+  border-color: rgba(249, 115, 22, 0.4);
+}
+
+.activity-card.critical {
+  @apply animate-gentle-glow;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Notification styles */
+.notification {
+  @apply animate-gentle-slide-in;
+  transition: all 0.3s ease-out;
+}
+
+.notification.success {
+  @apply animate-gentle-bounce;
+  animation-delay: 0.2s;
+}
+
+/* Loading states */
+.loading-gentle {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-gentle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: gentle-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes gentle-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Interactive elements */
+.interactive-gentle {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease-out;
+}
+
+.interactive-gentle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.interactive-gentle:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Priority-based gentle animations */
+.priority-low {
+  animation-duration: 4s;
+}
+
+.priority-medium {
+  animation-duration: 3s;
+}
+
+.priority-high {
+  animation-duration: 2.5s;
+}
+
+.priority-critical {
+  animation-duration: 2s;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gentle-pop-up,
+  .animate-soft-breathe,
+  .animate-gentle-glow,
+  .animate-gentle-slide-in,
+  .animate-soft-fade-in,
+  .animate-gentle-bounce,
+  .animate-soft-ripple {
+    animation: none;
+  }
+  
+  .activity-card.new,
+  .activity-card.pending,
+  .activity-card.urgent,
+  .activity-card.critical {
+    animation: none;
+  }
+  
+  .activity-card:hover {
+    transform: none;
+  }
+}
+
+/* Focus states for accessibility */
+.activity-card:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+  animation: none; /* Stop other animations when focused */
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .activity-card.pending {
+    border-color: #0066CC;
+    border-width: 2px;
+  }
+  
+  .activity-card.urgent {
+    border-color: #CC6600;
+    border-width: 2px;
+  }
+  
+  .activity-card.critical {
+    border-color: #CC0000;
+    border-width: 2px;
+  }
+}
