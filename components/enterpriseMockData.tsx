@@ -109,17 +109,15 @@ const generateCamera = (location: any) => {
 };
 
 // Activity type probabilities (realistic for enterprise facility)
+// Updated to match validation enum: ['medical', 'security-breach', 'alert', 'patrol', 'evidence', 'property-damage', 'bol-event']
 const ACTIVITY_TYPE_PROBABILITIES = {
-  'ACCESS_DENIED': 0.25,      // Most common - badge issues, expired access
-  'PATROL': 0.20,             // Regular security patrols
-  'TAILGATE': 0.15,           // Common security concern
-  'SUSPICIOUS_BEHAVIOR': 0.12, // AI-detected unusual patterns
-  'EQUIPMENT_FAULT': 0.10,     // Equipment malfunctions
-  'BREACH': 0.08,             // Unauthorized access attempts
-  'MEDICAL': 0.04,            // Medical emergencies
-  'FIRE': 0.03,               // Fire/smoke detection
-  'CROWD_DETECTION': 0.02,    // Crowding in areas
-  'ARMED_PERSON': 0.01        // Extremely rare but critical
+  'alert': 0.40,              // Most common - general alerts (access denied, suspicious behavior, etc.)
+  'patrol': 0.20,             // Regular security patrols
+  'security-breach': 0.15,    // Security concerns (tailgating, breaches, etc.)
+  'property-damage': 0.10,    // Equipment faults, damage
+  'medical': 0.08,            // Medical emergencies
+  'evidence': 0.05,           // Evidence collection, investigations
+  'bol-event': 0.02           // BOL-related events
 };
 
 // Priority distribution (realistic)
@@ -131,13 +129,12 @@ const PRIORITY_PROBABILITIES = {
 };
 
 // Status distribution
+// Updated to match validation enum: ['detecting', 'assigned', 'responding', 'resolved']
 const STATUS_PROBABILITIES = {
-  'new': 0.20,
-  'active': 0.15,
-  'assigned': 0.25,
-  'investigating': 0.20,
-  'resolved': 0.18,
-  'archived': 0.02
+  'detecting': 0.30,    // Initial detection phase
+  'assigned': 0.35,     // Most common - assigned to officers
+  'responding': 0.25,   // Active response in progress
+  'resolved': 0.10      // Completed activities
 };
 
 // Business impact probabilities
@@ -155,116 +152,93 @@ const generateActivityByType = (type: string, timestamp: Date): Partial<Enterpri
   const _camera = generateCamera(location);
   
   switch (type) {
-    case 'TAILGATE':
+    case 'alert':
+      const alertTypes = ['Access Denied', 'Suspicious Behavior', 'Fire/Smoke Detection', 'Crowd Detection', 'Equipment Alert'];
+      const alertType = alertTypes[Math.floor(Math.random() * alertTypes.length)];
       return {
-        title: 'Tailgating Detected',
-        description: 'Individual followed authorized person through access point without badge scan',
-        confidence: 85 + Math.random() * 15,
-        detectedObjects: ['2 people detected', '1 badge scan recorded'],
-        badgeHolder: generateEmployee(),
-        aiProcessingTime: 150 + Math.random() * 100,
-        confidenceScore: 0.85 + Math.random() * 0.15,
+        title: `${alertType} Alert`,
+        description: `System alert: ${alertType.toLowerCase()} detected requiring immediate attention`,
+        confidence: 80 + Math.random() * 20,
+        detectedObjects: ['Alert trigger', 'System notification'],
+        aiProcessingTime: 100 + Math.random() * 150,
+        confidenceScore: 0.80 + Math.random() * 0.20,
         falsePositiveLikelihood: Math.random() * 0.3
       };
       
-    case 'ACCESS_DENIED':
+    case 'security-breach':
+      const breachTypes = ['Tailgating', 'Unauthorized Access', 'Perimeter Breach', 'Weapon Detection'];
+      const breachType = breachTypes[Math.floor(Math.random() * breachTypes.length)];
       return {
-        title: 'Badge Access Denied',
-        description: 'Employee badge access denied - possible expired credentials or restricted area',
-        confidence: 95 + Math.random() * 5,
-        detectedObjects: ['Badge scan attempt', 'Access denied'],
-        badgeHolder: generateEmployee(),
-        aiProcessingTime: 50 + Math.random() * 50,
-        confidenceScore: 0.95 + Math.random() * 0.05
-      };
-      
-    case 'SUSPICIOUS_BEHAVIOR':
-      return {
-        title: 'Unusual Behavior Pattern Detected',
-        description: 'AI detected behavior pattern deviating from normal operational activities',
-        confidence: 70 + Math.random() * 20,
-        detectedObjects: ['Person loitering', 'Unusual movement pattern'],
-        aiProcessingTime: 300 + Math.random() * 200,
-        confidenceScore: 0.70 + Math.random() * 0.20,
-        falsePositiveLikelihood: Math.random() * 0.5
-      };
-      
-    case 'EQUIPMENT_FAULT':
-      return {
-        title: 'Equipment Malfunction Detected',
-        description: 'Automated system detected equipment operating outside normal parameters',
-        confidence: 90 + Math.random() * 10,
-        detectedObjects: ['Equipment anomaly', 'System alert'],
-        aiProcessingTime: 100 + Math.random() * 100,
-        confidenceScore: 0.90 + Math.random() * 0.10
-      };
-      
-    case 'MEDICAL':
-      return {
-        title: 'Medical Emergency Detected',
-        description: 'Person down or medical distress situation identified',
-        confidence: 80 + Math.random() * 15,
-        detectedObjects: ['Person down', 'Medical assistance needed'],
-        badgeHolder: Math.random() > 0.3 ? generateEmployee() : undefined,
-        aiProcessingTime: 200 + Math.random() * 150,
-        confidenceScore: 0.80 + Math.random() * 0.15,
-        isMassCasualty: Math.random() < 0.05 // 5% chance of mass casualty event
-      };
-      
-    case 'FIRE':
-      return {
-        title: 'Fire/Smoke Detection Alert',
-        description: 'Smoke or fire detected by environmental monitoring systems',
-        confidence: 95 + Math.random() * 5,
-        detectedObjects: ['Smoke detected', 'Temperature anomaly'],
-        aiProcessingTime: 100 + Math.random() * 50,
-        confidenceScore: 0.95 + Math.random() * 0.05,
-        externalAgencies: ['Fire Department', 'Emergency Services']
-      };
-      
-    case 'ARMED_PERSON':
-      return {
-        title: 'Weapon Detection Alert',
-        description: 'Potential weapon detected through AI analysis',
-        confidence: 75 + Math.random() * 20,
-        detectedObjects: ['Potential weapon', 'Person of interest'],
-        aiProcessingTime: 400 + Math.random() * 200,
-        confidenceScore: 0.75 + Math.random() * 0.20,
-        isSecurityThreat: true,
-        externalAgencies: ['Law Enforcement'],
-        escalationLevel: 3
-      };
-      
-    case 'BREACH':
-      return {
-        title: 'Security Breach Detected',
-        description: 'Unauthorized access to restricted area detected',
+        title: `${breachType} Detected`,
+        description: `Security breach: ${breachType.toLowerCase()} identified in restricted area`,
         confidence: 85 + Math.random() * 15,
-        detectedObjects: ['Unauthorized access', 'Security perimeter breach'],
-        aiProcessingTime: 200 + Math.random() * 100,
+        detectedObjects: ['Security breach', 'Unauthorized activity'],
+        badgeHolder: Math.random() > 0.5 ? generateEmployee() : undefined,
+        aiProcessingTime: 200 + Math.random() * 200,
         confidenceScore: 0.85 + Math.random() * 0.15,
-        isSecurityThreat: Math.random() > 0.5
+        isSecurityThreat: true,
+        externalAgencies: Math.random() > 0.7 ? ['Law Enforcement'] : undefined
       };
       
-    case 'PATROL':
+    case 'patrol':
       return {
         title: 'Security Patrol Checkpoint',
-        description: 'Routine security patrol checkpoint completed',
+        description: 'Routine security patrol checkpoint completed successfully',
         confidence: 98 + Math.random() * 2,
         detectedObjects: ['Security officer', 'Patrol route'],
         aiProcessingTime: 50 + Math.random() * 25,
         confidenceScore: 0.98 + Math.random() * 0.02
       };
       
-    case 'CROWD_DETECTION':
+    case 'property-damage':
+      const damageTypes = ['Equipment Malfunction', 'Structural Damage', 'Vandalism', 'Environmental Damage'];
+      const damageType = damageTypes[Math.floor(Math.random() * damageTypes.length)];
       return {
-        title: 'Crowd Density Alert',
-        description: 'Unusual crowd formation detected in operational area',
-        confidence: 80 + Math.random() * 15,
-        detectedObjects: ['Crowd formation', 'High density area'],
-        aiProcessingTime: 250 + Math.random() * 150,
-        confidenceScore: 0.80 + Math.random() * 0.15,
+        title: `${damageType} Reported`,
+        description: `Property damage incident: ${damageType.toLowerCase()} requires assessment and repair`,
+        confidence: 90 + Math.random() * 10,
+        detectedObjects: ['Property damage', 'Maintenance required'],
+        aiProcessingTime: 150 + Math.random() * 100,
+        confidenceScore: 0.90 + Math.random() * 0.10,
         isOperationalImpact: true
+      };
+      
+    case 'medical':
+      return {
+        title: 'Medical Emergency Detected',
+        description: 'Medical emergency situation identified requiring immediate response',
+        confidence: 85 + Math.random() * 15,
+        detectedObjects: ['Person down', 'Medical assistance needed'],
+        badgeHolder: Math.random() > 0.3 ? generateEmployee() : undefined,
+        aiProcessingTime: 200 + Math.random() * 150,
+        confidenceScore: 0.85 + Math.random() * 0.15,
+        isMassCasualty: Math.random() < 0.05, // 5% chance of mass casualty event
+        externalAgencies: ['Emergency Medical Services']
+      };
+      
+    case 'evidence':
+      const evidenceTypes = ['Digital Evidence', 'Physical Evidence', 'Witness Statement', 'Video Evidence'];
+      const evidenceType = evidenceTypes[Math.floor(Math.random() * evidenceTypes.length)];
+      return {
+        title: `${evidenceType} Collection`,
+        description: `Evidence collection activity: ${evidenceType.toLowerCase()} documented for investigation`,
+        confidence: 95 + Math.random() * 5,
+        detectedObjects: ['Evidence item', 'Documentation'],
+        aiProcessingTime: 100 + Math.random() * 100,
+        confidenceScore: 0.95 + Math.random() * 0.05
+      };
+      
+    case 'bol-event':
+      return {
+        title: 'BOL Event Detected',
+        description: 'Be On Lookout (BOL) event triggered - person or vehicle of interest identified',
+        confidence: 90 + Math.random() * 10,
+        detectedObjects: ['BOL match', 'Person/vehicle of interest'],
+        badgeHolder: Math.random() > 0.6 ? generateEmployee() : undefined,
+        aiProcessingTime: 300 + Math.random() * 200,
+        confidenceScore: 0.90 + Math.random() * 0.10,
+        isSecurityThreat: true,
+        externalAgencies: ['Law Enforcement']
       };
       
     default:
@@ -317,7 +291,7 @@ const generateEnterpriseActivity = (baseTime: Date, idCounter: number): Enterpri
   ] : undefined;
   
   // Assign responding units for active events
-  const respondingUnits = ['active', 'assigned', 'investigating'].includes(status) ? [
+  const respondingUnits = ['assigned', 'responding'].includes(status) ? [
     `Unit-${Math.floor(Math.random() * 20) + 1}`,
     ...(priority === 'critical' ? [`Unit-${Math.floor(Math.random() * 20) + 21}`] : [])
   ] : undefined;
