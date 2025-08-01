@@ -153,6 +153,32 @@ export function AIAssistantPanel() {
     }));
   };
 
+  // Minimize/expand handlers (defined early to avoid hoisting issues)
+  const handleMinimize = () => {
+    setState(prev => ({ ...prev, isMinimized: true }));
+  };
+
+  const handleExpand = () => {
+    setState(prev => ({ 
+      ...prev, 
+      isMinimized: false, 
+      isExpanded: !prev.isExpanded 
+    }));
+  };
+
+  const handleViewChange = (view: 'chat' | 'history' | 'settings' | 'voice') => {
+    setState(prev => ({ ...prev, currentView: view }));
+  };
+
+  // Voice input handlers
+  const handleStartListening = () => {
+    setState(prev => ({ ...prev, isListening: true }));
+  };
+
+  const handleStopListening = () => {
+    setState(prev => ({ ...prev, isListening: false }));
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     if (!settings.enableKeyboardShortcuts) return;
@@ -336,23 +362,6 @@ export function AIAssistantPanel() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, dragOffset, state.isExpanded]);
-
-  // Minimize/expand handlers
-  const handleMinimize = () => {
-    setState(prev => ({ ...prev, isMinimized: true }));
-  };
-
-  const handleExpand = () => {
-    setState(prev => ({ 
-      ...prev, 
-      isMinimized: false, 
-      isExpanded: !prev.isExpanded 
-    }));
-  };
-
-  const handleViewChange = (view: 'chat' | 'history' | 'settings' | 'voice') => {
-    setState(prev => ({ ...prev, currentView: view }));
-  };
 
   // Check if action requires confirmation
   const requiresConfirmation = (actionType: string, priority: string): boolean => {
@@ -767,14 +776,6 @@ export function AIAssistantPanel() {
     if (transcript.trim()) {
       handleSendMessage(transcript);
     }
-  };
-
-  const handleStartListening = () => {
-    setState(prev => ({ ...prev, isListening: true }));
-  };
-
-  const handleStopListening = () => {
-    setState(prev => ({ ...prev, isListening: false }));
   };
 
   const handleRetryAction = async (action: any) => {
