@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useActivityStore } from '../stores/activityStore';
+import { useCommunicationStore } from '../stores/communicationStore';
 
 export interface WebSocketMessage {
   action: string;
@@ -45,6 +46,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectAttemptsRef = useRef(0);
   const messageQueueRef = useRef<WebSocketMessage[]>([]);
   const messageHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(new Map());
+  
+  // Communication store integration
+  const communicationStore = useCommunicationStore();
 
   // Check if we're in development mode and should use mock data
   const isDevelopment = import.meta.env.DEV;
@@ -85,6 +89,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         });
         reconnectAttemptsRef.current = 0;
 
+        // Update communication store connection state
+        communicationStore.setConnectionState('connected');
+
         // Send queued messages
         while (messageQueueRef.current.length > 0) {
           const msg = messageQueueRef.current.shift();
@@ -98,6 +105,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         try {
           const data = JSON.parse(event.data);
           console.log('WebSocket message received:', data);
+
+          // Forward message to communication store for processing
+          communicationStore.handleWebSocketMessage(data);
 
           // Call handlers for this action
           const handlers = messageHandlersRef.current.get(data.action);
@@ -117,12 +127,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        communicationStore.setError('Connection error');
         setState(prev => ({ ...prev, error: 'Connection error' }));
       };
 
       ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason);
         wsRef.current = null;
+        
+        // Update communication store connection state
+        communicationStore.setConnectionState('disconnected');
         
         // Don't try to reconnect in development with mock endpoints
         if (useMockWebSocket) {
@@ -134,10 +148,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           return;
         }
 
+        const errorMessage = event.code === 1008 ? 'Authentication failed' : null;
+        communicationStore.setError(errorMessage);
+        
         setState({
           isConnected: false,
           connectionState: 'disconnected',
-          error: event.code === 1008 ? 'Authentication failed' : null,
+          error: errorMessage,
         });
 
         // Auto-reconnect logic
@@ -156,6 +173,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       };
     } catch (error) {
       console.error('Failed to create WebSocket:', error);
+      communicationStore.setConnectionState('error');
+      communicationStore.setError('Failed to connect');
       setState({
         isConnected: false,
         connectionState: 'error',
@@ -175,12 +194,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       wsRef.current = null;
     }
     
+    // Update communication store connection state
+    communicationStore.setConnectionState('disconnected');
+    
     setState({
       isConnected: false,
       connectionState: 'disconnected',
       error: null,
     });
-  }, []);
+  }, [communicationStore]);
 
   // Send a message
   const sendMessage = useCallback((message: WebSocketMessage) => {
