@@ -14,6 +14,8 @@ import { CreateActivityModal } from './CreateActivityModal';
 import { useActivityStore } from '../stores';
 import { useCaseStore } from '../stores/caseStore';
 import { useServices, useApiClient } from '../services/ServiceProvider';
+import { useModuleNavigation } from '../hooks/useModuleNavigation';
+import { BreadcrumbNavigation } from './shared/BreadcrumbNavigation';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -39,6 +41,9 @@ import { Priority, Status } from '../lib/utils/status';
 import { EnterpriseActivity } from '../lib/types/activity';
 
 export function Activities() {
+  // Navigation system integration
+  const navigation = useModuleNavigation();
+  
   // Get AWS API client if configured
   const apiClient = useApiClient();
   const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true' && apiClient;
@@ -269,6 +274,11 @@ export function Activities() {
   return (
     <ActivityErrorBoundaryWrapper context="Activities Page Root">
       <div className="h-screen flex flex-col bg-gray-50">
+        {/* Breadcrumb Navigation */}
+        <div className="flex-shrink-0 bg-white border-b px-3 py-2">
+          <BreadcrumbNavigation />
+        </div>
+        
         {/* Enhanced Header with Facility Overview - Compact */}
         <ActivityErrorBoundaryWrapper context="Activities Header">
           <div className="flex-shrink-0 bg-white border-b shadow-sm">

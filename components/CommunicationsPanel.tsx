@@ -629,20 +629,60 @@ export function CommunicationsPanel({
           </div>
         </div>
 
-        {/* Time Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Show:</span>
-          {(['15m', '1h', '4h', '24h'] as const).map(period => (
-            <Button
-              key={period}
-              variant={timeFilter === period ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeFilter(period)}
-              className="h-7 px-3 text-xs"
-            >
-              {period}
-            </Button>
-          ))}
+        {/* Enhanced Filter Controls */}
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          {/* Time Filter Row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-foreground">Time:</span>
+            {(['15m', '1h', '4h', '24h'] as const).map(period => (
+              <Button
+                key={period}
+                variant={timeFilter === period ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeFilter(period)}
+                className="h-8 px-3 text-sm"
+              >
+                {period}
+              </Button>
+            ))}
+          </div>
+
+          {/* Priority & Channel Filters */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Priority:</span>
+              <div className="flex gap-1">
+                {['critical', 'high', 'medium', 'low'].map(priority => (
+                  <Button
+                    key={priority}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    title={`Filter ${priority} priority`}
+                  >
+                    {priority.charAt(0).toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Channel:</span>
+              <div className="flex gap-1">
+                {['Main', 'Emergency', 'Dispatch'].map(channel => (
+                  <Button
+                    key={channel}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    title={`Filter ${channel} channel`}
+                  >
+                    {channel}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

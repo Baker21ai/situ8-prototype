@@ -767,18 +767,45 @@ export function CommandCenter() {
         {/* Left Panel - Activity Stream (25%) */}
         <div className="col-span-3">
           <Card className="h-full flex flex-col max-w-full">
-            <CardHeader className="pb-3 flex-shrink-0">
-              <CardTitle className="flex items-center justify-between text-lg">
-                Activity Stream
-                <Button
-                  size="sm"
-                  variant={showCriticalOnly ? "default" : "outline"}
-                  onClick={() => setShowCriticalOnly(!showCriticalOnly)}
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  Critical Only
-                </Button>
-              </CardTitle>
+            <CardHeader className="pb-2 flex-shrink-0">
+              <div className="space-y-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Activity Stream
+                </CardTitle>
+                
+                {/* Integrated Filter Controls */}
+                <div className="bg-muted/30 rounded-lg p-2 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">Show:</span>
+                    <Button
+                      size="sm"
+                      variant={showCriticalOnly ? "default" : "outline"}
+                      onClick={() => setShowCriticalOnly(!showCriticalOnly)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Target className="h-3 w-3 mr-1" />
+                      Critical Only
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      title="Filter by time range"
+                    >
+                      Last 1h
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      title="Filter by assignment"
+                    >
+                      Assigned
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0 flex-1 min-h-0 max-w-full">
               <ScrollArea className="h-full">

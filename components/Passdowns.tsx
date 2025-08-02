@@ -8,10 +8,15 @@ import { PassdownDashboard } from './PassdownDashboard';
 import { PassdownCreateForm } from './PassdownCreateForm';
 import { PassdownDetailView } from './PassdownDetailView';
 import { PassdownSummary, Passdown } from '../lib/types/passdown';
+import { useModuleNavigation } from '../hooks/useModuleNavigation';
+import { BreadcrumbNavigation } from './shared/BreadcrumbNavigation';
 
 type ViewMode = 'dashboard' | 'create' | 'detail' | 'edit';
 
 export function Passdowns() {
+  // Navigation system integration
+  const navigation = useModuleNavigation();
+  
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [selectedPassdownId, setSelectedPassdownId] = useState<string | null>(null);
 
@@ -51,6 +56,7 @@ export function Passdowns() {
     case 'create':
       return (
         <div className="container mx-auto px-4 py-6">
+          <BreadcrumbNavigation />
           <PassdownCreateForm
             onSuccess={handleCreateSuccess}
             onCancel={handleBackToDashboard}
@@ -61,6 +67,7 @@ export function Passdowns() {
     case 'edit':
       return (
         <div className="container mx-auto px-4 py-6">
+          <BreadcrumbNavigation />
           <PassdownCreateForm
             onSuccess={handleCreateSuccess}
             onCancel={handleBackToDashboard}
@@ -78,6 +85,7 @@ export function Passdowns() {
       
       return (
         <div className="container mx-auto px-4 py-6">
+          <BreadcrumbNavigation />
           <PassdownDetailView
             passdownId={selectedPassdownId}
             onBack={handleBackToDashboard}
@@ -90,6 +98,7 @@ export function Passdowns() {
     default:
       return (
         <div className="container mx-auto px-4 py-6">
+          <BreadcrumbNavigation />
           <PassdownDashboard
             onCreateNew={handleCreateNew}
             onSelectPassdown={handleSelectPassdown}

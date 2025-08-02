@@ -6,6 +6,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useCaseStore } from '../stores/caseStore';
 import { useServices, useApiClient } from '../services/ServiceProvider';
+import { useModuleNavigation, generateBreadcrumbs, type NavigationContext } from '../hooks/useModuleNavigation';
 import { 
   Calendar, 
   Clock, 
@@ -188,6 +189,31 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
 
   // Get stats from the store method
   const stats = getCaseStats();
+
+  // Navigation system integration
+  const navigation = useModuleNavigation();
+  
+  // Check for navigation context on mount
+  useEffect(() => {
+    const context = navigation.getNavigationContext('cases');
+    if (context) {
+      // Handle different navigation contexts
+      if (context.action === 'create' && context.sourceEntityId) {
+        // Show create form with pre-filled data from source entity
+        setShowCreateForm(true);
+        console.log('Opening case creation from:', context.sourceEntityType, context.sourceEntityId);
+      } else if (context.action === 'view' && context.sourceEntityId) {
+        // Filter cases related to source entity
+        if (context.sourceEntityType === 'activity') {
+          setSearchTerm(context.sourceEntityId);
+        }
+        console.log('Viewing cases related to:', context.sourceEntityType, context.sourceEntityId);
+      }
+      
+      // Clear context after handling
+      navigation.clearNavigationContext('cases');
+    }
+  }, [navigation]);
   
   // AWS API data state
   const [awsCases, setAwsCases] = useState<SimpleCase[]>([]);
@@ -517,8 +543,39 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
     </Card>
   );
 
+  // Generate breadcrumbs based on current context
+  const breadcrumbs = navigation.generateBreadcrumbs();
+
   return (
     <div className="space-y-4">
+      {/* Breadcrumb Navigation */}
+      {breadcrumbs.length > 1 && (
+        <nav className="flex items-center space-x-2 text-sm text-gray-500">
+          {breadcrumbs.map((crumb, index) => (
+            <div key={index} className="flex items-center">
+              {index > 0 && <span className="mx-2">/</span>}
+              {crumb.module ? (
+                <button
+                  onClick={() => crumb.module && navigation.navigateToModule(crumb.module)}
+                  className="hover:text-gray-700 underline"
+                >
+                  {crumb.label}
+                </button>
+              ) : crumb.action ? (
+                <button
+                  onClick={crumb.action}
+                  className="hover:text-gray-700 underline"
+                >
+                  {crumb.label}
+                </button>
+              ) : (
+                <span className="text-gray-900 font-medium">{crumb.label}</span>
+              )}
+            </div>
+          ))}
+        </nav>
+      )}
+
       {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>

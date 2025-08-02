@@ -10,6 +10,8 @@ import { useIncidentStore } from '../stores/incidentStore';
 import { useActivityStore } from '../stores/activityStore';
 import { useCaseStore } from '../stores/caseStore';
 import { useServices, useApiClient } from '../services/ServiceProvider';
+import { useModuleNavigation } from '../hooks/useModuleNavigation';
+import { BreadcrumbNavigation } from './shared/BreadcrumbNavigation';
 import { formatDistanceToNow } from '../lib/utils/time';
 import { Incident } from '../lib/types/incident';
 import { 
@@ -196,6 +198,9 @@ const generateCommunicationData = (): CommunicationEntry[] => [
 ];
 
 export function Timeline({ className = '', onOpenModal, onOpenFullPage, activities = [] }: TimelineProps) {
+  // Navigation system integration
+  const navigation = useModuleNavigation();
+  
   // Get AWS API client if configured
   const apiClient = useApiClient();
   const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true' && apiClient;
@@ -670,6 +675,11 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
 
   return (
     <div className={`h-full flex flex-col bg-white ${className}`}>
+      {/* Breadcrumb Navigation */}
+      <div className="flex-shrink-0 bg-white border-b px-4 py-2">
+        <BreadcrumbNavigation />
+      </div>
+      
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b bg-gradient-to-r from-slate-50 to-white">
         <div className="flex items-center justify-between mb-3">
@@ -694,24 +704,49 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
           </div>
         </div>
 
-        {/* Time Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Show:</span>
-          {(['15m', '1h', '4h', '24h'] as const).map(period => (
-            <Button
-              key={period}
-              variant={timeFilter === period ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeFilter(period)}
-              className="h-7 px-3 text-xs"
-            >
-              {period}
-            </Button>
-          ))}
-          {activeTab === 'incidents' && (
-            <>
-              <_Separator orientation="vertical" className="h-6 mx-2" />
+        {/* Enhanced Filter Controls */}
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          {/* Time Filter Row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-medium text-foreground">Time:</span>
+            {(['15m', '1h', '4h', '24h'] as const).map(period => (
               <Button
+                key={period}
+                variant={timeFilter === period ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeFilter(period)}
+                className="h-8 px-3 text-sm"
+              >
+                {period}
+              </Button>
+            ))}
+          </div>
+
+          {/* Priority Filter Row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-medium text-foreground">Priority:</span>
+            {[
+              { key: 'critical', label: 'Critical', color: 'bg-red-500 text-white' },
+              { key: 'high', label: 'High', color: 'bg-orange-500 text-white' },
+              { key: 'medium', label: 'Medium', color: 'bg-yellow-500 text-white' },
+              { key: 'low', label: 'Low', color: 'bg-green-500 text-white' }
+            ].map(priority => (
+              <Button
+                key={priority.key}
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-sm"
+                title={`Filter ${priority.label} priority items`}
+              >
+                {priority.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {activeTab === 'incidents' && (
+          <div className="mt-2">
+            <Button
                 variant={showPendingOnly ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setShowPendingOnly(!showPendingOnly)}
@@ -720,9 +755,8 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
                 <Clock className="h-3 w-3 mr-1" />
                 Pending Only
               </Button>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

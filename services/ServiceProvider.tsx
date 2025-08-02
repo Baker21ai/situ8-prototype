@@ -14,7 +14,7 @@ import { PassdownService } from './passdown.service';
 import { AuthService } from './auth.service';
 import { initializeApiClient, type AWSConfig } from './aws-api';
 import { useActivityStore } from '../stores/activityStore';
-import { useUserStore } from '../stores/userStore';
+import { useUserStore, useAuth } from '../stores/userStore';
 
 // Service context interface
 interface ServiceContextType {

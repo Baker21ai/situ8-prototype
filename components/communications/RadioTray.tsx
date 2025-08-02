@@ -127,14 +127,14 @@ export function RadioTray({
           'fixed bottom-4 right-4 z-50',
           'bg-background border-2 rounded-lg shadow-2xl',
           'transition-all duration-300 ease-in-out',
-          'backdrop-blur-md bg-white/95',
+          'backdrop-blur-md',
           trayState === 'compact' ? 'w-80' : 'w-96',
           'radio-fade-in',
           className
         )}
       >
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
+      <div className="flex items-center justify-between p-3 border-b bg-muted rounded-t-lg">
         <div className="flex items-center gap-2">
           <div className={cn(
             'p-1.5 rounded-full',
@@ -144,7 +144,7 @@ export function RadioTray({
           )}>
             <Radio className="w-4 h-4" />
           </div>
-          <span className="font-semibold text-gray-800">Radio Control</span>
+          <span className="font-semibold text-foreground">Radio Control</span>
           {currentChannel && (
             <Badge 
               variant="secondary" 

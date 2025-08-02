@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Separator } from './components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
 import { Toaster } from './components/ui/sonner';
+import { LoginForm } from './components/auth/LoginForm';
+import { useAuth } from './stores/userStore';
 
 // Lazy load heavy components for code splitting
 const CommandCenter = lazy(() => import('./components/CommandCenter').then(m => ({ default: m.CommandCenter })));
@@ -39,6 +41,7 @@ import {
   Zap,
   ClipboardList
 } from 'lucide-react';
+import { useModuleNavigation, useModuleNavigationListener, setCurrentModule, type ModuleName, type NavigationContext } from './hooks/useModuleNavigation';
 
 type Module = 'command-center' | 'activities' | 'communications' | 'visitors' | 'incidents' | 'cases' | 'bol' | 'passdowns' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings' | 'performance-test' | 'performance-dashboard';
 
@@ -100,13 +103,13 @@ const HeaderLogo = memo(() => (
 HeaderLogo.displayName = 'HeaderLogo';
 
 // Memoized User Badge component
-const UserBadge = memo<{ userRole: string }>(({ userRole }) => (
+const UserBadge = memo<{ userRole: string; user?: any }>(({ userRole, user }) => (
   <div className="flex items-center gap-4">
     <Badge variant="secondary">
       {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
     </Badge>
     <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm">
-      A
+      {user?.profile?.avatar || user?.profile?.firstName?.charAt(0) || 'U'}
     </div>
   </div>
 ));
@@ -226,20 +229,42 @@ QuickStats.displayName = 'QuickStats';
 
 // Main App component with optimizations
 const App = memo(() => {
+  // Authentication state
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  
   const [activeModule, setActiveModule] = useState<Module>('command-center');
-  const [userRole] = useState<'admin' | 'supervisor' | 'officer'>('admin');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [communicationsModalOpen, setCommunicationsModalOpen] = useState(false);
   
-  // Mock user data - in real app, this would come from auth
-  const mockUser = {
-    id: 'user-123',
-    email: 'john.doe@situ8.com',
-    name: 'John Doe',
-    role: 'admin',
-    clearanceLevel: 5,
-    token: 'mock-token' // In real app, this would be the Cognito token
-  };
+  // If authentication is loading, show loading spinner
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center dark">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-muted-foreground">Initializing services...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If not authenticated, show login form
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="dark">
+        <LoginForm 
+          onSuccess={() => {
+            // Authentication successful, component will re-render with authenticated state
+            console.log('Login successful, redirecting to main app');
+          }}
+          showDemoMode={true}
+        />
+      </div>
+    );
+  }
+  
+  // Extract user role for UI (convert from auth service format)
+  const userRole = user.role.toLowerCase().replace('_', '-') as 'admin' | 'supervisor' | 'officer';
 
   // Enable dark mode for 24/7 operations (memoized)
   const enableDarkMode = useCallback(() => {
@@ -264,9 +289,34 @@ const App = memo(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
 
+  // Initialize navigation system
+  const navigation = useModuleNavigation({
+    onModuleChange: (module: ModuleName, context?: NavigationContext) => {
+      setActiveModule(module as Module);
+      setCurrentModule(module);
+      
+      // Handle navigation context if provided
+      if (context) {
+        console.log('Navigation context:', context);
+        // Could handle specific context actions here
+        // e.g., pre-fill forms, apply filters, highlight entities
+      }
+    }
+  });
+
+  // Listen for navigation events from other components
+  useModuleNavigationListener((module: ModuleName, context?: NavigationContext) => {
+    setActiveModule(module as Module);
+    setCurrentModule(module);
+    
+    if (context) {
+      console.log('Navigation event received:', module, context);
+    }
+  });
+
   const handleModuleChange = useCallback((moduleId: Module) => {
-    setActiveModule(moduleId);
-  }, []);
+    navigation.navigateToModule(moduleId as ModuleName);
+  }, [navigation]);
 
   // Memoized module content renderer with Suspense
   const renderModuleContent = useCallback(() => {
@@ -358,7 +408,7 @@ const App = memo(() => {
             <div className="flex items-center gap-4">
               <AWSStatusIndicator />
               <Clock />
-              <UserBadge userRole={userRole} />
+              <UserBadge userRole={userRole} user={user} />
             </div>
           </div>
         </header>
@@ -417,11 +467,11 @@ const App = memo(() => {
         
         {/* Radio Tray - Docked PTT Interface */}
         <RadioTray
-          userId={mockUser.id}
-          userName={mockUser.name}
-          userRole={mockUser.role}
-          userClearance={mockUser.clearanceLevel}
-          token={mockUser.token}
+          userId={user.id}
+          userName={user.profile?.fullName || user.email}
+          userRole={user.role}
+          userClearance={user.clearanceLevel}
+          token="authenticated-token" // Would be real token from auth service
           onOpenModal={() => setCommunicationsModalOpen(true)}
         />
         
@@ -429,11 +479,11 @@ const App = memo(() => {
         <CommunicationsModal
           open={communicationsModalOpen}
           onOpenChange={setCommunicationsModalOpen}
-          userId={mockUser.id}
-          userName={mockUser.name}
-          userRole={mockUser.role}
-          userClearance={mockUser.clearanceLevel}
-          token={mockUser.token}
+          userId={user.id}
+          userName={user.profile?.fullName || user.email}
+          userRole={user.role}
+          userClearance={user.clearanceLevel}
+          token="authenticated-token" // Would be real token from auth service
         />
       </div>
     </ServiceProvider>

@@ -661,7 +661,7 @@ export function CaseCreateForm({ onSuccess, onCancel, initialData }: CaseCreateF
                   "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
                   index <= stepIndex
                     ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-600"
+                    : "bg-muted text-muted-foreground"
                 )}
               >
                 {index < stepIndex ? (
@@ -674,7 +674,7 @@ export function CaseCreateForm({ onSuccess, onCancel, initialData }: CaseCreateF
                 <div
                   className={cn(
                     "w-16 h-0.5 mx-4",
-                    index < stepIndex ? "bg-blue-600" : "bg-gray-200"
+                    index < stepIndex ? "bg-blue-600" : "bg-border"
                   )}
                 />
               )}

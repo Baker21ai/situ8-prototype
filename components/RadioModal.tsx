@@ -264,10 +264,10 @@ export function RadioModal({ isOpen, onClose, onOpenFullPage }: RadioModalProps)
         </DialogHeader>
 
         {/* Quick Filters */}
-        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium">Quick Filters:</span>
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Quick Filters:</span>
           </div>
           
           <Select value={selectedSite} onValueChange={setSelectedSite}>

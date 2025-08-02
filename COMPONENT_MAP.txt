@@ -1,0 +1,222 @@
+SITU8 SECURITY PLATFORM - COMPONENT MAP & HIERARCHY
+============================================================
+
+📍 WHERE COMPONENTS APPEAR:
+============================================================
+
+1. ACTIVITIES PAGE (/activities)
+   ├── Main Page Container: Activities.tsx
+   ├── Activity List: EnterpriseActivityManager.tsx  
+   ├── Individual Cards: EnterpriseActivityCard.tsx
+   └── Detail Modal: ResponsiveActivityDetail.tsx
+
+2. COMMAND CENTER (/command-center) 
+   ├── Left Panel: EnterpriseActivityManager.tsx (same as Activities)
+   ├── Middle Panel: Interactive Map (not built yet)
+   └── Right Panel: Timeline.tsx (shows incidents)
+
+3. CASES PAGE (/cases) - NEEDS TO BE BUILT
+   └── Cases.tsx (not implemented yet)
+
+============================================================
+🏗️ COMPONENT HIERARCHY & RELATIONSHIPS:
+============================================================
+
+ACTIVITIES PAGE STRUCTURE:
+┌─────────────────────────────────────────────────────────┐
+│ Activities.tsx (Main Page Container)                    │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ EnterpriseActivityManager.tsx (List Manager)        │ │
+│ │ ┌─────────────────────────────────────────────────┐ │ │
+│ │ │ PrioritySegmentedList (Groups by Priority)     │ │ │
+│ │ │ ┌─────────────────────────────────────────────┐ │ │ │
+│ │ │ │ CRITICAL PRIORITY SECTION (Red)           │ │ │ │
+│ │ │ │ ┌─────────────────────────────────────────┐ │ │ │ │
+│ │ │ │ │ EnterpriseActivityCard.tsx             │ │ │ │ │
+│ │ │ │ │ ├─ EnterpriseStreamCard (Full Cards)   │ │ │ │ │
+│ │ │ │ │ ├─ MinimalCard (Tiny Dots)             │ │ │ │ │  
+│ │ │ │ │ ├─ ClusterCard (Grouped Activities)    │ │ │ │ │
+│ │ │ │ │ └─ SummaryCard (Single Line)           │ │ │ │ │
+│ │ │ │ └─────────────────────────────────────────┘ │ │ │ │
+│ │ │ └─────────────────────────────────────────────┘ │ │ │
+│ │ │ ┌─────────────────────────────────────────────┐ │ │ │
+│ │ │ │ HIGH PRIORITY SECTION (Orange)            │ │ │ │
+│ │ │ │ [Same card structure as above]            │ │ │ │
+│ │ │ └─────────────────────────────────────────────┘ │ │ │
+│ │ └─────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+
+WHEN YOU CLICK AN ACTIVITY CARD:
+┌─────────────────────────────────────────────────────────┐
+│ ResponsiveActivityDetail.tsx (Modal Router)             │
+│ │                                                       │
+│ ├─ DESKTOP: ModernActivityDetail.tsx                    │
+│ │  ┌─────────────────────────────────────────────────┐  │
+│ │  │ ┌─────────────┬─────────────────────────────────┐ │  │
+│ │  │ │ LEFT PANEL  │ RIGHT PANEL                     │ │  │
+│ │  │ │             │                                 │ │  │
+│ │  │ │ Evidence    │ ┌─ ActionButton Components     │ │  │
+│ │  │ │ Viewer      │ │  ├─ DISPATCH GUARDS (Red)    │ │  │
+│ │  │ │             │ │  ├─ BROADCAST BOLO (Orange)  │ │  │
+│ │  │ │ AI Analysis │ │  ├─ LOCKDOWN (Red)           │ │  │
+│ │  │ │ Progress    │ │  └─ ESCALATE (Orange)        │ │  │
+│ │  │ │ Bars        │ └─                             │ │  │
+│ │  │ │             │ ┌─ GuardCard Components        │ │  │
+│ │  │ │ Badge       │ │  ├─ Responding Guards        │ │  │
+│ │  │ │ Holder      │ │  └─ Available Guards         │ │  │
+│ │  │ │ Info        │ └─                             │ │  │
+│ │  │ └─────────────┴─────────────────────────────────┘ │  │
+│ │  └─────────────────────────────────────────────────┘  │
+│ │                                                       │
+│ └─ MOBILE: ModernActivityDetailMobile.tsx               │
+│    ┌─────────────────────────────────────────────────┐  │
+│    │ Bottom Sheet Modal with Tabs:                   │  │
+│    │ ┌─────────┬─────────┬─────────┐                 │  │
+│    │ │Overview │ Actions │ Guards  │                 │  │
+│    │ └─────────┴─────────┴─────────┘                 │  │
+│    └─────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+
+============================================================
+📋 COMPONENT FILE LOCATIONS & PURPOSES:
+============================================================
+
+PAGE CONTAINERS:
+├─ Activities.tsx                    → Main Activities page 
+├─ CommandCenter.tsx                 → Three-panel layout
+└─ Cases.tsx                         → Investigation page (TO BUILD)
+
+ACTIVITY COMPONENTS:
+├─ EnterpriseActivityManager.tsx     → Activity list with filters/search
+├─ EnterpriseActivityCard.tsx        → Individual activity cards
+├─ ResponsiveActivityDetail.tsx      → Modal router (mobile/desktop)
+├─ ModernActivityDetail.tsx          → Desktop modal (full-screen)
+└─ ModernActivityDetailMobile.tsx    → Mobile modal (bottom sheet)
+
+TIMELINE COMPONENTS:
+└─ Timeline.tsx                      → Incident timeline (right panel)
+
+SUPPORTING COMPONENTS:
+├─ CreateActivityModal.tsx           → Create new activities
+├─ CommunicationsPanel.tsx           → Communications interface  
+├─ RadioModal.tsx                    → Radio communications
+└─ ExternalDataDisplay.tsx           → 3rd party system data
+
+============================================================
+🎯 ACTIVITY CARD VARIANTS (what you see in the list):
+============================================================
+
+1. EnterpriseStreamCard (DEFAULT - Full Cards):
+   ┌─────────────────────────────────────────────────────┐
+   │ 13:34 🛡️ property-damage    Detroit Fulfillment    │
+   │ Environmental Damage Reported                       │
+   │ 📍 Pick Floor 2                                     │
+   │ [CRITICAL]                            Officer Chen  │
+   └─────────────────────────────────────────────────────┘
+
+2. MinimalCard (Tiny Dots):
+   ● ● ● ● (color-coded by priority, hover for details)
+
+3. ClusterCard (Grouped Activities):
+   ┌─────────────────────────────────────────────────────┐
+   │ 🔄 5 activities • [HIGH] • Detroit Fulfillment     │
+   │ Security Patrol Checkpoint                          │
+   │ ● ● ● ● ● (activity breakdown dots)                 │
+   └─────────────────────────────────────────────────────┘
+
+4. SummaryCard (Single Line):
+   │ property-damage • 2m ago • Environmental Damage... │
+
+============================================================
+🔧 ATOMIC UI COMPONENTS (building blocks):
+============================================================
+
+StatusBadge                    → Priority-colored status indicators
+ActionButton                   → Context-aware action buttons  
+├─ ActionButton.Critical       → Red buttons (DISPATCH, LOCKDOWN)
+├─ ActionButton.Warning        → Orange buttons (BROADCAST, ESCALATE)  
+├─ ActionButton.Success        → Green buttons (RESOLVE)
+└─ ActionButton.Secondary      → Gray buttons (secondary actions)
+
+GuardCard                      → Individual guard information
+EvidenceViewer                 → Camera feed display
+ProgressIndicator              → AI confidence metrics
+├─ ProgressIndicator.Confidence → AI confidence percentage
+└─ StatusLabel                 → Status indicators with variants
+
+============================================================
+🎛️ FILTERING & CONTROLS:
+============================================================
+
+EnterpriseActivityManager.tsx contains:
+├─ Search Input                     → Text search across activities
+├─ Priority Filters                 → [C] [H] [M] [L] buttons  
+├─ Time Range Selector              → Live, 15m, 1h, 4h, 24h
+├─ AI Filtering Toggle              → Smart false-positive filtering
+├─ Clustering Toggle                → Group related activities
+├─ View Mode Tabs                   → Minimal | Summary | Stream
+└─ Layout Mode Toggle               → Grid | Horizontal scroll
+
+============================================================
+📊 DATA FLOW & INTEGRATION:
+============================================================
+
+DATA SOURCES:
+useActivityStore() → Zustand store with activity data
+useServices()      → Service layer for business logic
+mockData          → Temporary test data (in components)
+
+REAL-TIME UPDATES:
+Activities Page → EnterpriseActivityManager → useActivityStore → Real data
+Command Center  → Timeline → useIncidentStore → Real incidents  
+Cases Page      → Cases → useCaseStore → Cases data (TO BUILD)
+
+SERVICE INTEGRATION:
+ActivityService    → Activity business logic
+IncidentService    → Incident auto-creation  
+CaseService        → Investigation management
+AuditService       → Change tracking
+
+============================================================
+🚧 COMPONENTS TO BUILD/FIX:
+============================================================
+
+HIGH PRIORITY:
+├─ Cases.tsx                        → Investigation management page
+├─ IncidentPanel.tsx                → For Timeline incident details  
+└─ BOLManager.tsx                   → For Activities page integration
+
+MEDIUM PRIORITY:  
+├─ Timeline.tsx                     → Connect to real incident data
+├─ InteractiveMap.tsx               → Command Center middle panel
+└─ Navigation updates               → Add Cases route to App.tsx
+
+LOW PRIORITY:
+├─ Enhanced filtering UI            → More filter options
+├─ Bulk action improvements         → Better multi-select
+└─ Performance optimizations       → Virtual scrolling, caching
+
+============================================================
+🎯 HOW TO REFERENCE COMPONENTS WHEN TALKING TO ME:
+============================================================
+
+EXAMPLE REQUESTS:
+"Edit the EnterpriseStreamCard to show confidence scores"
+"Update the ModernActivityDetail modal header section"  
+"Add a button to the ActionButton.Critical component"
+"Fix the Timeline.tsx to use real incident data"
+"Create the missing Cases.tsx page"
+"Update the GuardCard to show ETA times"
+"Modify the PrioritySegmentedList layout"
+
+COMPONENT SHORTCUTS:
+- Activity cards = EnterpriseActivityCard.tsx
+- Desktop modal = ModernActivityDetail.tsx
+- Mobile modal = ModernActivityDetailMobile.tsx  
+- Activity list = EnterpriseActivityManager.tsx
+- Main page = Activities.tsx
+- Timeline = Timeline.tsx
+- Cases = Cases.tsx (needs building)
+
+Remember: Be specific about which component file and which section/function within that file you want modified!

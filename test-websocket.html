@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Situ8 WebSocket Test with Cognito Auth</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .auth-section { background: #e9ecef; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .log { background: #f8f9fa; padding: 10px; height: 300px; overflow-y: scroll; border: 1px solid #ddd; }
+        button { padding: 8px 15px; margin: 5px; }
+        input { padding: 5px; width: 300px; margin: 5px; }
+        .token-display { background: #f8f9fa; padding: 10px; border: 1px solid #ddd; border-radius: 3px; font-family: monospace; word-break: break-all; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Situ8 WebSocket Communication Test</h1>
+    
+    <div class="auth-section">
+        <h3>🔐 Cognito Authentication</h3>
+        <div>
+            <input type="email" id="emailInput" placeholder="Email (e.g., yamen@example.com)" value="yamen@example.com" />
+            <input type="password" id="passwordInput" placeholder="Password" />
+            <button onclick="authenticate()">Login & Get Token</button>
+        </div>
+        <div>
+            <strong>Current Token:</strong>
+            <div id="tokenDisplay" class="token-display">No token - please authenticate first</div>
+        </div>
+    </div>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div>
+        <button onclick="connect()">Connect with Auth Token</button>
+        <button onclick="connectWithoutAuth()">Connect Without Auth (will fail)</button>
+        <button onclick="disconnect()">Disconnect</button>
+        <button onclick="sendTestMessage()">Send Test Message</button>
+    </div>
+    
+    <div>
+        <input type="text" id="messageInput" placeholder="Enter message..." />
+        <button onclick="sendCustomMessage()">Send Custom</button>
+    </div>
+    
+    <h3>Connection Log:</h3>
+    <div id="log" class="log"></div>
+
+    <script src="https://unpkg.com/amazon-cognito-identity-js@latest/dist/amazon-cognito-identity.min.js"></script>
+    <script>
+        let ws = null;
+        let cognitoToken = null;
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        const tokenDisplay = document.getElementById('tokenDisplay');
+        
+        // WebSocket URL from your infrastructure
+        const WS_URL = 'wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev';
+        
+        // Cognito configuration
+        const REGION = 'us-west-2';
+        const USER_POOL_ID = 'us-west-2_ECLKvbdSp';
+        const CLIENT_ID = '5ouh548bibh1rrp11neqcvvqf6';
+        
+        // Initialize Cognito User Pool
+        const poolData = {
+            UserPoolId: USER_POOL_ID,
+            ClientId: CLIENT_ID
+        };
+        const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(status, className) {
+            statusDiv.textContent = status;
+            statusDiv.className = `status ${className}`;
+        }
+        
+        function authenticate() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!email || !password) {
+                log('❌ Please enter both email and password');
+                return;
+            }
+            
+            log('🔐 Attempting to authenticate with Cognito...');
+            
+            const userData = {
+                Username: email,
+                Pool: userPool
+            };
+            
+            const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            
+            const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+                Username: email,
+                Password: password
+            });
+            
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: function(result) {
+                    cognitoToken = result.getIdToken().getJwtToken();
+                    log('✅ Authentication successful!');
+                    log('🎫 JWT Token received');
+                    
+                    // Display token (truncated for security)
+                    const truncatedToken = cognitoToken.substring(0, 50) + '...' + cognitoToken.substring(cognitoToken.length - 50);
+                    tokenDisplay.textContent = truncatedToken;
+                    
+                    // Log token payload for debugging
+                    try {
+                        const payload = JSON.parse(atob(cognitoToken.split('.')[1]));
+                        log('👤 User: ' + payload.email + ' | Role: ' + payload['custom:role']);
+                    } catch (e) {
+                        log('⚠️ Could not parse token payload');
+                    }
+                },
+                onFailure: function(err) {
+                    log('❌ Authentication failed: ' + err.message);
+                    cognitoToken = null;
+                    tokenDisplay.textContent = 'Authentication failed: ' + err.message;
+                }
+            });
+        }
+        
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected');
+                return;
+            }
+            
+            if (!cognitoToken) {
+                log('❌ No authentication token! Please login first.');
+                return;
+            }
+            
+            updateStatus('Connecting...', 'connecting');
+            const wsUrlWithToken = WS_URL + '?token=' + encodeURIComponent(cognitoToken);
+            log('Attempting to connect to: ' + WS_URL + ' (with auth token)');
+            
+            ws = new WebSocket(wsUrlWithToken);
+            
+            ws.onopen = function(event) {
+                log('✅ Connected successfully!');
+                updateStatus('Connected', 'connected');
+            };
+            
+            ws.onmessage = function(event) {
+                log('📨 Received: ' + event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    log('📦 Parsed message: ' + JSON.stringify(data, null, 2));
+                } catch (e) {
+                    log('⚠️ Could not parse as JSON: ' + event.data);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                log(`❌ Connection closed: Code ${event.code}, Reason: ${event.reason}`);
+                updateStatus('Disconnected', 'disconnected');
+                
+                if (event.code === 1008) {
+                    log('🔒 Authentication required - this is expected without Cognito token');
+                }
+            };
+            
+            ws.onerror = function(error) {
+                log('💥 WebSocket error: ' + error);
+                updateStatus('Error', 'disconnected');
+            };
+        }
+        
+        function connectWithoutAuth() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected');
+                return;
+            }
+            
+            updateStatus('Connecting...', 'connecting');
+            log('Attempting to connect without authentication (this should fail)');
+            log('Connecting to: ' + WS_URL);
+            
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = function(event) {
+                log('✅ Connected successfully! (This is unexpected)');
+                updateStatus('Connected', 'connected');
+            };
+            
+            ws.onmessage = function(event) {
+                log('📨 Received: ' + event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    log('📦 Parsed message: ' + JSON.stringify(data, null, 2));
+                } catch (e) {
+                    log('⚠️ Could not parse as JSON: ' + event.data);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                log(`❌ Connection closed: Code ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
+                updateStatus('Disconnected', 'disconnected');
+                
+                if (event.code === 1008) {
+                    log('🔒 Policy violation - authentication required (this is expected)');
+                } else if (event.code === 1006) {
+                    log('🔒 Abnormal closure - likely due to authorization failure');
+                }
+            };
+            
+            ws.onerror = function(error) {
+                log('💥 WebSocket error: ' + error);
+                updateStatus('Error', 'disconnected');
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                log('🔌 Disconnected by user');
+                updateStatus('Disconnected', 'disconnected');
+            }
+        }
+        
+        function sendTestMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected - cannot send message');
+                return;
+            }
+            
+            const message = {
+                action: 'sendMessage',
+                channelId: 'general',
+                content: 'Test message from WebSocket test client',
+                timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(message));
+            log('📤 Sent test message: ' + JSON.stringify(message));
+        }
+        
+        function sendCustomMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content) {
+                log('❌ Please enter a message');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected - cannot send message');
+                return;
+            }
+            
+            const message = {
+                action: 'sendMessage',
+                channelId: 'general',
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(message));
+            log('📤 Sent custom message: ' + JSON.stringify(message));
+            input.value = '';
+        }
+        
+        // Auto-connect on page load
+        window.onload = function() {
+            log('🚀 WebSocket test client with Cognito authentication loaded');
+            log('🔗 Target URL: ' + WS_URL);
+            log('🔐 User Pool: ' + USER_POOL_ID);
+            log('📱 Client ID: ' + CLIENT_ID);
+            log('ℹ️ Steps to test:');
+            log('  1. Enter email and password (try: yamen@example.com)');
+            log('  2. Click "Login & Get Token"');
+            log('  3. Click "Connect with Auth Token"');
+            log('  4. Try sending messages');
+            log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        };
+    </script>
+</body>
+</html>
