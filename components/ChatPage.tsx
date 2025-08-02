@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatLayout } from './communications/ChatLayout';
 
+// Chat page component for Situ8 communications
 export function ChatPage() {
   return (
     <div className="h-screen flex flex-col">
