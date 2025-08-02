@@ -2,6 +2,62 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 White Screen Troubleshooting Guide
+
+If `npm run dev` shows a white screen, follow these steps:
+
+### 1. **Check Browser Console**
+```bash
+# Open browser dev tools (F12) and check for errors
+# Look for common issues:
+# - "Failed to resolve module" errors
+# - Environment variable warnings
+# - Service initialization failures
+# - TypeScript compilation errors
+```
+
+### 2. **Environment Variables Issue (MOST COMMON)**
+The project has incorrect environment variable prefixes:
+```bash
+# Current (incorrect for Vite):
+REACT_APP_ENVIRONMENT=development
+
+# Should be (correct for Vite):
+VITE_ENVIRONMENT=development
+
+# Quick fix: Either rename all REACT_APP_ to VITE_ in .env.development
+# OR: Add to vite.config.ts to support REACT_APP_ prefix
+```
+
+### 3. **TypeScript Configuration Mismatch**
+Check if TypeScript can find the entry point:
+```bash
+npm run typecheck
+# Look for errors about src/main.tsx not being included
+```
+
+### 4. **Service Initialization Failures**
+If stuck on "Initializing services..." loading screen:
+```javascript
+// Check browser console for service errors
+// Add this to browser console to debug:
+window.__SITU8_DEBUG__ = true;
+localStorage.setItem('situ8-debug', 'true');
+```
+
+### 5. **Quick Reset Solutions**
+```bash
+# Nuclear option - clean everything:
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+
+# Clear browser data:
+# - Clear localStorage for http://localhost:5173
+# - Hard refresh (Ctrl+Shift+R)
+# - Disable browser extensions
+```
+
 ## 🛠️ Essential Development Commands
 
 ```bash
@@ -13,371 +69,461 @@ npm run dev
 
 # Production build
 npm run build
-
-# Preview production build
-npm run preview
+npm run build:check    # Build with type checking
 
 # Type checking
 npm run typecheck
 
 # Linting
 npm run lint
+
+# Testing
+npm test              # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:ui       # Run tests with UI
+npm run test:coverage # Run with coverage report
+
+# Preview production build
+npm run preview
 ```
 
 ## 🏗️ Project Architecture
 
 ### Tech Stack
 - **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui components
+- **Styling**: Tailwind CSS + shadcn/ui components  
 - **State Management**: Zustand stores with service layer
+- **Testing**: Vitest + Testing Library
 - **Icons**: Lucide React
 - **Animations**: Framer Motion
+- **Performance**: Virtual scrolling for large datasets
 
 ### Three-Tier Security Architecture
 ```
 Activities (Foundation) → Incidents (Operational Response) → Cases (Strategic Investigation)
 ```
 
-### Service Layer Pattern
-All business logic is centralized in the service layer (`services/`):
-- **BaseService**: Common functionality (validation, audit, error handling)
-- **ActivityService**: Activity logic, auto-tagging, BOL integration
-- **IncidentService**: Incident auto-creation rules and workflows
-- **CaseService**: Investigation management, evidence tracking
-- **AuditService**: Compliance and change tracking
-- **ServiceProvider**: React context for dependency injection
+### Service Layer Architecture (Complex Dependency Injection)
 
-### Store Pattern (Zustand)
-Stores handle UI state and delegate business logic to services:
-- Immutable state updates
-- Service integration via `useServices()`
-- Audit trail for all operations
-- Soft delete pattern (never hard delete)
+**Initialization Flow**: `App.tsx` → `ServiceProvider` → Service Instances → Store Initialization
 
-## 🚀 Recent Updates (July 30, 2025)
+#### Service Provider Pattern (`services/ServiceProvider.tsx`)
+```javascript
+// Critical: ServiceProvider initializes ALL services and provides them via React Context
+// If any service fails during initialization, app may hang on loading screen
 
-### ✅ Completed Work
-1. **Cases Page Implementation**
-   - Created comprehensive Cases.tsx component with investigation management UI
-   - Added case list/grid views, filters, creation dialog, and detail view
-   - Implemented evidence management interface with chain of custody
-   - Connected to case store for state management
+const services = {
+  activityService: new ActivityService(),
+  incidentService: new IncidentService(), 
+  caseService: new CaseService(),
+  bolService: new BOLService(),
+  auditService: new AuditService(),
+  visitorService: new VisitorService(complexConfig), // 200+ lines of config
+  passdownService: new PassdownService(),
+  authService: new AuthService()
+};
 
-2. **Navigation Integration**
-   - Added Cases route to App.tsx navigation
-   - Cases page is now accessible as a separate module
-   - Updated navigation to show Cases as implemented
-
-3. **Timeline-Incident Integration**
-   - Connected Timeline component to real incident store
-   - Replaced mock data with actual incident data from store
-   - Added pending incident validation UI
-   - Implemented real-time incident display with proper status indicators
-
-4. **Type System Updates**
-   - Added missing formatDistanceToNow utility function
-   - Updated incident store mock data to match Incident interface
-   - Fixed StatusBadge component to use new status values
-   - Partially resolved type mismatches between stores and components
-
-### ⚠️ Remaining Issues
-1. **Type Mismatches**
-   - Cases component expects full Case type but store provides SimpleCase
-   - Need to either update store to use full types or create adapter layer
-   - ActivityType and Status values in mockActivityData.tsx still use old values
-
-2. **Missing UI Components**
-   - IncidentPanel for detailed incident management
-   - BOL management interface
-   - Full activity type migration in UI components
-
-3. **Service Layer Integration**
-   - Cases component references caseService but it's not fully implemented
-   - Need to complete service layer for all entities
-
-### 📝 Immediate Next Steps
-1. Fix mockActivityData.tsx to use new ActivityType values (medical, security-breach, etc.)
-2. Update case store to handle full Case type or create adapter
-3. Complete service layer implementation for cases
-4. Create IncidentPanel component for Timeline
-
-# Situ8 Security Platform - Development Guide
-
-## 🏗️ Architecture Overview
-
-### Three-Tier Security Workflow
-```
-Activities (Foundation) → Incidents (Operational Response) → Cases (Strategic Investigation)
+// Health checks run asynchronously - failures logged but don't block UI
 ```
 
-### Current Implementation State
-
-| Component | Backend | Frontend | Status |
-|-----------|---------|----------|---------|
-| **Activities** | ✅ Complete | ✅ Complete | Fully functional |
-| **Incidents** | ✅ Complete | ✅ Timeline | Connected to Timeline |
-| **Cases** | ✅ Complete | ✅ Basic UI | Cases page implemented |
-| **BOL** | ✅ Complete | ❌ Missing | Needs Activities integration |
-| **Audit** | ✅ Complete | ✅ Integrated | Working |
-
-### Application Structure
+#### Service Layer Hierarchy
 ```
-┌─────────────────────────────────────────────────────┐
-│ Navigation: Activities │ Command Center │ Cases │    │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  Command Center (Three Panels):                     │
-│  ┌────────────┬───────────────┬─────────────────┐ │
-│  │ Activities │ Interactive   │ Timeline        │ │
-│  │ Stream     │ Map           │ (Incidents)     │ │
-│  └────────────┴───────────────┴─────────────────┘ │
-│                                                     │
-│  Activities Page: Full activity management          │
-│  Cases Page: Investigation management (TO BUILD)    │
-└─────────────────────────────────────────────────────┘
+BaseService (abstract)
+├── ActivityService
+├── IncidentService  
+├── CaseService
+├── BOLService
+├── AuditService
+├── VisitorService (most complex - has workflow engine)
+├── PassdownService
+└── AuthService
 ```
 
-## 📁 Key Files & Directories
+#### Service Communication Patterns
+- **Cross-service dependencies**: IncidentService → ActivityService for auto-creation
+- **Event-driven**: All services emit audit events to AuditService
+- **Health monitoring**: Each service implements `healthCheck()` method
+- **Error handling**: Services use `ServiceResponse<T>` pattern with success/failure states
 
-### Service Layer (Business Logic) ✅
+### Store Pattern (Zustand + Service Integration)
+Stores are **UI state containers** that delegate to services:
+```javascript
+// Stores NEVER contain business logic - only UI state and service calls
+const { activityService } = useServices(); // Get service from context
+const result = await activityService.createActivity(data, auditContext);
+
+// Store responsibilities:
+// - UI state (loading, pagination, filters)
+// - Service method calls
+// - Real-time updates (WebSocket integration)
+// - Virtual scrolling state (handles 5000+ items)
+```
+
+#### Store Initialization Chain
+```
+ServiceProvider mounts → initializeStores() → Store.getState() → loadInitialData()
+```
+
+**Critical**: If service initialization fails, stores may not initialize properly, causing white screen.
+
+## 🔐 User Management System
+
+### Current State
+- ✅ **AWS Cognito infrastructure**: Complete CloudFormation stack ready
+- ✅ **Role-based access control**: 4 roles (Admin, Security Officer, Developer, Viewer)
+- ✅ **Clearance levels**: 1-5 security levels for sensitive operations
+- ✅ **WebSocket authentication**: Real-time communications with auth
+- ❌ **Frontend integration**: Login components, auth service, protected routes needed
+
+### Implementation Required
+```typescript
+// Need to implement:
+- AuthService integration in ServiceProvider
+- Login/Signup components using Cognito
+- Protected routes with role-based access
+- User context/state management
+- Demo user switching for presentations
+```
+
+### Configuration
+- **Cognito config**: `config/cognito.ts` - Environment-specific settings
+- **User roles**: Admin, Security Officer, Developer, Viewer
+- **Permissions**: Defined per role for activities, cases, incidents, BOL, users, audit
+
+## 📁 Key Architecture Files & Patterns
+
+### Critical Entry Points & Configuration
+```
+src/main.tsx                # Vite entry point (⚠️ excluded from tsconfig)
+App.tsx                     # Root component with lazy loading
+index.html                  # Vite HTML template
+vite.config.ts              # Build config with complex chunking strategy
+tsconfig.json               # ⚠️ Excludes src/ but entry point is src/main.tsx
+.env.development            # ⚠️ Uses REACT_APP_ prefix (should be VITE_)
+```
+
+### Service Layer (Business Logic)
 ```
 services/
-├── base.service.ts          # Base service class with audit
-├── activity.service.ts      # Activity logic, auto-tagging
-├── incident.service.ts      # Incident auto-creation
-├── case.service.ts          # Case & evidence management
-├── bol.service.ts           # BOL pattern matching
-├── audit.service.ts         # Audit trail
-└── ServiceProvider.tsx      # React context provider
+├── ServiceProvider.tsx      # ⭐ Complex DI container - 8 services + health checks
+├── base.service.ts          # Abstract base with audit/validation/business rules
+├── activity.service.ts      # Auto-tagging, BOL integration, clustering
+├── incident.service.ts      # Auto-creation from activities, escalation rules
+├── case.service.ts          # Investigation workflows, evidence management
+├── audit.service.ts         # Compliance tracking, change audit
+├── auth.service.ts          # Cognito integration (not yet frontend connected)
+└── types.ts                # Service contracts, error handling types
 ```
 
-### State Management (Zustand) ✅
+### State Management (UI Layer)
 ```
 stores/
-├── activityStore.ts         # Activity state & operations
-├── incidentStore.ts         # Incident state
-├── caseStore.ts             # Case state
-├── bolStore.ts              # BOL state
-├── auditStore.ts            # Audit log state
-└── index.ts                 # Store exports
+├── index.ts                # Store initialization, cleanup utilities
+├── activityStore.ts        # Complex: Virtual scrolling, real-time generation
+├── incidentStore.ts        # Auto-creation triggers from activities
+├── caseStore.ts           # Investigation state, evidence tracking
+├── userStore.ts           # Demo user switching, permissions
+└── auditStore.ts          # Compliance audit trails
 ```
 
-### Type Definitions ✅
+### Component Architecture Patterns
 ```
-lib/types/
-├── activity.ts              # EnterpriseActivity interface
-├── incident.ts              # Incident interface
-├── case.ts                  # Case & Evidence interfaces
-├── bol.ts                   # BOL interfaces
-├── audit.ts                 # Audit trail types
-└── common.ts                # Shared types
-```
+App.tsx                     # Lazy loading with React.Suspense
+├── ServiceProvider         # Service DI context wrapper
+├── Lazy Components:
+│   ├── CommandCenter       # Dashboard with real-time data
+│   ├── Activities          # Virtual scrolling (5000+ items)
+│   ├── Cases              # Investigation management
+│   └── Communications     # WebSocket real-time messaging
 
-### UI Components
-```
 components/
-├── Activities.tsx           ✅ Activity management page
-├── CommandCenter.tsx        ✅ Three-panel layout
-├── Timeline.tsx             ⚠️  Has mock incidents, needs real data
-├── Cases.tsx                ❌ TO BUILD - Investigation page
-├── IncidentPanel.tsx        ❌ TO BUILD - For Timeline
-└── BOLManager.tsx           ❌ TO BUILD - For Activities
+├── atoms/                  # Simple UI components
+├── molecules/              # Compound components
+├── organisms/              # Complex business components
+└── ui/                    # shadcn/ui component library
 ```
 
-## 🚨 What's Left to Build
-
-### 1. Cases Page (High Priority)
-**File to create**: `components/Cases.tsx`
-```typescript
-// Route: /cases
-// Full-page investigation management interface
-// Features needed:
-- Case list/grid with filters (status, priority, type)
-- Case creation from incidents or activities
-- Case detail view with:
-  - Evidence management & chain of custody
-  - Team assignment (lead, investigators)
-  - Timeline of case events
-  - Linked incidents/activities
-  - Documentation & notes
+### Error Handling & Recovery
+```
+src/presentation/atoms/errors/
+├── ErrorFallback.tsx       # Comprehensive error UI with recovery
+├── ActivityErrorBoundary.tsx   # Activity-specific error handling
+├── VirtualScrollErrorBoundary.tsx  # Performance error recovery
+└── SearchErrorBoundary.tsx     # Search operation error handling
 ```
 
-### 2. Timeline Incident UI (High Priority)
-**File to update**: `components/Timeline.tsx`
-**New file**: `components/IncidentPanel.tsx`
-```typescript
-// Replace mock data with real incidents
-// Features needed:
-- Connect to incidentStore
-- Pending incident validation (5/15 min timers)
-- Incident creation from activities
-- Quick actions (assign, escalate, resolve)
-- Multi-location incident support
+### Infrastructure & Deployment
+```
+infrastructure/
+├── cognito-stack.yaml      # AWS Cognito CloudFormation (✅ Complete)
+├── dynamodb/              # Table schemas for all entities
+├── aws/lambdas/           # API Gateway + Lambda functions
+└── api-gateway-stack.yaml  # REST API configuration
+
+lambda/                     # Packaged Lambda functions
+├── activities/            # Activity CRUD operations
+├── incidents/             # Incident management
+├── cases/                 # Case investigation APIs
+└── audit/                 # Compliance logging
 ```
 
-### 3. BOL Integration (Medium Priority)
-**Files to update**: `components/Activities.tsx`, `components/EnterpriseActivityManager.tsx`
-```typescript
-// BOL creates activities automatically
-// Features needed:
-- BOL management section in Activities
-- Confidence score display (70%, 85%, 95%)
-- Pattern matching results
-- Multi-site BOL distribution
+### Complex Configuration Files
+```
+vite.config.ts             # Advanced chunking strategy, compression
+├── Manual chunking by domain (services, components, vendors)
+├── Asset optimization (images, fonts)
+├── Bundle analyzer integration
+└── Development HMR optimizations
+
+tailwind.config.js         # Custom design system
+├── CSS custom properties integration
+├── Animation definitions
+└── Component-specific utilities
 ```
 
-### 4. Navigation Updates (High Priority)
-**File to update**: `App.tsx`
-```typescript
-// Add Cases to main navigation
-// Update routes:
-- /activities (existing)
-- /command-center (existing)
-- /cases (new)
-```
+## 🚀 Current Implementation Status
 
-## 🛠️ Development Commands
+| Module | Backend | Frontend | Status |
+|--------|---------|----------|---------|
+| **Activities** | ✅ Complete | ✅ Complete | Fully functional |
+| **Incidents** | ✅ Complete | ✅ Timeline | Connected & working |
+| **Cases** | ✅ Complete | ✅ Complete | Investigation UI ready |
+| **Passdowns** | ✅ Complete | ✅ Complete | Shift handoff system |
+| **BOL** | ✅ Complete | ❌ Integration needed | Pattern matching ready |
+| **Auth/Users** | ✅ AWS ready | ❌ Frontend needed | Cognito infrastructure ready |
+| **Communications** | ✅ WebSocket | ✅ Basic UI | Real-time messaging |
 
+## 🔧 Development Environment & Debugging
+
+### Environment Configuration Issues
+**Current Problem**: Mixed environment variable prefixes
 ```bash
-# Install dependencies
-npm install
+# .env.development has REACT_APP_ prefixes (Create React App)
+# But project uses Vite which needs VITE_ prefixes
 
-# Start development
-npm run dev
-
-# Build for production
-npm run build
-
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-```
-
-## 🔧 Implementation Guide
-
-### Adding the Cases Page
-
-1. **Create the Cases component**:
-```typescript
-// components/Cases.tsx
-import { useCaseStore } from '../stores/caseStore';
-import { useServices } from '../services/ServiceProvider';
-
-export function Cases() {
-  const { cases, loading, error } = useCaseStore();
-  const { caseService } = useServices();
-  
-  // Implement case list, filters, and detail views
+# Options to fix:
+# 1. Rename all variables: REACT_APP_* → VITE_*
+# 2. Or add to vite.config.ts:
+define: {
+  'process.env': Object.keys(process.env)
+    .filter(key => key.startsWith('REACT_APP_'))
+    .reduce((env, key) => {
+      env[key] = JSON.stringify(process.env[key]);
+      return env;
+    }, {})
 }
 ```
 
-2. **Add route in App.tsx**:
-```typescript
-<Route path="/cases" element={<Cases />} />
+### TypeScript Configuration Debugging
+```bash
+# Check if src/main.tsx is included in compilation:
+npm run typecheck
+
+# Current issue: tsconfig.json excludes "src/**/*" but entry point is src/main.tsx
+# Fix: Either move main.tsx to root OR update include/exclude paths
 ```
 
-3. **Update navigation**:
-```typescript
-const navItems = [
-  { path: '/activities', label: 'Activities', icon: Activity },
-  { path: '/command-center', label: 'Command Center', icon: LayoutGrid },
-  { path: '/cases', label: 'Cases', icon: Briefcase }, // NEW
-];
+### Service Debugging Commands
+```javascript
+// Browser console debugging:
+// 1. Check service initialization
+window.__SITU8_SERVICES__ = useServices.getState();
+console.log('Services initialized:', window.__SITU8_SERVICES__.isInitialized);
+
+// 2. Check service health
+const services = useServices.getState();
+Object.keys(services).forEach(async (key) => {
+  if (services[key].healthCheck) {
+    const health = await services[key].healthCheck();
+    console.log(`${key}:`, health.status);
+  }
+});
+
+// 3. Check store state
+window.__SITU8_STORES__ = {
+  activity: useActivityStore.getState(),
+  incident: useIncidentStore.getState(),
+  user: useUserStore.getState()
+};
 ```
 
-### Connecting Timeline to Real Incidents
+### Performance Debugging
+```javascript
+// Virtual scrolling debugging:
+// Check if large datasets are causing issues
+const activityStore = useActivityStore.getState();
+console.log('Activity count:', activityStore.activities.length);
+console.log('Filtered count:', activityStore.filteredActivities.length);
 
-1. **Update Timeline.tsx**:
-```typescript
-import { useIncidentStore } from '../stores/incidentStore';
-
-// Replace mock data with:
-const { incidents, loading } = useIncidentStore();
+// Memory usage:
+console.log('Storage usage:', getStorageSize() + ' KB');
 ```
 
-2. **Create IncidentPanel component** for incident management within Timeline
+### Common Development Issues
 
-### Business Logic Requirements
+#### 1. **Service Initialization Hanging**
+```bash
+# Symptoms: Stuck on "Initializing services..." screen
+# Debug: Check browser console for service health check failures
+# Fix: Disable problematic services temporarily
+```
 
-#### Activity Auto-Tagging
-- System tags: `trigger:human|integration`, `location:building-zone`, `time:business-hours|after-hours`
-- User tags: Manual, role-limited
+#### 2. **Virtual Scrolling Performance**
+```bash
+# Symptoms: Slow scrolling with large datasets
+# Debug: Check activity count in store
+# Fix: Adjust REACT_APP_BATCH_SIZE in .env.development
+```
 
-#### Incident Auto-Creation Rules
-| Activity Type | Creates Incident | Validation Required |
-|--------------|------------------|---------------------|
-| medical | ALWAYS | No - Direct to active |
-| security-breach | ALWAYS | Yes - 5 min pending |
-| bol-event | ALWAYS | Yes - 5 min pending |
-| alert | IF confidence >80% | Yes - 5 min pending |
-| property-damage | IF confidence >75% | Yes - 5 min pending |
+#### 3. **WebSocket Connection Issues**
+```bash
+# Symptoms: Real-time updates not working
+# Debug: Check network tab for WebSocket connections
+# Config: AWS WebSocket API Gateway endpoints in .env.development
+```
 
-#### Case Creation
-- From incidents: Any status
-- From activities: Direct creation allowed
-- Evidence: Requires chain of custody tracking
+#### 4. **AWS Service Mocking**
+```javascript
+// For local development without AWS:
+REACT_APP_USE_LOCAL_DYNAMODB=true
+REACT_APP_USE_LOCAL_LAMBDA=true
+REACT_APP_ENABLE_MOCK_DATA=true
+```
 
-## 🧪 Testing & Debugging
+## 🔧 Development Guidelines
+
+### Service Integration
+```typescript
+// Always use services for business logic
+const { activityService } = useServices();
+const result = await activityService.createActivity(data);
+
+// Never modify store state directly
+// Use service methods that handle validation, audit, business rules
+```
+
+### Testing Strategy
+```bash
+# Run specific test file
+npm test Activities.test.tsx
+
+# Run tests for specific component
+npm test -- --grep="Activity"
+
+# Coverage for specific directory
+npm run test:coverage -- components/
+```
+
+### Performance Considerations
+- Virtual scrolling implemented for activity lists (handles 5000+ entries)
+- Lazy loading for heavy components (CommandCenter, Activities, Cases)
+- Optimized Vite build with manual chunking strategy
+- Use filters to reduce rendered items in large datasets
+
+## 🌐 AWS Migration
+
+### Quick Validation
+```bash
+# Verify AWS setup
+aws sts get-caller-identity
+aws cognito-idp list-user-pools --region us-west-2
+
+# Deploy Cognito stack
+aws cloudformation deploy --stack-name situ8-cognito \
+  --template-body file://infrastructure/cognito-stack.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=dev \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+## 📋 Immediate Next Steps
+
+1. **User Management Integration** - Implement Cognito frontend integration
+2. **BOL UI Integration** - Add BOL management to Activities page  
+3. **Real-time Communications** - Complete WebSocket UI integration
+4. **Testing Coverage** - Expand test suite for all services
+5. **Performance Monitoring** - Add performance tracking for virtual scrolling
+
+## 🧪 Debugging & Troubleshooting
 
 ### Check Service Status
 ```typescript
-// In browser console
+// Browser console
 window.__SITU8_SERVICES__ = useServices.getState();
 console.log(window.__SITU8_SERVICES__.isInitialized);
 ```
 
-### Verify Store Data
-```typescript
-// Check activities
-useActivityStore.getState().activities
-
-// Check incidents  
-useIncidentStore.getState().incidents
-
-// Check cases
-useCaseStore.getState().cases
-```
-
 ### Common Issues
+- **Services not initialized**: Ensure ServiceProvider wraps App component
+- **Type mismatches**: Run `npm run typecheck` to identify issues
+- **Performance issues**: Check virtual scrolling implementation in large lists
+- **Mock data showing**: Verify components use real stores not mock data
 
-1. **Services not initialized**: Ensure ServiceProvider wraps App
-2. **Mock data showing**: Check Timeline uses real stores
-3. **Types mismatch**: Run `npm run typecheck`
+## 📝 Critical Implementation Patterns
 
-## 📊 Performance Considerations
+### Complex Loading & Initialization Sequence
+```javascript
+// App.tsx loading chain (potential failure points):
+1. ServiceProvider mounts → shows "Initializing services..." 
+2. 8 services initialize with health checks
+3. initializeStores() called → loads initial data
+4. Real-time generation starts (activities)
+5. Lazy components load with React.Suspense
+6. Dark mode forced on (document.documentElement.classList.add('dark'))
 
-- Activities: Handles 5000+ entries
-- Virtual scrolling implemented in activity lists
-- Pagination ready in all stores
-- Use filters to reduce rendered items
-
-## 🚀 Next Steps Priority
-
-1. **Build Cases page** - Critical for investigation workflow
-2. **Connect Timeline to incidents** - Replace mock data
-3. **Add navigation** - Update App.tsx routes
-4. **Test workflows** - Activities → Incidents → Cases
-5. **BOL integration** - Pattern matching UI
-
-## 📝 Important Notes
-
-- Never directly modify store state - use service methods
-- All operations must create audit entries
-- No hard deletes - soft delete only
-- Mock data generators exist for testing
-- Business logic is in services, not components
-
-## 🌤️ AWS Migration
-
-For complete AWS migration guide and step-by-step tasks, see: **`AWS_MIGRATION_IMPLEMENTATION_TASKS.md`**
-
-### Quick Reference
-```bash
-# AWS setup validation
-aws bedrock list-foundation-models --region us-west-2
-
-# Cost monitoring
-aws cloudwatch get-metric-statistics --namespace AWS/DynamoDB
+// Any failure in this chain can cause white screen
 ```
+
+### Virtual Scrolling Performance Architecture
+```javascript
+// Handles 5000+ activities with react-window
+// Located in: components/VirtualScrollingPerformanceTest.tsx
+// Store integration: stores/activityStore.ts (pagination, filtering)
+
+// Performance settings in .env.development:
+REACT_APP_VIRTUAL_SCROLL_ENABLED=true
+REACT_APP_BATCH_SIZE=100
+REACT_APP_CACHE_TIMEOUT=30000
+```
+
+### Service-Store Communication Pattern
+```javascript
+// Services handle business logic, stores handle UI state
+// Critical pattern: NEVER put business logic in stores
+
+// Correct:
+const { activityService } = useServices();
+const result = await activityService.createActivity(data, auditContext);
+setActivities(result.data);
+
+// Wrong:
+setActivities([...activities, newActivity]); // No validation, audit, or business rules
+```
+
+### Error Boundary Strategy
+```javascript
+// Comprehensive error boundaries at multiple levels:
+// 1. App-level: Catches service initialization failures
+// 2. Component-level: Activity, VirtualScroll, Search specific errors
+// 3. Recovery patterns: Retry, reset, graceful degradation
+```
+
+### AWS Integration Patterns
+```javascript
+// Two modes: Local development vs AWS integration
+// Environment flag: REACT_APP_USE_AWS_API controls which mode
+
+// Local mode: Mock services, localStorage persistence
+// AWS mode: Real DynamoDB, Lambda, Cognito, WebSocket
+```
+
+## 📝 Important Development Rules
+
+- **Never directly modify store state** - use service methods only
+- **All operations must create audit entries** via BaseService pattern
+- **No hard deletes** - soft delete pattern enforced across all entities
+- **Business logic belongs in services**, not components or stores
+- **Mock data generators exist** for testing (`components/enterpriseMockData.tsx`)
+- **Service health checks are async** - don't block UI but log failures
+- **Virtual scrolling required** for performance with large datasets (5000+ items)
+- **Environment variables must use VITE_ prefix**, not REACT_APP_
+- **Error boundaries wrap complex components** - check browser console for recovery options

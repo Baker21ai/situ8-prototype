@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { EnterpriseActivity } from '../lib/types/activity';
+import { ActivityData, ActivityFilters, ActivityStats, ActivityCluster, EnterpriseActivity } from '../lib/types/activity';
 import { Priority, Status } from '../lib/utils/status';
 import { ActivityType } from '../lib/utils/security';
 import { generateEnterpriseActivities, generateRealtimeActivity } from '../components/enterpriseMockData';
@@ -13,6 +13,26 @@ import { ActivityService } from '../services/activity.service';
 import { AuditService } from '../services/audit.service';
 import { BOLService } from '../services/bol.service';
 import { AuditContext } from '../services/types';
+import { useUserStore } from './userStore';
+
+// Type alias for Activity
+type Activity = ActivityData | EnterpriseActivity;
+
+// Helper function to create default audit context
+const getDefaultAuditContext = (): AuditContext => {
+  const { currentUser } = useUserStore.getState();
+  return {
+    userId: currentUser?.id || 'system',
+    userName: currentUser?.email || 'System',
+    userRole: currentUser?.role || 'admin',
+    action: 'system_operation'
+  };
+};
+
+// Helper function to ensure context is provided
+const ensureContext = (context?: AuditContext): AuditContext => {
+  return context || getDefaultAuditContext();
+};
 
 interface ActivityState {
   // Activity data
@@ -305,131 +325,137 @@ export const useActivityStore = create<ActivityStore>()(
         }
       },
       
-      createActivity: async (activityData, context) => {
-        const { activityService, activities, lastActivityId, bolService } = get();
+      createActivity: async (activity: Partial<Activity>, context?: AuditContext) => {
+        const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
+          let newActivity: Activity;
+          
           if (activityService) {
-            // Use service to create activity with business logic
-            const result = await activityService.createActivity(activityData, context);
-            
-            if (result.success && result.data) {
-              set({ 
-                activities: [result.data, ...activities],
-                lastActivityId: parseInt(result.data.id.split('-')[1]) || lastActivityId
-              });
-              
-              // Check for BOL matches if service is available
-              if (bolService) {
-                await bolService.checkNewActivity(result.data, context);
-              }
-            } else {
+            const result = await activityService.createActivity(activity, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Failed to create activity');
             }
+            newActivity = result.data;
           } else {
-            // Fallback to direct creation
-            const newId = lastActivityId + 1;
-            const newActivity: EnterpriseActivity = {
-              id: `ACT-${newId.toString().padStart(6, '0')}`,
-              timestamp: new Date(),
-              created_at: new Date(),
-              updated_at: new Date(),
-              created_by: context.userId,
-              updated_by: context.userId,
-              system_tags: [],
-              user_tags: [],
-              incident_contexts: [],
-              retention_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              is_archived: false,
-              allowed_status_transitions: ['detecting', 'assigned', 'responding', 'resolved'],
-              requires_approval: false,
-              type: 'alert',
-              title: 'New Activity',
-              location: 'Unknown Location',
+            // Fallback creation with ensured context
+            const safeContext = ensuredContext;
+            const id = `ACT-${Date.now()}`;
+            newActivity = {
+              id,
+              type: activity.type || 'note',
+              title: activity.title || 'New Activity',
+              description: activity.description || '',
+              timestamp: new Date().toISOString(),
+              created_by: safeContext.userId,
+              updated_by: safeContext.userId,
+              status: 'active',
               priority: 'medium',
-              status: 'detecting',
-              ...activityData,
-            } as EnterpriseActivity;
-            
-            set({ 
-              activities: [newActivity, ...activities],
-              lastActivityId: newId 
+              tags: activity.tags || [],
+              metadata: activity.metadata || {},
+              attachments: activity.attachments || [],
+              links: activity.links || [],
+              comments: activity.comments || [],
+              ...activity
+            };
+          }
+          
+          set(state => ({
+            activities: [newActivity, ...state.activities],
+            loading: false,
+            lastActivityId: parseInt(newActivity.id.split('-')[1]) || 0
+          }));
+          
+          get().applyFilters();
+          return newActivity;
+          
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to create activity',
+            loading: false 
+          });
+          throw error;
+        }
+      },
+      
+      updateActivity: async (id: string, updates: Partial<Activity>, context?: AuditContext) => {
+        const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
+        
+        try {
+          let updatedActivity: Activity;
+          
+          if (activityService) {
+            const result = await activityService.updateActivity(id, updates, ensuredContext);
+            if (!result.success || !result.data) {
+              throw new Error(result.error?.message || 'Failed to update activity');
+            }
+            updatedActivity = result.data;
+          } else {
+            // Fallback update with ensured context
+            set(state => {
+              const activity = state.activities.find(a => a.id === id);
+              if (!activity) throw new Error('Activity not found');
+              
+              updatedActivity = {
+                ...activity,
+                ...updates,
+                updated_by: ensuredContext.userId,
+                updated_at: new Date().toISOString()
+              };
+              
+              return {
+                activities: state.activities.map(a => 
+                  a.id === id ? updatedActivity : a
+                )
+              };
             });
           }
           
+          set({ loading: false });
           get().applyFilters();
-        } catch (error) {
-          set({ 
-            error: error instanceof Error ? error.message : 'Failed to create activity'
-          });
-        }
-      },
-      
-      updateActivity: async (id, updates, context) => {
-        const { activityService, activities } = get();
-        
-        try {
-          if (activityService) {
-            // Use service to update activity with business logic
-            const result = await activityService.updateActivity(id, updates, context);
-            
-            if (result.success && result.data) {
-              const updatedActivities = activities.map(activity =>
-                activity.id === id ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-            } else {
-              throw new Error(result.error?.message || 'Failed to update activity');
-            }
-          } else {
-            // Fallback to direct update
-            const updatedActivities = activities.map(activity =>
-              activity.id === id 
-                ? { 
-                    ...activity, 
-                    ...updates, 
-                    updated_at: new Date(),
-                    updated_by: context.userId
-                  }
-                : activity
-            );
-            set({ activities: updatedActivities });
-          }
+          return updatedActivity;
           
-          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to update activity'
+            error: error instanceof Error ? error.message : 'Failed to update activity',
+            loading: false 
           });
+          throw error;
         }
       },
       
-      deleteActivity: async (id, context) => {
-        const { activityService, activities } = get();
+      deleteActivity: async (id: string, context?: AuditContext) => {
+        const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service to delete activity (soft delete with business logic)
-            const result = await activityService.deleteActivity(id, context);
-            
-            if (result.success) {
-              // Remove from local state after successful service call
-              const updatedActivities = activities.filter(activity => activity.id !== id);
-              set({ activities: updatedActivities });
-            } else {
+            const result = await activityService.deleteActivity(id, ensuredContext);
+            if (!result.success) {
               throw new Error(result.error?.message || 'Failed to delete activity');
             }
-          } else {
-            // Fallback to direct removal
-            const updatedActivities = activities.filter(activity => activity.id !== id);
-            set({ activities: updatedActivities });
           }
+          
+          set(state => ({
+            activities: state.activities.filter(activity => activity.id !== id),
+            loading: false
+          }));
           
           get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to delete activity'
+            error: error instanceof Error ? error.message : 'Failed to delete activity',
+            loading: false
           });
+          throw error;
         }
       },
       
@@ -438,190 +464,180 @@ export const useActivityStore = create<ActivityStore>()(
       },
       
       // Status management with business logic
-      updateActivityStatus: async (id, status, context, reason) => {
+      updateActivityStatus: async (id: string, status: string, context?: AuditContext, reason?: string) => {
         const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service for status updates with role-based validation
-            const result = await activityService.updateActivityStatus(id, status, context);
-            
-            if (result.success && result.data) {
-              const { activities } = get();
-              const updatedActivities = activities.map(activity =>
-                activity.id === id ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-              get().applyFilters();
-            } else {
+            const result = await activityService.updateActivityStatus(id, status, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Status update not allowed');
             }
+            
+            set(state => ({
+              activities: state.activities.map(activity =>
+                activity.id === id ? result.data! : activity
+              ),
+              loading: false
+            }));
           } else {
-            // Fallback to direct update
-            await get().updateActivity(id, { status }, context);
+            await get().updateActivity(id, { status }, ensuredContext);
           }
+          
+          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to update activity status'
+            error: error instanceof Error ? error.message : 'Failed to update activity status',
+            loading: false
           });
+          throw error;
         }
       },
       
-      assignActivity: async (id, assignedTo, context) => {
+      assignActivity: async (id: string, assignedTo: string, context?: AuditContext) => {
         const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service for assignment with business logic
-            const result = await activityService.assignActivity(id, assignedTo, context);
-            
-            if (result.success && result.data) {
-              const { activities } = get();
-              const updatedActivities = activities.map(activity =>
-                activity.id === id ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-              get().applyFilters();
-            } else {
+            const result = await activityService.assignActivity(id, assignedTo, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Failed to assign activity');
             }
+            
+            set(state => ({
+              activities: state.activities.map(activity =>
+                activity.id === id ? result.data! : activity
+              ),
+              loading: false
+            }));
           } else {
-            // Fallback to direct update
-            await get().updateActivity(id, { assignedTo, status: 'assigned' }, context);
+            await get().updateActivity(id, { assignedTo, status: 'assigned' }, ensuredContext);
           }
+          
+          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to assign activity'
+            error: error instanceof Error ? error.message : 'Failed to assign activity',
+            loading: false
           });
+          throw error;
         }
       },
       
-      // Real-time operations
-      startRealtimeGeneration: () => {
-        set({ realtimeEnabled: true });
-      },
-      
-      stopRealtimeGeneration: () => {
-        set({ realtimeEnabled: false });
-      },
-      
-      generateRealtimeActivity: async () => {
-        const { lastActivityId, realtimeEnabled } = get();
-        if (!realtimeEnabled) return;
-        
-        const newId = lastActivityId + 1;
-        const newActivity = generateRealtimeActivity(newId);
-        
-        // Create default audit context for system-generated activities
-        const systemContext: AuditContext = {
-          userId: 'system',
-          userName: 'System',
-          userRole: 'admin',
-          action: 'generate_realtime_activity',
-          reason: 'Automated real-time activity generation'
-        };
-        
-        await get().createActivity(newActivity, systemContext);
-      },
-      
-      // Auto-tagging system
-      updateTags: async (id, userTags, context) => {
+      updateTags: async (id: string, userTags: string[], context?: AuditContext) => {
         const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service for tag updates with auto-tagging logic
-            const result = await activityService.updateTags(id, userTags, context);
-            
-            if (result.success && result.data) {
-              const { activities } = get();
-              const updatedActivities = activities.map(activity =>
-                activity.id === id ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-              get().applyFilters();
-            } else {
+            const result = await activityService.updateTags(id, userTags, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Failed to update tags');
             }
+            
+            set(state => ({
+              activities: state.activities.map(activity =>
+                activity.id === id ? result.data! : activity
+              ),
+              loading: false
+            }));
           } else {
-            // Fallback to direct update
-            await get().updateActivity(id, { user_tags: userTags }, context);
+            await get().updateActivity(id, { user_tags: userTags }, ensuredContext);
           }
+          
+          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to update tags'
+            error: error instanceof Error ? error.message : 'Failed to update tags',
+            loading: false
           });
+          throw error;
         }
       },
       
-      // Multi-incident support
-      linkToIncident: async (activityId, incidentId, context) => {
+      linkToIncident: async (activityId: string, incidentId: string, context?: AuditContext) => {
         const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service for incident linking with business logic
-            const result = await activityService.linkToIncident(activityId, incidentId, context);
-            
-            if (result.success && result.data) {
-              const { activities } = get();
-              const updatedActivities = activities.map(activity =>
-                activity.id === activityId ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-              get().applyFilters();
-            } else {
+            const result = await activityService.linkToIncident(activityId, incidentId, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Failed to link to incident');
             }
+            
+            set(state => ({
+              activities: state.activities.map(activity =>
+                activity.id === activityId ? result.data! : activity
+              ),
+              loading: false
+            }));
           } else {
-            // Fallback to direct update
             const { activities } = get();
             const activity = activities.find(a => a.id === activityId);
             if (activity && !activity.incident_contexts.includes(incidentId)) {
               await get().updateActivity(activityId, {
                 incident_contexts: [...activity.incident_contexts, incidentId]
-              }, context);
+              }, ensuredContext);
             }
           }
+          
+          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to link to incident'
+            error: error instanceof Error ? error.message : 'Failed to link to incident',
+            loading: false
           });
+          throw error;
         }
       },
       
-      unlinkFromIncident: async (activityId, incidentId, context) => {
+      unlinkFromIncident: async (activityId: string, incidentId: string, context?: AuditContext) => {
         const { activityService } = get();
+        const ensuredContext = ensureContext(context);
+        
+        set({ loading: true, error: null });
         
         try {
           if (activityService) {
-            // Use service for incident unlinking with business logic
-            const result = await activityService.unlinkFromIncident(activityId, incidentId, context);
-            
-            if (result.success && result.data) {
-              const { activities } = get();
-              const updatedActivities = activities.map(activity =>
-                activity.id === activityId ? result.data! : activity
-              );
-              set({ activities: updatedActivities });
-              get().applyFilters();
-            } else {
+            const result = await activityService.unlinkFromIncident(activityId, incidentId, ensuredContext);
+            if (!result.success || !result.data) {
               throw new Error(result.error?.message || 'Failed to unlink from incident');
             }
+            
+            set(state => ({
+              activities: state.activities.map(activity =>
+                activity.id === activityId ? result.data! : activity
+              ),
+              loading: false
+            }));
           } else {
-            // Fallback to direct update
             const { activities } = get();
             const activity = activities.find(a => a.id === activityId);
             if (activity) {
               await get().updateActivity(activityId, {
                 incident_contexts: activity.incident_contexts.filter(id => id !== incidentId)
-              }, context);
+              }, ensuredContext);
             }
           }
+          
+          get().applyFilters();
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to unlink from incident'
+            error: error instanceof Error ? error.message : 'Failed to unlink from incident',
+            loading: false
           });
+          throw error;
         }
       },
       
@@ -741,19 +757,40 @@ export const useActivityStore = create<ActivityStore>()(
       
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
-      };
-    },
-    {
-      name: 'situ8-activity-store',
-      // Only persist essential data, not derived state or service instances
-      partialize: (state) => ({
-        // Don't persist activities - always load fresh mock data
-        filters: state.filters,
-        pagination: state.pagination,
-        sorting: state.sorting,
-        realtimeEnabled: state.realtimeEnabled,
-        lastActivityId: state.lastActivityId,
-      }),
-    }
-  )
-);
+      
+      // Real-time generation functions
+      startRealtimeGeneration: () => {
+        set({ realtimeEnabled: true });
+        console.log('Real-time activity generation started');
+      },
+      
+      stopRealtimeGeneration: () => {
+        set({ realtimeEnabled: false });
+        console.log('Real-time activity generation stopped');
+      },
+      
+      generateRealtimeActivity: async () => {
+        const { lastActivityId, realtimeEnabled } = get();
+        if (!realtimeEnabled) return;
+        
+        const newId = lastActivityId + 1;
+        const newActivity = generateRealtimeActivity(newId);
+        
+        // Use system context through ensureContext
+        await get().createActivity(newActivity);
+      },
+    };
+  },
+  {
+    name: 'situ8-activity-store',
+    // Only persist essential data, not derived state or service instances
+    partialize: (state) => ({
+      // Don't persist activities - always load fresh mock data
+      filters: state.filters,
+      pagination: state.pagination,
+      sorting: state.sorting,
+      realtimeEnabled: state.realtimeEnabled,
+      lastActivityId: state.lastActivityId,
+    }),
+  }
+));

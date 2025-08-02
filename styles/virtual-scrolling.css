@@ -1,0 +1,210 @@
+/* Virtual Scrolling Performance Optimizations */
+
+/* Optimize rendering for virtual lists */
+.virtualized-list {
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  will-change: scroll-position;
+  
+  /* Optimize scrolling performance */
+  -webkit-overflow-scrolling: touch;
+  overflow-anchor: none;
+  
+  /* Reduce paint operations */
+  contain: layout style paint;
+}
+
+/* Optimize virtual list items */
+.virtualized-list > div {
+  /* Enable hardware acceleration for list items */
+  transform: translateZ(0);
+  
+  /* Optimize rendering */
+  contain: layout style paint;
+  
+  /* Reduce reflow/repaint */
+  will-change: transform;
+}
+
+/* Performance optimizations for activity cards in virtual lists */
+.virtualized-list .activity-card {
+  /* Use GPU acceleration for smooth scrolling */
+  transform: translateZ(0);
+  
+  /* Optimize animations */
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  
+  /* Contain layout shifts */
+  contain: layout;
+}
+
+/* Optimize hover states for virtual items */
+.virtualized-list .activity-card:hover {
+  /* Use transform instead of layout-affecting properties */
+  transform: translateZ(0) scale(1.02);
+}
+
+/* Optimize images and media in virtual lists */
+.virtualized-list img,
+.virtualized-list video {
+  /* Prevent layout shifts */
+  contain: layout;
+  
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  
+  /* Optimize decoding */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Optimize text rendering in virtual lists */
+.virtualized-list .activity-title,
+.virtualized-list .activity-description {
+  /* Optimize font rendering */
+  text-rendering: optimizeSpeed;
+  
+  /* Prevent layout shifts */
+  contain: layout style;
+}
+
+/* Performance indicators */
+.fps-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.fps-indicator.excellent {
+  background: rgba(34, 197, 94, 0.9);
+}
+
+.fps-indicator.good {
+  background: rgba(251, 191, 36, 0.9);
+}
+
+.fps-indicator.poor {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+/* Memory usage indicator */
+.memory-indicator {
+  position: fixed;
+  top: 50px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Scroll performance optimizations */
+@media (prefers-reduced-motion: no-preference) {
+  .virtualized-list {
+    scroll-behavior: auto; /* Disable smooth scrolling for performance */
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .virtualized-list {
+    /* Optimize for high DPI displays */
+    image-rendering: -webkit-optimize-contrast;
+  }
+  
+  .virtualized-list .activity-card {
+    /* Use sub-pixel positioning */
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  .virtualized-list {
+    /* Reduce overscan on mobile for better performance */
+    --overscan-count: 3;
+  }
+  
+  .virtualized-list .activity-card {
+    /* Simplify animations on mobile */
+    transition: none;
+  }
+  
+  .virtualized-list .activity-card:hover {
+    /* Disable hover effects on mobile */
+    transform: none;
+  }
+}
+
+/* Performance monitoring styles */
+.performance-monitor {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 11px;
+  min-width: 200px;
+  z-index: 9999;
+}
+
+.performance-monitor .metric {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+
+.performance-monitor .metric.good {
+  color: #22c55e;
+}
+
+.performance-monitor .metric.warning {
+  color: #f59e0b;
+}
+
+.performance-monitor .metric.critical {
+  color: #ef4444;
+}
+
+/* Loading states for virtual items */
+.virtualized-list .activity-card.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Intersection observer optimizations */
+.virtualized-list .activity-card[data-visible="false"] {
+  /* Hide non-visible items from paint */
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.virtualized-list .activity-card[data-visible="true"] {
+  /* Show visible items */
+  visibility: visible;
+  pointer-events: auto;
+}

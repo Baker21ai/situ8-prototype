@@ -1,5 +1,6 @@
 import { EnterpriseActivity } from '../lib/types/activity';
 import { ENTERPRISE_SITES, Site as _Site, getSiteById } from './sitesMockData';
+import { IntegrationService, ExternalEvent } from '../services/integration.service';
 
 // Get all buildings from all sites
 const ALL_BUILDINGS = ENTERPRISE_SITES.flatMap(site => site.buildings);
@@ -267,6 +268,92 @@ const selectByProbability = (probabilities: Record<string, number>): string => {
   return Object.keys(probabilities)[0];
 };
 
+/**
+ * 🔌 SIMULATE EXTERNAL SYSTEM INTEGRATION
+ * This demonstrates how real Lenel/AI events would be processed
+ */
+export function generateExternalSystemActivity(): EnterpriseActivity | null {
+  // Simulate random external system events
+  const externalEvents: ExternalEvent[] = [
+    // Lenel Access Control Events
+    {
+      systemName: 'lenel',
+      externalType: 'ACCESS_DENIED',
+      timestamp: new Date(),
+      location: selectRandomBuilding(),
+      rawData: {
+        accessPoint: 'DOOR_001',
+        cardId: '12345',
+        personId: 'EMP_001'
+      }
+    },
+    {
+      systemName: 'lenel', 
+      externalType: 'TAILGATE',
+      timestamp: new Date(),
+      location: selectRandomBuilding(),
+      rawData: {
+        accessPoint: 'DOOR_002',
+        multiplePersons: true
+      }
+    },
+    // Ambient AI Events
+    {
+      systemName: 'ambientAI',
+      externalType: 'TAILGATING_DETECTED',
+      timestamp: new Date(),
+      location: selectRandomBuilding(),
+      confidence: 0.92,
+      rawData: {
+        camera_id: 'CAM_005',
+        zone: 'entrance_zone',
+        confidence: 0.92
+      }
+    },
+    {
+      systemName: 'ambientAI',
+      externalType: 'UNAUTHORIZED_PERSON',
+      timestamp: new Date(),
+      location: selectRandomBuilding(),
+      confidence: 0.87,
+      rawData: {
+        camera_id: 'CAM_003',
+        zone: 'restricted_area',
+        confidence: 0.87
+      }
+    }
+  ];
+
+  // Randomly select an external event
+  const randomEvent = externalEvents[Math.floor(Math.random() * externalEvents.length)];
+  
+  // Process through integration service
+  const result = IntegrationService.processExternalEvent(randomEvent);
+  
+  if (result.success && result.internalActivity) {
+    // Convert to full EnterpriseActivity
+    const baseActivity = generateEnterpriseActivity(new Date(), Math.floor(Math.random() * 10000));
+    return {
+      ...baseActivity,
+      ...result.internalActivity,
+      // Add integration markers
+      system_tags: [
+        ...(result.internalActivity.system_tags || []),
+        'external-integration',
+        `source-${randomEvent.systemName}`
+      ]
+    } as EnterpriseActivity;
+  }
+  
+  return null;
+}
+
+function selectRandomBuilding() {
+  const randomSite = ENTERPRISE_SITES[Math.floor(Math.random() * ENTERPRISE_SITES.length)];
+  const randomBuilding = randomSite.buildings[Math.floor(Math.random() * randomSite.buildings.length)];
+  return `${randomSite.name} - ${randomBuilding}`;
+}
+
 // Generate single enterprise activity
 const generateEnterpriseActivity = (baseTime: Date, idCounter: number): EnterpriseActivity => {
   const type = selectByProbability(ACTIVITY_TYPE_PROBABILITIES) as EnterpriseActivity['type'];
@@ -367,16 +454,27 @@ export const generateEnterpriseActivities = (count: number = 5000): EnterpriseAc
   
   for (let i = 0; i < count; i++) {
     // Generate activities over the past 24 hours with realistic distribution
-    // More recent activities are more likely
-    const hoursAgo = Math.pow(Math.random(), 2) * 24; // Skewed towards recent
-    const baseTime = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
-    
-    // Add some randomness to timestamp (within 15 minutes)
-    const randomOffset = (Math.random() - 0.5) * 15 * 60 * 1000;
-    const timestamp = new Date(baseTime.getTime() + randomOffset);
-    
-    const activity = generateEnterpriseActivity(timestamp, i + 1);
-    activities.push(activity);
+  // More recent activities are more likely
+  const hoursAgo = Math.pow(Math.random(), 2) * 24; // Skewed towards recent
+  const baseTime = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+  
+  // Add some randomness to timestamp (within 15 minutes)
+  const randomOffset = (Math.random() - 0.5) * 15 * 60 * 1000;
+  const timestamp = new Date(baseTime.getTime() + randomOffset);
+  
+  // 🎯 30% chance to generate external system activity to demo raw data display
+  if (Math.random() < 0.3) {
+    const externalActivity = generateExternalSystemActivity();
+    if (externalActivity) {
+      externalActivity.timestamp = timestamp;
+      externalActivity.id = `ACT-${(i + 1).toString().padStart(6, '0')}`;
+      activities.push(externalActivity);
+      continue;
+    }
+  }
+  
+  const activity = generateEnterpriseActivity(timestamp, i + 1);
+  activities.push(activity);
   }
   
   // Sort by timestamp (newest first)

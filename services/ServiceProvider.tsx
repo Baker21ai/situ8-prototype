@@ -10,7 +10,11 @@ import { CaseService } from './case.service';
 import { BOLService } from './bol.service';
 import { AuditService } from './audit.service';
 import { VisitorService } from './visitor.service';
+import { PassdownService } from './passdown.service';
+import { AuthService } from './auth.service';
+import { initializeApiClient, type AWSConfig } from './aws-api';
 import { useActivityStore } from '../stores/activityStore';
+import { useUserStore } from '../stores/userStore';
 
 // Service context interface
 interface ServiceContextType {
@@ -20,6 +24,9 @@ interface ServiceContextType {
   bolService: BOLService;
   auditService: AuditService;
   visitorService: VisitorService;
+  passdownService: PassdownService;
+  authService: AuthService;
+  apiClient?: any; // AWS API client instance
   isInitialized: boolean;
 }
 
@@ -33,15 +40,56 @@ interface ServiceProviderProps {
 
 export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
   const [services, setServices] = useState<ServiceContextType | null>(null);
-  const initializeServices = useActivityStore(state => state.initializeServices);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Initialize all services
-    const activityService = new ActivityService();
-    const incidentService = new IncidentService();
-    const caseService = new CaseService();
-    const bolService = new BOLService();
-    const auditService = new AuditService();
+    if (isInitialized) return; // Prevent re-initialization
+    
+    const initializeAllServices = async () => {
+      try {
+        // Initialize AWS API client if configured
+        let apiClient: any = null;
+        const useAwsApiVite = import.meta.env.VITE_USE_AWS_API === 'true';
+        const useAwsApiReact = process.env.REACT_APP_USE_AWS_API === 'true';
+        
+        if (useAwsApiVite || useAwsApiReact) {
+          try {
+            const awsConfig: AWSConfig = {
+              apiBaseUrl: import.meta.env.VITE_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || '',
+              region: import.meta.env.VITE_AWS_REGION || process.env.REACT_APP_AWS_REGION || 'us-west-2',
+              userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || process.env.REACT_APP_COGNITO_USER_POOL_ID || ''
+            };
+            apiClient = initializeApiClient(awsConfig);
+            console.log('AWS API client initialized:', awsConfig.apiBaseUrl);
+          } catch (awsError) {
+            console.warn('AWS API client initialization failed, continuing without AWS integration:', awsError);
+          }
+        }
+
+        // Initialize all services with error handling
+        const activityService = new ActivityService();
+        const incidentService = new IncidentService();
+        const caseService = new CaseService();
+        const bolService = new BOLService();
+        const auditService = new AuditService();
+        const passdownService = new PassdownService();
+        
+        // Initialize auth service with graceful fallback
+        let authService;
+        try {
+          authService = new AuthService();
+          console.log('Auth service initialized successfully');
+        } catch (authError) {
+          console.warn('Auth service initialization failed, using mock auth:', authError);
+          // Create a mock auth service that doesn't crash
+          authService = {
+            healthCheck: () => Promise.resolve({ status: 'degraded', message: 'Mock auth service' }),
+            login: () => Promise.resolve({ success: false, error: 'Auth service not available' }),
+            logout: () => Promise.resolve(),
+            getCurrentUser: () => null,
+            isAuthenticated: () => false
+          };
+        }
     
     // Default visitor management config
     const visitorConfig = {
@@ -83,7 +131,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           ],
           actions: [
             {
-              type: 'activate_card' as const,
+              type: 'update_access_level' as const,
               target: 'lenel_integration',
               parameters: {
                 access_level: 'visitor',
@@ -94,7 +142,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           conditions: [
             {
               field: 'status',
-              operator: 'equals',
+              operator: 'equals' as const,
               value: 'pre_registered'
             }
           ]
@@ -110,7 +158,9 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           { id: 'lobby_access', name: 'Lobby Access', description: 'Access to lobby areas only' },
           { id: 'building_access', name: 'Building Access', description: 'Access to building interior' },
           { id: 'secure_access', name: 'Secure Access', description: 'Access to secure areas' }
-        ]
+        ],
+        card_templates: [],
+        visitor_zones: []
       },
       notifications: {
         channels: [
@@ -173,49 +223,73 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         }
       }
     };
-    
-    const visitorService = new VisitorService(visitorConfig);
+        
+        const visitorService = new VisitorService(visitorConfig);
 
-    // Initialize stores with services
-    initializeServices();
+        // Note: Store initialization removed to prevent infinite re-render loop
 
-    // Create service context
-    const serviceContext: ServiceContextType = {
-      activityService,
-      incidentService,
-      caseService,
-      bolService,
-      auditService,
-      visitorService,
-      isInitialized: true
+        // Create service context
+        const serviceContext: ServiceContextType = {
+          activityService,
+          incidentService,
+          caseService,
+          bolService,
+          auditService,
+          visitorService,
+          passdownService,
+          authService,
+          apiClient,
+          isInitialized: true
+        };
+
+        setServices(serviceContext);
+
+        // Run health checks on all services
+        Promise.allSettled([
+          activityService.healthCheck(),
+          incidentService.healthCheck(),
+          caseService.healthCheck(),
+          bolService.healthCheck(),
+          auditService.healthCheck(),
+          visitorService.healthCheck(),
+          passdownService.healthCheck()
+          // Note: AuthService doesn't implement healthCheck, it's handled by store initialization
+        ]).then(results => {
+          const unhealthyServices = results
+            .map((result, index) => ({ 
+              index, 
+              result: result.status === 'fulfilled' ? result.value : { status: 'unhealthy' } 
+            }))
+            .filter(({ result }) => result.status !== 'healthy');
+          
+          if (unhealthyServices.length > 0) {
+            console.warn('Some services failed health checks:', unhealthyServices);
+          } else {
+            console.log('All services initialized successfully and are healthy');
+          }
+        });
+
+      } catch (error) {
+        console.error('Service initialization failed:', error);
+        // Set minimal services to prevent app crash
+        setServices({
+          activityService: new ActivityService(),
+          incidentService: new IncidentService(),
+          caseService: new CaseService(),
+          bolService: new BOLService(),
+          auditService: new AuditService(),
+          visitorService: null as any,
+          passdownService: new PassdownService(),
+          authService: null as any,
+          apiClient: null,
+          isInitialized: false
+        });
+      }
     };
 
-    setServices(serviceContext);
-
-    // Run health checks on all services
-    Promise.allSettled([
-      activityService.healthCheck(),
-      incidentService.healthCheck(),
-      caseService.healthCheck(),
-      bolService.healthCheck(),
-      auditService.healthCheck(),
-      visitorService.healthCheck()
-    ]).then(results => {
-      const unhealthyServices = results
-        .map((result, index) => ({ 
-          index, 
-          result: result.status === 'fulfilled' ? result.value : { status: 'unhealthy' } 
-        }))
-        .filter(({ result }) => result.status !== 'healthy');
-      
-      if (unhealthyServices.length > 0) {
-        console.warn('Some services failed health checks:', unhealthyServices);
-      } else {
-        console.log('All services initialized successfully and are healthy');
-      }
-    });
-
-  }, [initializeServices]);
+    initializeAllServices();
+    setIsInitialized(true);
+  }, []);
 
   if (!services) {
     return (
@@ -275,6 +349,25 @@ export const useVisitorService = () => {
   return visitorService;
 };
 
+export const usePassdownService = () => {
+  const { passdownService } = useServices();
+  return passdownService;
+};
+
+export const useAuthService = () => {
+  const { authService } = useServices();
+  return authService;
+};
+
+// AWS API Client hook
+export const useApiClient = () => {
+  const { apiClient } = useServices();
+  if (!apiClient) {
+    console.warn('AWS API client not initialized - falling back to local services');
+  }
+  return apiClient;
+};
+
 // Audit context helper for creating consistent audit contexts
 export const createAuditContext = (
   userId: string = 'current-user',
@@ -306,7 +399,8 @@ export const ServiceStatus: React.FC = () => {
         services.caseService.healthCheck(),
         services.bolService.healthCheck(),
         services.auditService.healthCheck(),
-        services.visitorService.healthCheck()
+        services.visitorService.healthCheck(),
+        services.passdownService.healthCheck()
       ]);
 
       const results = {
@@ -315,7 +409,8 @@ export const ServiceStatus: React.FC = () => {
         case: checks[2].status === 'fulfilled' ? checks[2].value : { status: 'error' },
         bol: checks[3].status === 'fulfilled' ? checks[3].value : { status: 'error' },
         audit: checks[4].status === 'fulfilled' ? checks[4].value : { status: 'error' },
-        visitor: checks[5].status === 'fulfilled' ? checks[5].value : { status: 'error' }
+        visitor: checks[5].status === 'fulfilled' ? checks[5].value : { status: 'error' },
+        passdown: checks[6].status === 'fulfilled' ? checks[6].value : { status: 'error' }
       };
 
     setHealthChecks(results);

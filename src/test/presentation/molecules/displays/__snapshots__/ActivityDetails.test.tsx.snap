@@ -1,0 +1,379 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ActivityDetails > Snapshot tests > should match snapshot for cluster 1`] = `
+<div
+  class="space-y-3 "
+>
+  <div
+    class="flex items-start justify-between"
+  >
+    <div
+      class="flex-1"
+    >
+      <h3
+        class="text-lg font-semibold "
+      >
+        5 activities in Building A
+      </h3>
+      <div
+        class="ml-2"
+        data-testid="badge"
+      >
+        <div
+          data-testid="users-icon"
+        />
+        5
+         activities
+      </div>
+    </div>
+    <div
+      class="flex items-center gap-2 flex-shrink-0"
+    >
+      <div
+        data-testid="priority-indicator"
+      >
+        critical
+         (
+        md
+        , 
+        badge
+        )
+      </div>
+    </div>
+  </div>
+  <div
+    class="flex items-center gap-3 text-sm text-muted-foreground"
+  >
+    <div
+      data-testid="location-tag"
+    >
+      Building A
+       (
+      site
+      , 
+      md
+      , icon: 
+      true
+      )
+    </div>
+    <div
+      data-testid="time-display"
+    >
+      relative
+       (
+      md
+      , icon: 
+      true
+      )
+    </div>
+  </div>
+  <div
+    class="text-sm text-muted-foreground"
+  >
+    Multiple security events detected
+  </div>
+  <div
+    class="grid grid-cols-2 gap-2 text-xs text-muted-foreground"
+  >
+    <div>
+      Time Range: 
+      30 minutes
+    </div>
+    <div>
+      Highest Priority: 
+      critical
+    </div>
+    <div>
+      Types: 
+      security-breach, alert
+    </div>
+    <div>
+      Last Activity:
+      <div
+        data-testid="time-display"
+      >
+        relative
+         (
+        xs
+        , icon: 
+        false
+        )
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ActivityDetails > Snapshot tests > should match snapshot for default variant 1`] = `
+<div
+  class="space-y-3 "
+>
+  <div
+    class="flex items-start justify-between"
+  >
+    <div
+      class="flex-1"
+    >
+      <h3
+        class="text-lg font-semibold "
+      >
+        Security Alert
+      </h3>
+    </div>
+    <div
+      class="flex items-center gap-2 flex-shrink-0"
+    >
+      <div
+        data-testid="priority-indicator"
+      >
+        high
+         (
+        md
+        , 
+        badge
+        )
+      </div>
+      <div
+        data-testid="status-badge"
+      >
+        detecting
+         (
+        high
+        , 
+        md
+        )
+      </div>
+    </div>
+  </div>
+  <div
+    class="flex items-center gap-3 text-sm text-muted-foreground"
+  >
+    <div
+      data-testid="location-tag"
+    >
+      Building A
+       (
+      site
+      , 
+      md
+      , icon: 
+      true
+      )
+    </div>
+    <div
+      data-testid="time-display"
+    >
+      relative
+       (
+      md
+      , icon: 
+      true
+      )
+    </div>
+  </div>
+  <div
+    class="text-sm text-muted-foreground"
+  >
+    Unauthorized access detected
+  </div>
+  <div
+    class="text-sm text-muted-foreground"
+  >
+    <div
+      class="flex items-center gap-1"
+    >
+      <div
+        data-testid="users-icon"
+      />
+      <span>
+        Assigned to: 
+        John Doe
+      </span>
+      <span
+        class="ml-2"
+      >
+        • 
+        2
+         units responding
+      </span>
+    </div>
+  </div>
+  <div
+    class="text-sm text-muted-foreground"
+  >
+    <div
+      class="flex items-center gap-1"
+    >
+      <div
+        data-testid="camera-icon"
+      />
+      <span>
+        Camera 1
+      </span>
+      <span
+        class="ml-2"
+      >
+        +
+        2
+         more
+      </span>
+    </div>
+  </div>
+  <div
+    class="flex items-center gap-1 flex-wrap"
+  >
+    <div
+      data-testid="tag-icon"
+    />
+    <div
+      class="text-xs"
+      data-testid="badge"
+    >
+      security
+    </div>
+    <div
+      class="text-xs"
+      data-testid="badge"
+    >
+      urgent
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ActivityDetails > Snapshot tests > should match snapshot for inline variant 1`] = `
+<div
+  class="space-x-2 flex items-center flex-wrap"
+>
+  <div
+    class="contents"
+  >
+    <div
+      class="contents"
+    >
+      <h3
+        class="text-sm font-medium mr-2"
+      >
+        Security Alert
+      </h3>
+    </div>
+    <div
+      class="flex items-center gap-2 "
+    >
+      <div
+        data-testid="priority-indicator"
+      >
+        high
+         (
+        xs
+        , 
+        badge
+        )
+      </div>
+      <div
+        data-testid="status-badge"
+      >
+        detecting
+         (
+        high
+        , 
+        xs
+        )
+      </div>
+    </div>
+  </div>
+  <div
+    class="flex items-center gap-3 text-xs text-muted-foreground"
+  >
+    <div
+      data-testid="location-tag"
+    >
+      Building A
+       (
+      site
+      , 
+      xs
+      , icon: 
+      true
+      )
+    </div>
+    <div
+      data-testid="time-display"
+    >
+      relative
+       (
+      xs
+      , icon: 
+      true
+      )
+    </div>
+  </div>
+  <div
+    class="text-xs text-muted-foreground"
+  >
+    Unauthorized access detected
+  </div>
+  <div
+    class="text-xs text-muted-foreground"
+  >
+    <div
+      class="flex items-center gap-1"
+    >
+      <div
+        data-testid="users-icon"
+      />
+      <span>
+        Assigned to: 
+        John Doe
+      </span>
+      <span
+        class="ml-2"
+      >
+        • 
+        2
+         units responding
+      </span>
+    </div>
+  </div>
+  <div
+    class="text-xs text-muted-foreground"
+  >
+    <div
+      class="flex items-center gap-1"
+    >
+      <div
+        data-testid="camera-icon"
+      />
+      <span>
+        Camera 1
+      </span>
+      <span
+        class="ml-2"
+      >
+        +
+        2
+         more
+      </span>
+    </div>
+  </div>
+  <div
+    class="flex items-center gap-1 flex-wrap"
+  >
+    <div
+      data-testid="tag-icon"
+    />
+    <div
+      class="text-xs"
+      data-testid="badge"
+    >
+      security
+    </div>
+    <div
+      class="text-xs"
+      data-testid="badge"
+    >
+      urgent
+    </div>
+  </div>
+</div>
+`;

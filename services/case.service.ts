@@ -28,6 +28,7 @@ export class CaseService extends BaseService<Case, string> {
   private caseStore: ReturnType<typeof useCaseStore.getState>;
   private incidentStore: ReturnType<typeof useIncidentStore.getState>;
   private auditStore: ReturnType<typeof useAuditStore.getState>;
+  private apiBaseUrl: string;
 
   // Business logic configuration for case management
   private readonly statusTransitionRules: StatusTransitionRule[] = [
@@ -51,7 +52,7 @@ export class CaseService extends BaseService<Case, string> {
     'public', 'internal', 'confidential', 'restricted', 'top_secret'
   ];
 
-  constructor() {
+  constructor(apiBaseUrl: string = import.meta.env.VITE_API_URL || '') {
     super('CaseService', {
       enableAudit: true,
       enableValidation: true,
@@ -62,6 +63,7 @@ export class CaseService extends BaseService<Case, string> {
     this.caseStore = useCaseStore.getState();
     this.incidentStore = useIncidentStore.getState();
     this.auditStore = useAuditStore.getState();
+    this.apiBaseUrl = apiBaseUrl;
   }
 
   protected getEntityName(): string {
@@ -862,6 +864,323 @@ export class CaseService extends BaseService<Case, string> {
 
     } catch (error) {
       return this.createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  // ==================== AWS API METHODS ====================
+  // These methods integrate with AWS Lambda functions for production
+
+  /**
+   * Create case via AWS API
+   */
+  async createCaseAWS(
+    data: Partial<Case>,
+    context: AuditContext
+  ): Promise<ServiceResponse<{ case: Case; timeline: any[] }>> {
+    try {
+      // Validate input
+      await this.validateInput(data);
+      
+      // Enforce business rules
+      await this.enforceRules(data, 'create');
+      
+      // Make API call
+      const response = await this.withRetry(async () => {
+        const res = await fetch(`${this.apiBaseUrl}/api/cases`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${context.token}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error?.message || 'Failed to create case');
+        }
+        
+        return res.json();
+      });
+      
+      // Audit log
+      await this.auditLog(context, 'create', response.data.case.id, null, response.data.case);
+      
+      // Publish event
+      await this.publishEvent({
+        eventType: 'case.created',
+        entityId: response.data.case.id,
+        entityType: 'case',
+        data: response.data.case,
+        userId: context.userId,
+        companyId: context.companyId
+      });
+      
+      return this.createSuccessResponse(
+        response.data,
+        'Case created successfully'
+      );
+    } catch (error) {
+      return this.createErrorResponse(error, 'CASE_CREATE_ERROR');
+    }
+  }
+
+  /**
+   * Get cases via AWS API
+   */
+  async getCasesAWS(
+    filters: any,
+    options: QueryOptions,
+    context: AuditContext
+  ): Promise<ServiceResponse<{ cases: Case[]; pagination: any; statistics: any }>> {
+    try {
+      // Build query string
+      const queryParams = new URLSearchParams();
+      
+      // Add filters
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.priority) queryParams.append('priority', filters.priority);
+      if (filters.caseType) queryParams.append('caseType', filters.caseType);
+      if (filters.phase) queryParams.append('phase', filters.phase);
+      if (filters.leadInvestigator) queryParams.append('leadInvestigator', filters.leadInvestigator);
+      if (filters.investigator) queryParams.append('investigator', filters.investigator);
+      if (filters.siteId) queryParams.append('siteId', filters.siteId);
+      if (filters.searchTerm) queryParams.append('searchTerm', filters.searchTerm);
+      if (filters.caseNumber) queryParams.append('caseNumber', filters.caseNumber);
+      if (filters.overdue) queryParams.append('overdue', 'true');
+      if (filters.multiSite) queryParams.append('multiSite', 'true');
+      
+      // Add pagination
+      if (options.limit) queryParams.append('limit', options.limit.toString());
+      if (options.page) queryParams.append('page', options.page.toString());
+      
+      // Make API call
+      const response = await this.withRetry(async () => {
+        const res = await fetch(`${this.apiBaseUrl}/api/cases?${queryParams}`, {
+          headers: {
+            'Authorization': `Bearer ${context.token}`
+          }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error?.message || 'Failed to fetch cases');
+        }
+        
+        return res.json();
+      });
+      
+      return this.createSuccessResponse(response.data);
+    } catch (error) {
+      return this.createErrorResponse(error, 'CASE_FETCH_ERROR');
+    }
+  }
+
+  /**
+   * Get case by ID via AWS API
+   */
+  async getCaseByIdAWS(
+    id: string,
+    includeRelated: boolean,
+    context: AuditContext
+  ): Promise<ServiceResponse<{ case: Case; evidence?: any[]; timeline?: any[]; related?: any }>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (includeRelated) {
+        queryParams.append('includeEvidence', 'true');
+        queryParams.append('includeTimeline', 'true');
+        queryParams.append('includeRelated', 'true');
+      }
+
+      const url = `${this.apiBaseUrl}/api/cases/${id}${queryParams.toString() ? '?' + queryParams : ''}`;
+      
+      const response = await this.withRetry(async () => {
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${context.token}`
+          }
+        });
+        
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error('Case not found');
+          }
+          const error = await res.json();
+          throw new Error(error.error?.message || 'Failed to fetch case');
+        }
+        
+        return res.json();
+      });
+      
+      return this.createSuccessResponse(response.data);
+    } catch (error) {
+      return this.createErrorResponse(error, 'CASE_FETCH_ERROR');
+    }
+  }
+
+  /**
+   * Update case via AWS API
+   */
+  async updateCaseAWS(
+    id: string,
+    data: Partial<Case>,
+    context: AuditContext
+  ): Promise<ServiceResponse<{ case: Case }>> {
+    try {
+      // Get existing case for audit trail
+      const existingResponse = await this.getCaseByIdAWS(id, false, context);
+      if (!existingResponse.success) {
+        return existingResponse as ServiceResponse<{ case: Case }>;
+      }
+      
+      const existing = existingResponse.data?.case;
+      
+      // Validate update
+      await this.validateInput(data);
+      
+      // Enforce business rules
+      await this.enforceRules({ ...existing, ...data }, 'update');
+      
+      // Make API call
+      const response = await this.withRetry(async () => {
+        const res = await fetch(`${this.apiBaseUrl}/api/cases/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${context.token}`
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error?.message || 'Failed to update case');
+        }
+        
+        return res.json();
+      });
+      
+      // Audit log
+      await this.auditLog(context, 'update', id, existing, response.data.case);
+      
+      // Publish event
+      await this.publishEvent({
+        eventType: 'case.updated',
+        entityId: id,
+        entityType: 'case',
+        data: response.data.case,
+        userId: context.userId,
+        companyId: context.companyId
+      });
+      
+      return this.createSuccessResponse(
+        response.data,
+        'Case updated successfully'
+      );
+    } catch (error) {
+      return this.createErrorResponse(error, 'CASE_UPDATE_ERROR');
+    }
+  }
+
+  /**
+   * Add evidence via AWS API
+   */
+  async addEvidenceAWS(
+    caseId: string,
+    evidenceData: any,
+    context: AuditContext
+  ): Promise<ServiceResponse<any>> {
+    try {
+      const response = await this.withRetry(async () => {
+        const res = await fetch(`${this.apiBaseUrl}/api/cases/${caseId}/evidence`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${context.token}`
+          },
+          body: JSON.stringify(evidenceData)
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to add evidence');
+        }
+        
+        return res.json();
+      });
+      
+      // Audit log
+      await this.auditLog(context, 'create', response.data.id, null, response.data, 'evidence');
+      
+      return this.createSuccessResponse(response.data, 'Evidence added successfully');
+    } catch (error) {
+      return this.createErrorResponse(error, 'EVIDENCE_ADD_ERROR');
+    }
+  }
+
+  /**
+   * Helper method to determine which API to use based on environment
+   */
+  private shouldUseAWS(): boolean {
+    return !!(this.apiBaseUrl && import.meta.env.VITE_USE_AWS_API === 'true');
+  }
+
+  /**
+   * Unified case creation method that chooses between AWS and local
+   */
+  async createCaseUnified(
+    data: Partial<Case>,
+    context: AuditContext
+  ): Promise<ServiceResponse<any>> {
+    if (this.shouldUseAWS()) {
+      return this.createCaseAWS(data, context);
+    } else {
+      return this.createCase(data, context);
+    }
+  }
+
+  /**
+   * Unified case fetching method that chooses between AWS and local
+   */
+  async getCasesUnified(
+    filters: any,
+    options: QueryOptions,
+    context: AuditContext
+  ): Promise<ServiceResponse<any>> {
+    if (this.shouldUseAWS()) {
+      return this.getCasesAWS(filters, options, context);
+    } else {
+      return this.getCases(filters, context);
+    }
+  }
+
+  /**
+   * Unified case by ID method that chooses between AWS and local
+   */
+  async getCaseByIdUnified(
+    id: string,
+    includeRelated: boolean,
+    context: AuditContext
+  ): Promise<ServiceResponse<any>> {
+    if (this.shouldUseAWS()) {
+      return this.getCaseByIdAWS(id, includeRelated, context);
+    } else {
+      return this.getCase(id, context);
+    }
+  }
+
+  /**
+   * Unified case update method that chooses between AWS and local
+   */
+  async updateCaseUnified(
+    id: string,
+    data: Partial<Case>,
+    context: AuditContext
+  ): Promise<ServiceResponse<any>> {
+    if (this.shouldUseAWS()) {
+      return this.updateCaseAWS(id, data, context);
+    } else {
+      return this.updateCase(id, data, context);
     }
   }
 }

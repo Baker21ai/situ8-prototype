@@ -1,0 +1,123 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`QuickActions > Snapshot tests > should match snapshot for floating variant 1`] = `
+<div
+  class="
+        fixed bottom-4 right-4 z-50
+        bg-white dark:bg-gray-800
+        rounded-lg shadow-lg border
+        p-2 flex gap-2
+        
+      "
+>
+  <button
+    class="action-button critical default"
+    data-testid="action-button"
+    data-variant="critical"
+  >
+    <div
+      data-testid="alert-triangle-icon"
+    />
+  </button>
+  <button
+    class="action-button secondary default"
+    data-testid="action-button"
+    data-variant="secondary"
+  >
+    <div
+      data-testid="user-icon"
+    />
+  </button>
+  <button
+    class="action-button secondary default"
+    data-testid="action-button"
+    data-variant="secondary"
+  >
+    <div
+      data-testid="eye-icon"
+    />
+  </button>
+  <button
+    class="default ghost min-w-0 h-8 w-8 p-0"
+    data-testid="button"
+  >
+    <div
+      data-testid="more-horizontal-icon"
+    />
+  </button>
+</div>
+`;
+
+exports[`QuickActions > Snapshot tests > should match snapshot for full variant 1`] = `
+<div
+  class="flex items-center gap-2 flex-wrap "
+>
+  <div
+    class="flex items-center gap-1"
+  >
+    <button
+      class="action-button critical default"
+      data-testid="action-button"
+      data-variant="critical"
+    >
+      <div
+        data-testid="alert-triangle-icon"
+      />
+      Escalate
+    </button>
+    <button
+      class="action-button secondary default"
+      data-testid="action-button"
+      data-variant="secondary"
+    >
+      <div
+        data-testid="user-icon"
+      />
+      Assign
+    </button>
+    <button
+      class="action-button secondary default"
+      data-testid="action-button"
+      data-variant="secondary"
+    >
+      <div
+        data-testid="eye-icon"
+      />
+      View
+    </button>
+  </div>
+  <button
+    class="default ghost h-8 w-8 p-0"
+    data-testid="button"
+  >
+    <div
+      data-testid="more-horizontal-icon"
+    />
+  </button>
+</div>
+`;
+
+exports[`QuickActions > Snapshot tests > should match snapshot for minimal variant 1`] = `
+<div
+  class="flex items-center gap-1 "
+>
+  <button
+    class="sm ghost h-6 w-6 p-0"
+    data-testid="button"
+    title="Escalate"
+  >
+    <div
+      data-testid="alert-triangle-icon"
+    />
+  </button>
+  <button
+    class="sm ghost h-6 w-6 p-0"
+    data-testid="button"
+    title="Assign"
+  >
+    <div
+      data-testid="user-icon"
+    />
+  </button>
+</div>
+`;

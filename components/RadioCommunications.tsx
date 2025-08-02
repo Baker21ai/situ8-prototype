@@ -9,6 +9,8 @@ import { Avatar as _Avatar, AvatarFallback as _AvatarFallback } from './ui/avata
 import { ActivityCard } from './organisms/ActivityCard';
 import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/activity';
 import { mockActivities, getActivitiesByTime } from './mockActivityData';
+import { CommunicationControls } from './shared/CommunicationControls';
+import { useCommunications } from '@/hooks/useCommunications';
 import { 
   Radio, 
   Mic, 
@@ -22,7 +24,8 @@ import {
   ChevronDown,
   Play,
   ExternalLink,
-  Headphones
+  Headphones,
+  Filter
 } from 'lucide-react';
 
 interface RadioMessage {
@@ -244,39 +247,20 @@ export function RadioCommunications({
   onOpenFullPage,
   activities = mockActivities 
 }: RadioCommunicationsProps) {
-  const [messages, setMessages] = useState<RadioMessage[]>(mockMessages);
-  const [guards, setGuards] = useState<Guard[]>(mockGuards);
+  const { 
+    messages, 
+    guards, 
+    activeChannel, 
+    setActiveChannel, 
+    playAudio, 
+    playingMessage 
+  } = useCommunications();
+  
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(mockTimelineEvents);
-  const [_selectedChannel, setSelectedChannel] = useState<string>('main');
   const [activeTab, setActiveTab] = useState<string>('communications');
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
 
-  // Simulate real-time message updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate new message every 30 seconds
-      if (Math.random() > 0.7) {
-        const newMessage: RadioMessage = {
-          id: `msg-${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-          guardId: mockGuards[Math.floor(Math.random() * mockGuards.length)].id,
-          guardName: mockGuards[Math.floor(Math.random() * mockGuards.length)].name,
-          location: ['Building A', 'Building B', 'Building C', 'Parking Lot'][Math.floor(Math.random() * 4)],
-          channel: 'main',
-          type: 'voice',
-          content: ['All clear in my sector', 'Checking loading dock', 'Visitor escort complete', 'Starting perimeter patrol'][Math.floor(Math.random() * 4)],
-          transcriptionConfidence: 0.85 + Math.random() * 0.15,
-          hasAudio: true,
-          priority: 'low'
-        };
-        
-        setMessages(prev => [newMessage, ...prev.slice(0, 19)]);
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const _getStatusColor = (status: string) => {
     switch (status) {
@@ -405,7 +389,12 @@ export function RadioCommunications({
             </div>
             <div className="flex items-center gap-1">
               {message.hasAudio && (
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0"
+                  onClick={() => playAudio(message.id)}
+                >
                   <Play className="h-3 w-3" />
                 </Button>
               )}
@@ -693,35 +682,12 @@ export function RadioCommunications({
         </TabsContent>
       </Tabs>
 
-      {/* Quick Actions Footer */}
-      <div className="p-4 border-t bg-gray-50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs text-gray-500">Quick Filters:</div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="text-xs h-6">
-              All Sites
-            </Button>
-            <Button size="sm" variant="outline" className="text-xs h-6">
-              Critical
-            </Button>
-            <Button size="sm" variant="outline" className="text-xs h-6">
-              Last Hour
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="flex-1">
-            <Mic className="h-4 w-4 mr-2" />
-            Push to Talk
-          </Button>
-          {onOpenFullPage && (
-            <Button size="sm" variant="outline" onClick={onOpenFullPage}>
-              View All Comms →
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Communication Controls Footer */}
+      <CommunicationControls
+        variant="compact"
+        onOpenFullPage={onOpenFullPage}
+        showFilters={true}
+      />
     </div>
   );
 }

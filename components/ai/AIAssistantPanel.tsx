@@ -119,9 +119,9 @@ export function AIAssistantPanel() {
     if (savedPosition) {
       setPosition(JSON.parse(savedPosition));
     } else {
-      // Default to bottom-right corner
+      // Default to bottom-left corner
       setPosition({ 
-        x: window.innerWidth - 340, 
+        x: 20, 
         y: window.innerHeight - 500 
       });
     }
@@ -847,7 +847,7 @@ export function AIAssistantPanel() {
       <div
         className="fixed z-50 select-none"
         style={{ 
-          right: '20px', 
+          left: '20px', 
           bottom: '20px',
         }}
       >

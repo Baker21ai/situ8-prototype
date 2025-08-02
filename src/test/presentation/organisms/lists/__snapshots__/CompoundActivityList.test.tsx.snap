@@ -1,0 +1,345 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CompoundActivityList > Snapshot tests > should match snapshot for default state 1`] = `
+<div
+  data-testid="error-boundary"
+>
+  <div
+    class="flex flex-col h-full "
+  >
+    <div
+      class="flex-shrink-0 border-b bg-background p-4"
+    >
+      <div
+        class="flex items-center justify-between mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <h2
+            class="text-lg font-semibold"
+          >
+            Activities
+          </h2>
+          <div
+            class="secondary"
+            data-testid="badge"
+          >
+            3
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-2"
+        >
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="refresh-icon"
+            />
+          </button>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="grid-icon"
+            />
+          </button>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="filter-icon"
+            />
+          </button>
+        </div>
+      </div>
+      <div
+        class="flex items-center gap-4"
+      >
+        <div
+          class="flex-1 relative"
+        >
+          <div
+            data-testid="search-icon"
+          />
+          <input
+            class="pl-10"
+            data-testid="input"
+            placeholder="Search activities..."
+            value=""
+          />
+        </div>
+        <div
+          class="flex items-center gap-2"
+        >
+          <div
+            data-testid="select"
+          >
+            <div
+              data-testid="select-trigger"
+            >
+              <div
+                data-testid="select-value"
+              >
+                Time
+              </div>
+            </div>
+            <div
+              data-testid="select-content"
+            >
+              <div
+                data-testid="select-item"
+                data-value="timestamp"
+              >
+                Time
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="priority"
+              >
+                Priority
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="status"
+              >
+                Status
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="location"
+              >
+                Location
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="type"
+              >
+                Type
+              </div>
+            </div>
+          </div>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="sort-desc-icon"
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-1 overflow-hidden"
+    >
+      <div
+        data-testid="virtualized-list"
+      >
+        <div
+          data-testid="list-item-0"
+        >
+          Medium Priority Activity
+        </div>
+        <div
+          data-testid="list-item-1"
+        >
+          High Priority Alert
+        </div>
+        <div
+          data-testid="list-item-2"
+        >
+          Critical Security Alert
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`CompoundActivityList > Snapshot tests > should match snapshot for error state 1`] = `
+<div
+  class="flex items-center justify-center h-64 "
+>
+  <div
+    class="text-center"
+  >
+    <div
+      class="text-red-500 mb-2"
+    >
+      Error loading activities
+    </div>
+    <div
+      class="text-sm text-muted-foreground mb-4"
+    >
+      Test error
+    </div>
+    <button
+      class="outline sm undefined"
+      data-testid="button"
+    >
+      <div
+        data-testid="refresh-icon"
+      />
+      Retry
+    </button>
+  </div>
+</div>
+`;
+
+exports[`CompoundActivityList > Snapshot tests > should match snapshot for loading state 1`] = `
+<div
+  data-testid="error-boundary"
+>
+  <div
+    class="flex flex-col h-full "
+  >
+    <div
+      class="flex-shrink-0 border-b bg-background p-4"
+    >
+      <div
+        class="flex items-center justify-between mb-4"
+      >
+        <div
+          class="flex items-center gap-2"
+        >
+          <h2
+            class="text-lg font-semibold"
+          >
+            Activities
+          </h2>
+          <div
+            class="secondary"
+            data-testid="badge"
+          >
+            3
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-2"
+        >
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+            disabled=""
+          >
+            <div
+              data-testid="refresh-icon"
+            />
+          </button>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="grid-icon"
+            />
+          </button>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="filter-icon"
+            />
+          </button>
+        </div>
+      </div>
+      <div
+        class="flex items-center gap-4"
+      >
+        <div
+          class="flex-1 relative"
+        >
+          <div
+            data-testid="search-icon"
+          />
+          <input
+            class="pl-10"
+            data-testid="input"
+            placeholder="Search activities..."
+            value=""
+          />
+        </div>
+        <div
+          class="flex items-center gap-2"
+        >
+          <div
+            data-testid="select"
+          >
+            <div
+              data-testid="select-trigger"
+            >
+              <div
+                data-testid="select-value"
+              >
+                Time
+              </div>
+            </div>
+            <div
+              data-testid="select-content"
+            >
+              <div
+                data-testid="select-item"
+                data-value="timestamp"
+              >
+                Time
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="priority"
+              >
+                Priority
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="status"
+              >
+                Status
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="location"
+              >
+                Location
+              </div>
+              <div
+                data-testid="select-item"
+                data-value="type"
+              >
+                Type
+              </div>
+            </div>
+          </div>
+          <button
+            class="outline sm undefined"
+            data-testid="button"
+          >
+            <div
+              data-testid="sort-desc-icon"
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-1 overflow-hidden"
+    >
+      <div
+        class="flex items-center justify-center h-64"
+      >
+        <div
+          data-testid="refresh-icon"
+        />
+        <span>
+          Loading activities...
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;

@@ -8,7 +8,8 @@ import { Separator as _Separator } from './ui/separator';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useIncidentStore } from '../stores/incidentStore';
 import { useActivityStore } from '../stores/activityStore';
-import { useServices } from '../services/ServiceProvider';
+import { useCaseStore } from '../stores/caseStore';
+import { useServices, useApiClient } from '../services/ServiceProvider';
 import { formatDistanceToNow } from '../lib/utils/time';
 import { Incident } from '../lib/types/incident';
 import { 
@@ -195,9 +196,53 @@ const generateCommunicationData = (): CommunicationEntry[] => [
 ];
 
 export function Timeline({ className = '', onOpenModal, onOpenFullPage, activities = [] }: TimelineProps) {
+  // Get AWS API client if configured
+  const apiClient = useApiClient();
+  const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true' && apiClient;
+  
   // Get real incident data from store
   const { incidents, loading: incidentsLoading, error: incidentsError } = useIncidentStore();
+  const { createCase } = useCaseStore();
   const { incidentService } = useServices();
+  
+  // AWS API data state
+  const [awsIncidents, setAwsIncidents] = useState<Incident[]>([]);
+  const [awsLoading, setAwsLoading] = useState(false);
+  const [awsError, setAwsError] = useState<string | null>(null);
+  
+  // Fetch incidents from AWS API when configured
+  const fetchAwsIncidents = React.useCallback(async () => {
+    if (!useAwsApi) return;
+    
+    setAwsLoading(true);
+    setAwsError(null);
+    
+    try {
+      const response = await apiClient.getIncidents();
+      if (response.success && response.data) {
+        setAwsIncidents(response.data);
+      } else {
+        setAwsError(response.error || 'Failed to fetch incidents');
+      }
+    } catch (error) {
+      console.error('Error fetching AWS incidents:', error);
+      setAwsError(error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setAwsLoading(false);
+    }
+  }, [useAwsApi, apiClient]);
+
+  // Fetch AWS data on component mount
+  useEffect(() => {
+    if (useAwsApi) {
+      fetchAwsIncidents();
+    }
+  }, [fetchAwsIncidents]);
+
+  // Choose data source based on configuration
+  const currentIncidents = useAwsApi ? awsIncidents : incidents;
+  const currentLoading = useAwsApi ? awsLoading : incidentsLoading;
+  const currentError = useAwsApi ? awsError : incidentsError;
   
   // Convert incidents to timeline format
   const [incidentData, setIncidentData] = useState<TimelineEntry[]>([]);
@@ -206,10 +251,37 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
   const [_expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const [timeFilter, setTimeFilter] = useState<'15m' | '1h' | '4h' | '24h'>('1h');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+
+  // Handle case creation from incident
+  const handleCreateCaseFromIncident = React.useCallback(async (incident: Incident) => {
+    try {
+      const caseData = {
+        title: `Investigation: ${incident.title}`,
+        description: `Investigation case created from incident: ${incident.description}`,
+        caseType: 'incident_investigation' as const,
+        priority: incident.priority,
+        status: 'active' as const,
+        currentPhase: 'evidence_collection' as const,
+        relatedIncidents: [incident.id],
+        tags: ['incident-escalation', incident.type || 'general'],
+        initialFindings: `Escalated from incident: ${incident.title} (${incident.id})`,
+        investigationPlan: 'Comprehensive investigation of incident circumstances and contributing factors'
+      };
+
+      createCase(caseData);
+      console.log('Case created from incident:', incident.id);
+      
+      // You could add a success notification here
+      // toast.success('Investigation case created successfully');
+    } catch (error) {
+      console.error('Failed to create case from incident:', error);
+      // toast.error('Failed to create case');
+    }
+  }, [createCase]);
   
   // Convert real incidents to timeline entries
   useEffect(() => {
-    const timelineEntries = incidents.map((incident: Incident): TimelineEntry => ({
+    const timelineEntries = currentIncidents.map((incident: Incident): TimelineEntry => ({
       id: incident.id,
       timestamp: new Date(incident.created_at),
       type: 'incident',
@@ -230,7 +302,7 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
       }
     }));
     setIncidentData(timelineEntries);
-  }, [incidents]);
+  }, [currentIncidents]);
 
   // Real-time data simulation
   useEffect(() => {
@@ -470,6 +542,21 @@ export function Timeline({ className = '', onOpenModal, onOpenFullPage, activiti
                   Escalate
                 </Button>
               )}
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-7 text-xs"
+                onClick={() => {
+                  // Find the original incident from the timeline entry
+                  const originalIncident = currentIncidents.find(inc => inc.id === incident.id);
+                  if (originalIncident) {
+                    handleCreateCaseFromIncident(originalIncident);
+                  }
+                }}
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                Create Case
+              </Button>
             </div>
           </div>
         </div>

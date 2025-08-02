@@ -5,31 +5,36 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CaseType, CaseStatus } from '../lib/types/case';
+import type { CaseType, CaseStatus, InvestigationPhase } from '../lib/types/case';
 
 // Simplified case interface that's compatible with full Case interface
 interface SimpleCase {
   id: string;
-  case_number: string;
+  caseNumber: string;
   title: string;
   status: CaseStatus;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  lead_investigator: string;
-  created_at: Date;
-  description?: string;
+  leadInvestigatorId?: string;
+  createdAt: string;
+  description: string;
+  caseType: CaseType;
+  currentPhase: InvestigationPhase;
+  primarySiteId?: string;
+  targetCompletionDate?: string;
+  regulatoryDeadline?: string;
+  tags?: string[];
+  // Compatibility properties
   assignedTo?: string;
-  type: CaseType;
   investigators?: string[];
-  linked_incident_ids?: string[];
-  evidence_items?: any[];
-  timeline_events?: any[];
-  updated_at: Date;
-  created_by: string;
-  updated_by: string;
+  linkedIncidentIds?: string[];
+  evidenceItems?: any[];
+  timelineEvents?: any[];
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
   conclusion?: string;
-  // Add compatibility properties that components expect
-  related_incidents?: string[];
-  related_activities?: string[];
+  relatedIncidents?: string[];
+  relatedActivities?: string[];
 }
 
 interface CaseState {
@@ -60,6 +65,9 @@ interface CaseActions {
     closedCount: number;
   };
   resetStore: () => void;
+  fetchCases: () => Promise<void>;
+  clearError: () => void;
+  initializeWithSampleData: () => void;
 }
 
 type CaseStore = CaseState & CaseActions;
@@ -81,16 +89,18 @@ export const useCaseStore = create<CaseStore>()(
         
         const newCase: SimpleCase = {
           id: `CASE-${Date.now()}`,
-          case_number: caseNumber,
+          caseNumber,
           title: 'New Investigation Case',
+          description: 'Investigation case created via form',
           status: 'draft' as CaseStatus,
           priority: 'medium',
-          lead_investigator: 'current-user',
-          type: 'incident_investigation' as CaseType,
-          created_at: new Date(),
-          updated_at: new Date(),
-          created_by: 'current-user',
-          updated_by: 'current-user',
+          leadInvestigatorId: 'current-user',
+          caseType: 'incident_investigation' as CaseType,
+          currentPhase: 'initiation' as InvestigationPhase,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          createdBy: 'current-user',
+          updatedBy: 'current-user',
           ...caseData,
         };
         
@@ -160,6 +170,121 @@ export const useCaseStore = create<CaseStore>()(
           error: null,
           filters: {},
         });
+      },
+
+      fetchCases: async () => {
+        set({ loading: true, error: null });
+        try {
+          // For now, we'll just resolve immediately since we're using local storage
+          await new Promise(resolve => setTimeout(resolve, 500));
+          set({ loading: false });
+        } catch (error) {
+          set({ 
+            loading: false, 
+            error: error instanceof Error ? error.message : 'Failed to fetch cases' 
+          });
+        }
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
+
+      initializeWithSampleData: () => {
+        const sampleCases: SimpleCase[] = [
+          {
+            id: 'CASE-001',
+            caseNumber: 'CASE-2025-000001',
+            title: 'Security Breach Investigation - East Wing',
+            description: 'Unauthorized access detected in East Wing security systems. Multiple card swipes at unusual hours require investigation.',
+            status: 'active',
+            priority: 'high',
+            leadInvestigatorId: 'inv-001',
+            caseType: 'security_investigation',
+            currentPhase: 'evidence_collection',
+            primarySiteId: 'site-001',
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            createdBy: 'admin-001',
+            updatedBy: 'inv-001',
+            tags: ['urgent', 'access-control', 'east-wing'],
+            targetCompletionDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: 'CASE-002',
+            caseNumber: 'CASE-2025-000002',
+            title: 'Workplace Incident - Slip and Fall',
+            description: 'Employee reported slip and fall incident in cafeteria. Investigating potential safety hazards and liability.',
+            status: 'pending_review',
+            priority: 'medium',
+            leadInvestigatorId: 'inv-002',
+            caseType: 'safety_investigation',
+            currentPhase: 'reporting',
+            primarySiteId: 'site-001',
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            createdBy: 'hr-001',
+            updatedBy: 'inv-002',
+            tags: ['safety', 'cafeteria', 'liability'],
+            regulatoryDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: 'CASE-003',
+            caseNumber: 'CASE-2025-000003',
+            title: 'Fraud Investigation - Expense Claims',
+            description: 'Suspicious patterns detected in expense claim submissions from multiple employees. Potential fraudulent activity.',
+            status: 'escalated',
+            priority: 'critical',
+            leadInvestigatorId: 'inv-003',
+            caseType: 'fraud_investigation',
+            currentPhase: 'analysis',
+            primarySiteId: 'site-002',
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+            createdBy: 'finance-001',
+            updatedBy: 'inv-003',
+            tags: ['fraud', 'financial', 'expenses', 'high-priority'],
+            targetCompletionDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            id: 'CASE-004',
+            caseNumber: 'CASE-2025-000004',
+            title: 'Data Compliance Audit',
+            description: 'Routine compliance audit to ensure data handling procedures meet regulatory requirements.',
+            status: 'completed',
+            priority: 'low',
+            leadInvestigatorId: 'inv-004',
+            caseType: 'compliance_investigation',
+            currentPhase: 'closure',
+            primarySiteId: 'site-001',
+            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            createdBy: 'compliance-001',
+            updatedBy: 'inv-004',
+            tags: ['compliance', 'data-protection', 'audit', 'routine'],
+            conclusion: 'All data handling procedures found to be compliant with current regulations.',
+          },
+          {
+            id: 'CASE-005',
+            caseNumber: 'CASE-2025-000005',
+            title: 'Property Damage Investigation',
+            description: 'Damage to company vehicles in parking garage. Investigating cause and potential insurance claims.',
+            status: 'draft',
+            priority: 'medium',
+            leadInvestigatorId: 'inv-001',
+            caseType: 'property_investigation',
+            currentPhase: 'initiation',
+            primarySiteId: 'site-003',
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            createdBy: 'security-001',
+            updatedBy: 'security-001',
+            tags: ['property', 'vehicles', 'parking', 'insurance'],
+            targetCompletionDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+          }
+        ];
+
+        set({ cases: sampleCases });
       },
     }),
     {

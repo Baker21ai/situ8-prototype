@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PriorityIndicator > Snapshot tests > should match snapshot for default variant 1`] = `
+<div
+  class="
+            px-1.5 py-0.5 text-xs
+            bg-yellow-500/20 text-yellow-300 border-yellow-500
+            border font-medium 
+    
+    
+  
+          "
+  data-testid="priority-badge"
+>
+  Medium
+</div>
+`;
+
+exports[`PriorityIndicator > Snapshot tests > should match snapshot for dot variant 1`] = `
+<div
+  class="inline-flex items-center gap-1 
+    
+    
+  "
+>
+  <div
+    aria-label="High priority"
+    class="rounded-full w-2.5 h-2.5 bg-orange-500"
+  />
+  <span
+    class="text-xs text-orange-300 font-medium"
+  >
+    High
+  </span>
+</div>
+`;
+
+exports[`PriorityIndicator > Snapshot tests > should match snapshot for icon variant 1`] = `
+<div
+  class="inline-flex items-center gap-1 
+    animate-pulse
+    
+  "
+>
+  <div
+    aria-label="Critical priority"
+    class="h-3 w-3 text-red-400"
+    data-testid="alert-triangle-icon"
+  />
+  <span
+    class="text-xs text-red-300 font-medium"
+  >
+    Critical
+  </span>
+</div>
+`;

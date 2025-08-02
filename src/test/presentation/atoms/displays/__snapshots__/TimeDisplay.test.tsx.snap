@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TimeDisplay > Snapshot tests > should match snapshot for DualTimeDisplay 1`] = `
+<span
+  class="inline-flex items-center"
+>
+  <span
+    class="
+        inline-flex items-center gap-1
+        text-sm
+        text-muted-foreground
+        font-mono
+        
+      "
+  >
+    <time
+      datetime="2024-01-15T14:30:45.000Z"
+    >
+      14:30
+    </time>
+  </span>
+  <span
+    class="text-muted-foreground mx-1"
+  >
+     • 
+  </span>
+  <span
+    class="
+        inline-flex items-center gap-1
+        text-sm
+        text-muted-foreground
+        font-mono
+        
+      "
+    title="Jan 15, 2024 14:30:45"
+  >
+    <time
+      datetime="2024-01-15T14:30:45.000Z"
+    >
+      1 hours ago
+    </time>
+  </span>
+</span>
+`;
+
+exports[`TimeDisplay > Snapshot tests > should match snapshot for default variant 1`] = `
+<span
+  class="
+        inline-flex items-center gap-1
+        text-sm
+        text-muted-foreground
+        font-mono
+        
+      "
+  title="Jan 15, 2024 14:30:45"
+>
+  <time
+    datetime="2024-01-15T14:30:45.000Z"
+  >
+    1 hours ago
+  </time>
+</span>
+`;
+
+exports[`TimeDisplay > Snapshot tests > should match snapshot for time format with icon 1`] = `
+<span
+  class="
+        inline-flex items-center gap-1
+        text-sm
+        text-muted-foreground
+        font-mono
+        
+      "
+  title="Jan 15, 2024 14:30:45"
+>
+  <div
+    aria-hidden="true"
+    class="h-3 w-3 opacity-70"
+    data-testid="clock-icon"
+  />
+  <time
+    datetime="2024-01-15T14:30:45.000Z"
+  >
+    14:30
+  </time>
+</span>
+`;

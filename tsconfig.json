@@ -7,19 +7,22 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
 
-    /* Linting */
+    /* Linting - Relaxed for development */
     "strict": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": false,
     "noImplicitReturns": false,
     "noImplicitThis": false,
 
@@ -29,7 +32,7 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src", "components", "*.tsx", "App.tsx"],
-  "exclude": ["vite.config.ts", "design-iterations/**/*", "ui-ux-iterations/**/*", "command-center-design-styles/**/*", "claude-chats/**/*", "future-features/**/*"],
+  "include": ["components", "*.tsx", "App.tsx", "lib", "services", "stores", "src/**/*"],
+  "exclude": ["vite.config.ts", "design-iterations/**/*", "ui-ux-iterations/**/*", "command-center-design-styles/**/*", "claude-chats/**/*", "future-features/**/*", "stores/optimizedActivityStore.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,0 +1,94 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LocationTag > Snapshot tests > should match snapshot for default variant 1`] = `
+<div
+  class="
+        px-1.5 py-0.5
+        text-xs
+        bg-purple-500/20 border-purple-500 text-purple-300
+        font-medium inline-flex items-center
+        
+        
+      "
+  data-testid="location-badge"
+>
+  Building A
+</div>
+`;
+
+exports[`LocationTag > Snapshot tests > should match snapshot for hierarchical location 1`] = `
+<div
+  class="inline-flex items-center flex-wrap gap-1 "
+>
+  <div
+    class="
+        px-1.5 py-0.5
+        text-xs
+        bg-purple-500/20 border-purple-500 text-purple-300
+        font-medium inline-flex items-center
+        
+        
+      "
+    data-testid="location-badge"
+  >
+    East Campus
+  </div>
+  <span
+    class="text-muted-foreground text-xs"
+  >
+     › 
+  </span>
+  <div
+    class="
+        px-1.5 py-0.5
+        text-xs
+        text-blue-300 bg-transparent
+        font-medium inline-flex items-center
+        
+        
+      "
+    data-testid="location-badge"
+  >
+    Building A
+  </div>
+  <span
+    class="text-muted-foreground text-xs"
+  >
+     › 
+  </span>
+  <div
+    class="
+        px-1.5 py-0.5
+        text-xs
+        text-green-300 bg-transparent
+        font-medium inline-flex items-center
+        
+        
+      "
+    data-testid="location-badge"
+  >
+    Zone 3
+  </div>
+</div>
+`;
+
+exports[`LocationTag > Snapshot tests > should match snapshot for site with icon 1`] = `
+<div
+  class="
+        px-1.5 py-0.5
+        text-xs
+        bg-purple-500/20 border-purple-500 text-purple-300
+        font-medium inline-flex items-center
+        gap-1
+        
+      "
+  data-testid="location-badge"
+>
+  <div
+    aria-hidden="true"
+    class="h-3 w-3 text-purple-400"
+    data-testid="building-icon"
+  />
+  East Campus
+</div>
+`;

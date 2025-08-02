@@ -28,6 +28,7 @@ import { Priority, Status } from '../lib/utils/status';
 import { useActivityStore } from '../stores/activityStore';
 import { useIncidentStore } from '../stores/incidentStore';
 import { useAuditStore } from '../stores/auditStore';
+import { ActivityTypeMapper, ACTIVITY_TYPE_REGISTRY } from '../lib/config/activity-types.config';
 
 export class ActivityService extends BaseService<EnterpriseActivity, string> {
   private activityStore: ReturnType<typeof useActivityStore.getState>;
@@ -103,12 +104,13 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
     const locationError = this.validateRequired(activity.location, 'location');
     if (locationError) errors.push(locationError);
 
-    // Enum validation
+    // Dynamic activity type validation using configuration
     if (activity.type) {
+      const validTypes = ActivityTypeMapper.getAllValidTypes();
       const typeError = this.validateEnum(
         activity.type,
         'type',
-        ['medical', 'security-breach', 'alert', 'patrol', 'evidence', 'property-damage', 'bol-event']
+        validTypes
       );
       if (typeError) errors.push(typeError);
     }

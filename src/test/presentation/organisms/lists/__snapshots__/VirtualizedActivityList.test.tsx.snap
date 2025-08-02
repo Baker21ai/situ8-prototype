@@ -1,0 +1,281 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`VirtualizedActivityList > Snapshot tests > should match snapshot for empty state 1`] = `
+<div
+  class="flex items-center justify-center h-full text-gray-500 "
+>
+  <div
+    class="text-center"
+  >
+    <div
+      data-testid="alert-triangle-icon"
+    />
+    <div
+      class="text-lg font-medium"
+    >
+      No activities found
+    </div>
+    <div
+      class="text-sm"
+    >
+      Try adjusting your filters or search criteria
+    </div>
+  </div>
+</div>
+`;
+
+exports[`VirtualizedActivityList > Snapshot tests > should match snapshot for fixed size list 1`] = `
+<div
+  data-testid="error-wrapper"
+>
+  <div
+    class="flex flex-col h-full "
+  >
+    <div
+      class="flex-shrink-0 p-4"
+    >
+      <div
+        class="grid grid-cols-4 gap-4 mb-4"
+      >
+        <div
+          class="bg-red-50 border border-red-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-red-600"
+          >
+            1
+          </div>
+          <div
+            class="text-sm text-red-800"
+          >
+            Critical
+          </div>
+        </div>
+        <div
+          class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-orange-600"
+          >
+            1
+          </div>
+          <div
+            class="text-sm text-orange-800"
+          >
+            High
+          </div>
+        </div>
+        <div
+          class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-yellow-600"
+          >
+            1
+          </div>
+          <div
+            class="text-sm text-yellow-800"
+          >
+            Medium
+          </div>
+        </div>
+        <div
+          class="bg-green-50 border border-green-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-green-600"
+          >
+            0
+          </div>
+          <div
+            class="text-sm text-green-800"
+          >
+            Low
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-1 overflow-hidden"
+      tabindex="0"
+    >
+      <div
+        data-testid="fixed-size-list"
+      >
+        <div
+          data-testid="list-item-0"
+        >
+          <div
+            data-testid="activity-list-item"
+          >
+            Critical Security Alert
+          </div>
+        </div>
+        <div
+          data-testid="list-item-1"
+        >
+          <div
+            data-testid="activity-list-item"
+          >
+            High Priority Alert
+          </div>
+        </div>
+        <div
+          data-testid="list-item-2"
+        >
+          <div
+            data-testid="activity-list-item"
+          >
+            Medium Priority Activity
+          </div>
+        </div>
+        <div
+          data-testid="list-controls"
+        >
+          <button>
+            Trigger onItemsRendered
+          </button>
+          <button>
+            Trigger onScroll
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-shrink-0 p-2 border-t bg-gray-50 text-xs text-gray-600"
+    >
+      <div
+        class="flex items-center justify-between"
+      >
+        <span>
+          Showing 
+          3
+           activities • Virtual scrolling enabled • Memory optimized
+        </span>
+        <span>
+          ↑↓: Navigate • Enter: Select • Home/End: Jump
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`VirtualizedActivityList > Snapshot tests > should match snapshot for variable size list with clusters 1`] = `
+<div
+  data-testid="error-wrapper"
+>
+  <div
+    class="flex flex-col h-full "
+  >
+    <div
+      class="flex-shrink-0 p-4"
+    >
+      <div
+        class="grid grid-cols-4 gap-4 mb-4"
+      >
+        <div
+          class="bg-red-50 border border-red-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-red-600"
+          >
+            1
+          </div>
+          <div
+            class="text-sm text-red-800"
+          >
+            Critical
+          </div>
+        </div>
+        <div
+          class="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-orange-600"
+          >
+            0
+          </div>
+          <div
+            class="text-sm text-orange-800"
+          >
+            High
+          </div>
+        </div>
+        <div
+          class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-yellow-600"
+          >
+            0
+          </div>
+          <div
+            class="text-sm text-yellow-800"
+          >
+            Medium
+          </div>
+        </div>
+        <div
+          class="bg-green-50 border border-green-200 rounded-lg p-3 text-center"
+        >
+          <div
+            class="text-2xl font-bold text-green-600"
+          >
+            0
+          </div>
+          <div
+            class="text-sm text-green-800"
+          >
+            Low
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-1 overflow-hidden"
+      tabindex="0"
+    >
+      <div
+        data-testid="variable-size-list"
+      >
+        <div
+          data-testid="list-item-0"
+        >
+          <div
+            data-testid="activity-list-item"
+          >
+            3 activities in Building A
+          </div>
+        </div>
+        <div
+          data-testid="list-controls"
+        >
+          <button>
+            Trigger onItemsRendered
+          </button>
+          <button>
+            Trigger onScroll
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="flex-shrink-0 p-2 border-t bg-gray-50 text-xs text-gray-600"
+    >
+      <div
+        class="flex items-center justify-between"
+      >
+        <span>
+          Showing 
+          1
+           activities • Virtual scrolling enabled • Memory optimized
+        </span>
+        <span>
+          ↑↓: Navigate • Enter: Select • Home/End: Jump
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;

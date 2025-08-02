@@ -1,930 +1,809 @@
-import { useState, useEffect } from 'react';
-import { useCaseStore } from '../stores/caseStore';
-import { useServices } from '../services/ServiceProvider';
-import type { CaseType, CaseStatus } from '../lib/types/case';
+/**
+ * Cases Component
+ * Main UI for viewing and managing investigation cases
+ */
 
-// Type alias for the case data we get from the store
-type CaseData = {
+import React, { useEffect, useState, useMemo } from 'react';
+import { useCaseStore } from '../stores/caseStore';
+import { useServices, useApiClient } from '../services/ServiceProvider';
+import { 
+  Calendar, 
+  Clock, 
+  AlertCircle, 
+  Grid, 
+  List, 
+  Filter,
+  Plus,
+  Archive,
+  ChevronDown,
+  User,
+  MapPin,
+  Tag,
+  CheckCircle,
+  Eye,
+  Search,
+  Briefcase,
+  Shield,
+  AlertTriangle,
+  FileText,
+  Users,
+  Building,
+  Scale
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Input } from './ui/input';
+import { Skeleton } from './ui/skeleton';
+import { 
+  CaseStatus, 
+  CaseType,
+  InvestigationPhase 
+} from '../lib/types/case';
+
+// SimpleCase interface from store  
+interface SimpleCase {
   id: string;
-  case_number: string;
+  caseNumber: string;
   title: string;
   status: CaseStatus;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  lead_investigator: string;
-  created_at: Date;
-  description?: string;
-  assignedTo?: string;
-  type: CaseType;
-  investigators?: string[];
-  linked_incident_ids?: string[];
-  evidence_items?: any[];
-  timeline_events?: any[];
-  updated_at: Date;
-  created_by: string;
-  updated_by: string;
-  conclusion?: string;
-  related_incidents?: string[];
-  related_activities?: string[];
-};
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
-import { Alert, AlertDescription } from './ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { 
-  Briefcase, 
-  Search, 
-  Filter, 
-  Plus, 
-  Clock, 
-  Users,
-  FileText,
-  Camera,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  ChevronRight,
-  MapPin,
-  Calendar,
-  User,
-  Building,
-  Hash,
-  Activity,
-  FolderOpen,
-  Link,
-  MoreVertical,
-  Download,
-  Eye,
-  Edit,
-  Archive,
-  Trash2,
-  ClipboardCheck, 
-  Scale, 
-  Globe, 
-  Package, 
-  HardDrive, 
-  MessageSquare, 
-  Microscope,
-  Volume2
-} from 'lucide-react';
-import { Case, EvidenceItem } from '../lib/types/case';
-import { Priority } from '../lib/types/common';
-import { formatDistanceToNow } from '../lib/utils/time';
+  leadInvestigatorId?: string;
+  createdAt: string;
+  description: string;
+  caseType: CaseType;
+  currentPhase: InvestigationPhase;
+  primarySiteId?: string;
+  targetCompletionDate?: string;
+  regulatoryDeadline?: string;
+  tags?: string[];
+}
+import { formatDistanceToNow } from 'date-fns';
+import { CaseCreateForm } from './CaseCreateForm';
+import { CaseDetailView } from './CaseDetailView';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
-// Case status badge colors
-const statusColors: Record<string, string> = {
-  open: 'bg-blue-100 text-blue-800 border-blue-200',
-  investigating: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  evidence_collection: 'bg-purple-100 text-purple-800 border-purple-200',
-  analysis: 'bg-orange-100 text-orange-800 border-orange-200',
-  closed: 'bg-gray-100 text-gray-800 border-gray-200'
-};
-
-// Priority badge colors
-const priorityColors: Record<Priority, string> = {
-  critical: 'bg-red-100 text-red-800 border-red-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-green-100 text-green-800 border-green-200'
+// Case type display mapping with icons
+const caseTypeConfig: Record<CaseType, { label: string; icon: React.ReactNode; color: string }> = {
+  security_investigation: { 
+    label: 'Security Investigation', 
+    icon: <Shield className="w-4 h-4" />, 
+    color: 'bg-red-100 text-red-800' 
+  },
+  incident_investigation: { 
+    label: 'Incident Investigation', 
+    icon: <AlertTriangle className="w-4 h-4" />, 
+    color: 'bg-orange-100 text-orange-800' 
+  },
+  safety_investigation: { 
+    label: 'Safety Investigation', 
+    icon: <Shield className="w-4 h-4" />, 
+    color: 'bg-yellow-100 text-yellow-800' 
+  },
+  fraud_investigation: { 
+    label: 'Fraud Investigation', 
+    icon: <Search className="w-4 h-4" />, 
+    color: 'bg-purple-100 text-purple-800' 
+  },
+  compliance_investigation: { 
+    label: 'Compliance Investigation', 
+    icon: <FileText className="w-4 h-4" />, 
+    color: 'bg-blue-100 text-blue-800' 
+  },
+  property_investigation: { 
+    label: 'Property Investigation', 
+    icon: <Building className="w-4 h-4" />, 
+    color: 'bg-green-100 text-green-800' 
+  },
+  personnel_investigation: { 
+    label: 'Personnel Investigation', 
+    icon: <Users className="w-4 h-4" />, 
+    color: 'bg-indigo-100 text-indigo-800' 
+  },
+  operational_investigation: { 
+    label: 'Operational Investigation', 
+    icon: <Briefcase className="w-4 h-4" />, 
+    color: 'bg-gray-100 text-gray-800' 
+  },
+  environmental_investigation: { 
+    label: 'Environmental Investigation', 
+    icon: <Archive className="w-4 h-4" />, 
+    color: 'bg-teal-100 text-teal-800' 
+  },
+  quality_investigation: { 
+    label: 'Quality Investigation', 
+    icon: <CheckCircle className="w-4 h-4" />, 
+    color: 'bg-cyan-100 text-cyan-800' 
+  },
+  audit_investigation: { 
+    label: 'Audit Investigation', 
+    icon: <FileText className="w-4 h-4" />, 
+    color: 'bg-pink-100 text-pink-800' 
+  },
+  legal_investigation: { 
+    label: 'Legal Investigation', 
+    icon: <Scale className="w-4 h-4" />, 
+    color: 'bg-rose-100 text-rose-800' 
+  },
+  other: { 
+    label: 'Other Investigation', 
+    icon: <Archive className="w-4 h-4" />, 
+    color: 'bg-gray-100 text-gray-800' 
+  }
 };
 
-// Case type icons
-const typeIcons: Record<string, any> = {
-  investigation: Shield,
-  compliance: FileText,
-  incident_followup: AlertTriangle,
-  audit: ClipboardCheck,
-  legal: Scale,
-  insurance: Shield,
-  internal: Building,
-  external: Globe
+// Priority level colors and icons  
+const priorityConfig: Record<'low' | 'medium' | 'high' | 'critical', { color: string; icon: React.ReactNode }> = {
+  low: { color: 'bg-green-100 text-green-800', icon: null },
+  medium: { color: 'bg-yellow-100 text-yellow-800', icon: null },
+  high: { color: 'bg-orange-100 text-orange-800', icon: <AlertCircle className="w-3 h-3" /> },
+  critical: { color: 'bg-red-100 text-red-800', icon: <AlertCircle className="w-3 h-3" /> }
 };
 
-export function Cases() {
-  // Store hooks
-  const { 
-    cases, 
-    loading, 
+// Status colors
+const statusConfig: Record<CaseStatus, { color: string; label: string }> = {
+  draft: { color: 'bg-gray-100 text-gray-800', label: 'Draft' },
+  active: { color: 'bg-blue-100 text-blue-800', label: 'Active' },
+  pending_review: { color: 'bg-yellow-100 text-yellow-800', label: 'Pending Review' },
+  on_hold: { color: 'bg-orange-100 text-orange-800', label: 'On Hold' },
+  escalated: { color: 'bg-red-100 text-red-800', label: 'Escalated' },
+  completed: { color: 'bg-green-100 text-green-800', label: 'Completed' },
+  closed: { color: 'bg-gray-100 text-gray-600', label: 'Closed' },
+  archived: { color: 'bg-gray-100 text-gray-500', label: 'Archived' }
+};
+
+// Phase display mapping
+const phaseConfig: Record<InvestigationPhase, { label: string; color: string }> = {
+  initiation: { label: 'Initiation', color: 'bg-blue-100 text-blue-800' },
+  evidence_collection: { label: 'Evidence Collection', color: 'bg-purple-100 text-purple-800' },
+  analysis: { label: 'Analysis', color: 'bg-indigo-100 text-indigo-800' },
+  interviews: { label: 'Interviews', color: 'bg-orange-100 text-orange-800' },
+  verification: { label: 'Verification', color: 'bg-yellow-100 text-yellow-800' },
+  reporting: { label: 'Reporting', color: 'bg-teal-100 text-teal-800' },
+  review: { label: 'Review', color: 'bg-green-100 text-green-800' },
+  closure: { label: 'Closure', color: 'bg-gray-100 text-gray-800' }
+};
+
+interface CasesProps {
+  onCreateNew?: () => void;
+  onSelectCase?: (caseItem: SimpleCase) => void;
+}
+
+export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
+  // Get AWS API client if configured
+  const apiClient = useApiClient();
+  const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true' && apiClient;
+  
+  const {
+    cases,
+    loading,
     error,
-    selectedCase,
-    selectCase,
-    filters,
-    setFilters,
-    getCaseStats
+    fetchCases,
+    clearError,
+    getCaseStats,
+    initializeWithSampleData
   } = useCaseStore();
 
-  const { caseService, isInitialized } = useServices();
-
-  // Local state
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // Get case statistics
+  // Get stats from the store method
   const stats = getCaseStats();
+  
+  // AWS API data state
+  const [awsCases, setAwsCases] = useState<SimpleCase[]>([]);
+  const [awsLoading, setAwsLoading] = useState(false);
+  const [awsError, setAwsError] = useState<string | null>(null);
+  const [awsStats, setAwsStats] = useState<any>(null);
 
-  // Filter cases based on search
-  const filteredCases = cases.filter((caseItem: any) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        caseItem.title.toLowerCase().includes(query) ||
-        caseItem.case_number.toLowerCase().includes(query) ||
-        caseItem.description?.toLowerCase().includes(query) ||
-        caseItem.assignedTo?.toLowerCase().includes(query)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [phaseFilter, setPhaseFilter] = useState<string>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [showCaseDetail, setShowCaseDetail] = useState(false);
+
+  // Fetch cases from AWS API when configured
+  const fetchAwsCases = React.useCallback(async () => {
+    if (!useAwsApi) return;
+    
+    setAwsLoading(true);
+    setAwsError(null);
+    
+    try {
+      const response = await apiClient.getCases();
+      if (response.success && response.data) {
+        setAwsCases(response.data);
+        
+        // Calculate basic stats from AWS data
+        const total = response.data.length;
+        const active = response.data.filter((c: any) => c.status === 'active').length;
+        const completed = response.data.filter((c: any) => c.status === 'completed' || c.status === 'closed').length;
+        const draft = response.data.filter((c: any) => c.status === 'draft').length;
+        const criticalCount = response.data.filter((c: any) => c.priority === 'critical').length;
+        
+        setAwsStats({
+          total,
+          active,
+          completed,
+          draft,
+          criticalCount,
+          closedCount: completed,
+          byStatus: {
+            open: draft + active,
+            investigating: active,
+            evidence_collection: 0,
+            analysis: 0,
+            closed: completed
+          }
+        });
+      } else {
+        setAwsError(response.error || 'Failed to fetch cases');
+      }
+    } catch (error) {
+      console.error('Error fetching AWS cases:', error);
+      setAwsError(error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setAwsLoading(false);
+    }
+  }, [useAwsApi, apiClient]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (useAwsApi) {
+      fetchAwsCases();
+    } else {
+      // Initialize with sample data for testing if no cases exist
+      if (cases.length === 0) {
+        initializeWithSampleData();
+      }
+      fetchCases();
+    }
+  }, [useAwsApi, fetchAwsCases, fetchCases, cases.length, initializeWithSampleData]);
+
+  // Choose data source based on configuration
+  const currentCases = useAwsApi ? awsCases : cases;
+  const currentLoading = useAwsApi ? awsLoading : loading;
+  const currentError = useAwsApi ? awsError : error;
+  const currentStats = useAwsApi ? (awsStats || { total: 0, active: 0, completed: 0, draft: 0, criticalCount: 0, closedCount: 0, byStatus: {} }) : stats;
+
+  // Filter cases based on search and filters
+  const filteredCases = useMemo(() => {
+    let filtered = currentCases;
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.title.toLowerCase().includes(term) ||
+        c.description.toLowerCase().includes(term) ||
+        c.caseNumber.toLowerCase().includes(term) ||
+        c.tags?.some(tag => tag.toLowerCase().includes(term))
       );
     }
-    return true;
-  });
 
-  // Create new case
-  const handleCreateCase = async (caseData: Partial<any>) => {
-    if (!caseService) return;
-
-    try {
-      await caseService?.createCase?.(caseData, {
-        userId: 'current-user',
-        userName: 'Current User',
-        userRole: 'officer',
-        action: 'create_case'
-      });
-      setShowCreateDialog(false);
-    } catch (error) {
-      console.error('Failed to create case:', error);
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(c => c.status === statusFilter);
     }
+
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(c => c.priority === priorityFilter);
+    }
+
+    // Type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(c => c.caseType === typeFilter);
+    }
+
+    // Phase filter
+    if (phaseFilter !== 'all') {
+      filtered = filtered.filter(c => c.currentPhase === phaseFilter);
+    }
+
+    return filtered;
+  }, [currentCases, searchTerm, statusFilter, priorityFilter, typeFilter, phaseFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
+    setTypeFilter('all');
+    setPhaseFilter('all');
   };
 
-  // View case details
-  const handleViewCase = (caseItem: any) => {
-    selectCase(caseItem);
-    setShowDetailDialog(true);
+  // Calculate if case is overdue
+  const isOverdue = (caseItem: SimpleCase) => {
+    const now = new Date();
+    return (caseItem.targetCompletionDate && new Date(caseItem.targetCompletionDate) < now) ||
+           (caseItem.regulatoryDeadline && new Date(caseItem.regulatoryDeadline) < now);
   };
 
-  return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-white border-b shadow-sm">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-semibold flex items-center gap-2">
-                <Briefcase className="h-6 w-6" />
-                Case Management
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Strategic investigations and evidence tracking
-              </p>
-            </div>
-            <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Case
-            </Button>
-          </div>
+  // Handle case selection
+  const handleSelectCase = (caseItem: SimpleCase) => {
+    setSelectedCaseId(caseItem.id);
+    setShowCaseDetail(true);
+    onSelectCase?.(caseItem);
+  };
 
-          {/* Statistics */}
-          <div className="grid grid-cols-6 gap-4">
-            <Card className="border-l-4 border-l-blue-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <div className="text-xs text-muted-foreground">Total Cases</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-yellow-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.byStatus.open || 0}</div>
-                <div className="text-xs text-muted-foreground">Open</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-orange-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.byStatus.investigating || 0}</div>
-                <div className="text-xs text-muted-foreground">Investigating</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-purple-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.byStatus.evidence_collection || 0}</div>
-                <div className="text-xs text-muted-foreground">Evidence Collection</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-red-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.criticalCount}</div>
-                <div className="text-xs text-muted-foreground">Critical Priority</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-green-500">
-              <CardContent className="p-3">
-                <div className="text-2xl font-bold">{stats.closedCount}</div>
-                <div className="text-xs text-muted-foreground">Closed</div>
-              </CardContent>
-            </Card>
-          </div>
+  // Render loading state
+  if (currentLoading && currentCases.length === 0) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <Skeleton key={i} className="h-48" />
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Filters and Search */}
-      <div className="flex-shrink-0 bg-white border-b p-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search cases by title, number, or assignee..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Select value={filters.status || 'all'} onValueChange={(value) => setFilters({ status: value === 'all' ? undefined : value })}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="investigating">Investigating</SelectItem>
-              <SelectItem value="evidence_collection">Evidence Collection</SelectItem>
-              <SelectItem value="analysis">Analysis</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filters.priority || 'all'} onValueChange={(value) => setFilters({ priority: value === 'all' ? undefined : value as Priority })}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filters.type || 'all'} onValueChange={(value) => setFilters({ type: value === 'all' ? undefined : value })}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="investigation">Investigation</SelectItem>
-              <SelectItem value="compliance">Compliance</SelectItem>
-              <SelectItem value="incident_followup">Incident Follow-up</SelectItem>
-              <SelectItem value="audit">Audit</SelectItem>
-              <SelectItem value="legal">Legal</SelectItem>
-              <SelectItem value="insurance">Insurance</SelectItem>
-              <SelectItem value="internal">Internal</SelectItem>
-              <SelectItem value="external">External</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2 border rounded-md">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className="rounded-r-none"
-            >
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="rounded-l-none"
-            >
-              List
-            </Button>
-          </div>
+  // Render error state
+  if (currentError) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-red-600" />
+          <p className="text-red-800">{currentError}</p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={clearError}
+            className="ml-auto"
+          >
+            Dismiss
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      {/* Cases Display */}
-      <ScrollArea className="flex-1 p-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading cases...</p>
+  // Render list item
+  const renderListItem = (caseItem: SimpleCase) => (
+    <Card
+      key={caseItem.id}
+      className="hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => handleSelectCase(caseItem)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg">{caseItem.title}</h3>
+              <Badge variant="outline" className="text-xs font-mono">
+                {caseItem.caseNumber}
+              </Badge>
+              {isOverdue(caseItem) && (
+                <Badge className="bg-red-100 text-red-800">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Overdue
+                </Badge>
+              )}
             </div>
-          </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : filteredCases.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <Briefcase className="h-12 w-12 text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No cases found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'Try adjusting your search or filters' : 'Create your first case to get started'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setShowCreateDialog(true)} variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Case
-              </Button>
+            
+            <p className="text-sm text-gray-600 line-clamp-2">{caseItem.description}</p>
+
+            <div className="flex flex-wrap gap-2 text-sm">
+              <Badge className={caseTypeConfig[caseItem.caseType].color}>
+                {caseTypeConfig[caseItem.caseType].icon}
+                <span className="ml-1">{caseTypeConfig[caseItem.caseType].label}</span>
+              </Badge>
+              
+              <Badge className={priorityConfig[caseItem.priority].color}>
+                {priorityConfig[caseItem.priority].icon}
+                <span className="ml-1">{caseItem.priority}</span>
+              </Badge>
+
+              <Badge className={statusConfig[caseItem.status].color}>
+                {statusConfig[caseItem.status].label}
+              </Badge>
+
+              <Badge className={phaseConfig[caseItem.currentPhase].color}>
+                {phaseConfig[caseItem.currentPhase].label}
+              </Badge>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  Lead: {caseItem.leadInvestigatorId || 'Unassigned'}
+                </span>
+                {caseItem.primarySiteId && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {caseItem.primarySiteId}
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {formatDistanceToNow(new Date(caseItem.createdAt), { addSuffix: true })}
+                </span>
+              </div>
+            </div>
+
+            {caseItem.tags && caseItem.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {caseItem.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    <Tag className="w-3 h-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCases.map((caseItem) => (
-              <CaseCard
-                key={caseItem.id}
-                case={caseItem}
-                onView={handleViewCase}
-              />
-            ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Render grid item
+  const renderGridItem = (caseItem: SimpleCase) => (
+    <Card
+      key={caseItem.id}
+      className="hover:shadow-md transition-shadow cursor-pointer h-full"
+      onClick={() => handleSelectCase(caseItem)}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-base line-clamp-2">{caseItem.title}</CardTitle>
+          {isOverdue(caseItem) && (
+            <Badge className="bg-red-100 text-red-800 flex-shrink-0">
+              <Clock className="w-3 h-3" />
+            </Badge>
+          )}
+        </div>
+        <div className="flex gap-2 mt-2">
+          <Badge className={priorityConfig[caseItem.priority].color}>
+            {priorityConfig[caseItem.priority].icon}
+            <span className="ml-1">{caseItem.priority}</span>
+          </Badge>
+          <Badge className={statusConfig[caseItem.status].color}>
+            {statusConfig[caseItem.status].label}
+          </Badge>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-3">
+        <Badge variant="outline" className="text-xs font-mono">
+          {caseItem.caseNumber}
+        </Badge>
+        
+        <p className="text-sm text-gray-600 line-clamp-3">{caseItem.description}</p>
+        
+        <div className="space-y-1 text-sm">
+          <div className="flex items-center gap-2 text-gray-500">
+            {caseTypeConfig[caseItem.caseType].icon}
+            <span>{caseTypeConfig[caseItem.caseType].label}</span>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredCases.map((caseItem) => (
-              <CaseListItem
-                key={caseItem.id}
-                case={caseItem}
-                onView={handleViewCase}
-              />
-            ))}
+          
+          <div className="flex items-center gap-2 text-gray-500">
+            <User className="w-3 h-3" />
+            <span>Lead: {caseItem.leadInvestigatorId || 'Unassigned'}</span>
           </div>
-        )}
-      </ScrollArea>
+          
+          <div className="flex items-center gap-2 text-gray-500">
+            <Badge className={phaseConfig[caseItem.currentPhase].color}>
+              {phaseConfig[caseItem.currentPhase].label}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="text-sm text-gray-500">
+            {caseItem.primarySiteId && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {caseItem.primarySiteId}
+              </span>
+            )}
+          </div>
+          
+          <span className="text-xs text-gray-400">
+            {formatDistanceToNow(new Date(caseItem.createdAt), { addSuffix: true })}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Header and Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Cases</h2>
+          <p className="text-gray-600">Manage investigation cases and evidence</p>
+        </div>
+        
+        <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Create Case
+        </Button>
+      </div>
+
+      {/* Quick Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Cases</p>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                </div>
+                <Briefcase className="w-8 h-8 text-gray-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active Cases</p>
+                  <p className="text-2xl font-bold">{stats.active}</p>
+                </div>
+                <AlertCircle className="w-8 h-8 text-blue-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Critical Priority</p>
+                  <p className="text-2xl font-bold">{stats.criticalCount}</p>
+                </div>
+                <Clock className="w-8 h-8 text-red-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Draft Cases</p>
+                  <p className="text-2xl font-bold">{stats.draft}</p>
+                </div>
+                <Eye className="w-8 h-8 text-orange-400" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold">{stats.completed}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters and Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <Input
+                placeholder="Search cases by title, description, or case number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending_review">Pending Review</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="escalated">Escalated</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Case Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="security_investigation">Security</SelectItem>
+                  <SelectItem value="incident_investigation">Incident</SelectItem>
+                  <SelectItem value="safety_investigation">Safety</SelectItem>
+                  <SelectItem value="fraud_investigation">Fraud</SelectItem>
+                  <SelectItem value="compliance_investigation">Compliance</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+              >
+                {viewMode === 'list' ? <Grid className="w-4 h-4" /> : <List className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Active Filters Display */}
+          {(statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' || phaseFilter !== 'all' || searchTerm) && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary">
+                  Status: {statusFilter}
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {priorityFilter !== 'all' && (
+                <Badge variant="secondary">
+                  Priority: {priorityFilter}
+                  <button
+                    onClick={() => setPriorityFilter('all')}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {typeFilter !== 'all' && (
+                <Badge variant="secondary">
+                  Type: {typeFilter}
+                  <button
+                    onClick={() => setTypeFilter('all')}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {searchTerm && (
+                <Badge variant="secondary">
+                  Search: "{searchTerm}"
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs"
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cases List/Grid */}
+      {filteredCases.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Filter className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No cases found</h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all'
+                ? "Try adjusting your search or filters"
+                : "No cases have been created yet"}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+              <Button onClick={() => setShowCreateForm(true)}>
+                Create New Case
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className={cn(
+          viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            : "space-y-4"
+        )}>
+          {filteredCases.map(caseItem => 
+            viewMode === 'list' 
+              ? renderListItem(caseItem)
+              : renderGridItem(caseItem)
+          )}
+        </div>
+      )}
 
       {/* Create Case Dialog */}
-      <CreateCaseDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCreate={handleCreateCase}
-      />
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Case</DialogTitle>
+          </DialogHeader>
+          <CaseCreateForm
+            onSuccess={(caseId) => {
+              setShowCreateForm(false);
+              // Refresh cases list
+              fetchCases();
+            }}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Case Detail Dialog */}
-      {selectedCase && (
-        <CaseDetailDialog
-          open={showDetailDialog}
-          onOpenChange={setShowDetailDialog}
-          case={selectedCase}
-          caseService={caseService}
-        />
-      )}
+      <Dialog open={showCaseDetail} onOpenChange={setShowCaseDetail}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto p-0">
+          {selectedCaseId && (
+            <CaseDetailView
+              caseId={selectedCaseId}
+              onBack={() => {
+                setShowCaseDetail(false);
+                setSelectedCaseId(null);
+              }}
+              onEdit={(caseItem) => {
+                setShowCaseDetail(false);
+                // TODO: Open edit form
+                console.log('Edit case:', caseItem);
+              }}
+              onDelete={(caseId) => {
+                setShowCaseDetail(false);
+                // TODO: Handle delete
+                console.log('Delete case:', caseId);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-// Case Card Component
-interface CaseCardProps {
-  case: CaseData;
-  onView: (caseItem: CaseData) => void;
-}
-
-function CaseCard({ case: caseItem, onView }: CaseCardProps) {
-  const TypeIcon = typeIcons[caseItem.type] || Briefcase;
-  
-  return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onView(caseItem)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <TypeIcon className="h-5 w-5 text-muted-foreground" />
-            <Badge variant="outline" className="text-xs">
-              {caseItem.case_number}
-            </Badge>
-          </div>
-          <Badge className={priorityColors[caseItem.priority]}>
-            {caseItem.priority}
-          </Badge>
-        </div>
-        <CardTitle className="text-lg mt-2 line-clamp-2">{caseItem.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <Badge className={`${statusColors[caseItem.status]} w-fit`}>
-            {caseItem.status.replace('_', ' ').toUpperCase()}
-          </Badge>
-          
-          {caseItem.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {caseItem.description}
-            </p>
-          )}
-          
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDistanceToNow(caseItem.created_at)}
-              </span>
-              {caseItem.assignedTo && (
-                <span className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  {caseItem.assignedTo}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1">
-              <Activity className="h-3 w-3" />
-              {caseItem.linked_incident_ids?.length || 0} incidents
-            </span>
-            <span className="flex items-center gap-1">
-              <Camera className="h-3 w-3" />
-              {caseItem.evidence_items?.length || 0} evidence
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Case List Item Component
-interface CaseListItemProps {
-  case: CaseData;
-  onView: (caseItem: CaseData) => void;
-}
-
-function CaseListItem({ case: caseItem, onView }: CaseListItemProps) {
-  const TypeIcon = typeIcons[caseItem.type] || Briefcase;
-  
-  return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onView(caseItem)}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
-            <TypeIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold truncate">{caseItem.title}</h3>
-                <Badge variant="outline" className="text-xs">
-                  {caseItem.case_number}
-                </Badge>
-              </div>
-              {caseItem.description && (
-                <p className="text-sm text-muted-foreground truncate">
-                  {caseItem.description}
-                </p>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm">
-              <Badge className={statusColors[caseItem.status]}>
-                {caseItem.status.replace('_', ' ').toUpperCase()}
-              </Badge>
-              <Badge className={priorityColors[caseItem.priority]}>
-                {caseItem.priority}
-              </Badge>
-              <div className="text-muted-foreground">
-                {formatDistanceToNow(caseItem.created_at)}
-              </div>
-              {caseItem.assignedTo && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <User className="h-3 w-3" />
-                  {caseItem.assignedTo}
-                </div>
-              )}
-            </div>
-            
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Create Case Dialog
-function CreateCaseDialog({ 
-  open, 
-  onOpenChange, 
-  onCreate 
-}: { 
-  open: boolean; 
-  onOpenChange: (open: boolean) => void;
-  onCreate: (data: Partial<Case>) => void;
-}) {
-  const [formData, setFormData] = useState<Partial<Case>>({
-    title: '',
-    type: 'investigation',
-    priority: 'medium',
-    status: 'open',
-    description: ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onCreate(formData);
-    setFormData({
-      title: '',
-      type: 'investigation',
-      priority: 'medium',
-      status: 'open',
-      description: ''
-    });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Create New Case</DialogTitle>
-          <DialogDescription>
-            Open a new investigation case with evidence tracking and team management
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Case Title</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Enter case title..."
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger id="type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="investigation">Investigation</SelectItem>
-                  <SelectItem value="compliance">Compliance</SelectItem>
-                  <SelectItem value="incident_followup">Incident Follow-up</SelectItem>
-                  <SelectItem value="audit">Audit</SelectItem>
-                  <SelectItem value="legal">Legal</SelectItem>
-                  <SelectItem value="insurance">Insurance</SelectItem>
-                  <SelectItem value="internal">Internal</SelectItem>
-                  <SelectItem value="external">External</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as Priority })}>
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status">Initial Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as Status })}>
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="investigating">Investigating</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Provide case details and initial observations..."
-              rows={4}
-            />
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              Create Case
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Case Detail Dialog
-interface CaseDetailDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  case: Case;
-  caseService: any;
-}
-
-function CaseDetailDialog({ 
-  open, 
-  onOpenChange, 
-  case: caseItem,
-  caseService
-}: CaseDetailDialogProps) {
-  const TypeIcon = typeIcons[caseItem.type] || Briefcase;
-  
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl flex items-center gap-2">
-                <TypeIcon className="h-6 w-6" />
-                {caseItem.title}
-              </DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline">{caseItem.case_number}</Badge>
-                <Badge className={statusColors[caseItem.status]}>
-                  {caseItem.status.replace('_', ' ').toUpperCase()}
-                </Badge>
-                <Badge className={priorityColors[caseItem.priority]}>
-                  {caseItem.priority}
-                </Badge>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-        
-        <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="evidence">Evidence ({caseItem.evidence_items?.length || 0})</TabsTrigger>
-            <TabsTrigger value="incidents">Incidents ({caseItem.linked_incident_ids?.length || 0})</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Case Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-muted-foreground">Description</Label>
-                  <p className="mt-1">{caseItem.description || 'No description provided'}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Created</Label>
-                    <p className="mt-1">{new Date(caseItem.created_at).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Last Updated</Label>
-                    <p className="mt-1">{new Date(caseItem.updated_at).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Created By</Label>
-                    <p className="mt-1">{caseItem.created_by}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Assigned To</Label>
-                    <p className="mt-1">{caseItem.assignedTo || 'Unassigned'}</p>
-                  </div>
-                </div>
-                
-                {caseItem.conclusion && (
-                  <div>
-                    <Label className="text-muted-foreground">Conclusion</Label>
-                    <p className="mt-1">{caseItem.conclusion}</p>
-                  </div>
-                )}
-                
-                {caseItem.recommendations && (
-                  <div>
-                    <Label className="text-muted-foreground">Recommendations</Label>
-                    <p className="mt-1">{caseItem.recommendations}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="evidence" className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Evidence Items</h3>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Evidence
-              </Button>
-            </div>
-            
-            {caseItem.evidence_items && caseItem.evidence_items.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {caseItem.evidence_items.map((evidence) => (
-                  <EvidenceCard key={evidence.id} evidence={evidence} />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Camera className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No evidence items yet</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="incidents" className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Linked Incidents</h3>
-              <Button size="sm">
-                <Link className="h-4 w-4 mr-2" />
-                Link Incident
-              </Button>
-            </div>
-            
-            {caseItem.linked_incident_ids && caseItem.linked_incident_ids.length > 0 ? (
-              <div className="space-y-2">
-                {caseItem.linked_incident_ids.map((incidentId) => (
-                  <Card key={incidentId}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{incidentId}</p>
-                          <p className="text-sm text-muted-foreground">Incident details would appear here</p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Activity className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No linked incidents</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="timeline" className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Case Timeline</h3>
-            {caseItem.timeline_events && caseItem.timeline_events.length > 0 ? (
-              <div className="space-y-4">
-                {caseItem.timeline_events.map((event, index) => (
-                  <div key={index} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 bg-primary rounded-full" />
-                      {index < caseItem.timeline_events.length - 1 && (
-                        <div className="w-0.5 h-full bg-gray-200" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <p className="font-medium">{event.description}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(event.timestamp)} • {event.user}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No timeline events recorded</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="team" className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Investigation Team</h3>
-            <div className="grid grid-cols-1 gap-4">
-              {caseItem.lead_investigator && (
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{caseItem.lead_investigator}</p>
-                        <p className="text-sm text-muted-foreground">Lead Investigator</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {caseItem.investigators && caseItem.investigators.map((investigator) => (
-                <Card key={investigator}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{investigator}</p>
-                        <p className="text-sm text-muted-foreground">Investigator</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {!caseItem.lead_investigator && (!caseItem.investigators || caseItem.investigators.length === 0) && (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-muted-foreground">No team members assigned</p>
-                    <Button variant="outline" size="sm" className="mt-4">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Team Member
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Evidence Card Component
-function EvidenceCard({ evidence }: { evidence: EvidenceItem }) {
-  const typeIcons = {
-    photo: Camera,
-    video: Camera,
-    audio: Volume2,
-    document: FileText,
-    physical: Package,
-    digital: HardDrive,
-    witness_statement: MessageSquare,
-    expert_analysis: Microscope
-  };
-  
-  const TypeIcon = typeIcons[evidence.type] || FileText;
-  
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-              <TypeIcon className="h-5 w-5 text-gray-600" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium">{evidence.description}</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                Collected {formatDistanceToNow(evidence.collected_at)} by {evidence.collected_by}
-              </p>
-              <div className="flex items-center gap-4 mt-2">
-                <Badge variant={evidence.integrity_verified ? 'default' : 'secondary'}>
-                  {evidence.integrity_verified ? 'Verified' : 'Pending Verification'}
-                </Badge>
-                <Badge variant="outline">{evidence.classification}</Badge>
-                <span className="text-xs text-muted-foreground">
-                  {evidence.chain_of_custody.length} custody entries
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-

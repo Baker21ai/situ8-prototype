@@ -63,6 +63,16 @@ export interface ActivityData extends BaseActivity {
   camera?: string;
 }
 
+// External system data interface
+export interface ExternalSystemData {
+  sourceSystem: string;
+  originalType: string;
+  rawPayload: Record<string, any>;
+  processingTimestamp: string;
+  mappingUsed: string;
+  originalEvent: Record<string, any>;
+}
+
 // Enterprise activity with enhanced metadata
 export interface EnterpriseActivity extends ActivityData {
   sector?: string;
@@ -86,6 +96,8 @@ export interface EnterpriseActivity extends ActivityData {
     count: number;
     activities: string[];
   };
+  // 🎯 RAW EXTERNAL SYSTEM DATA
+  externalData?: ExternalSystemData;
 }
 
 // Badge holder information

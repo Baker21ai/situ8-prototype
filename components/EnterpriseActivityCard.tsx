@@ -14,6 +14,21 @@ import { EnterpriseActivity, ActivityCluster } from '../lib/types/activity';
 import { getPriorityColor, getStatusColor, getBusinessImpactColor, Priority } from '../lib/utils/status';
 import { getTypeIcon } from '../lib/utils/security';
 import { formatTime, formatTimeAgo } from '../lib/utils/time';
+import { ExternalDataDisplay } from './ExternalDataDisplay';
+
+// Import our new molecule components
+import { 
+  ActivityInfo, 
+  ActivityInfoCompact, 
+  ActivityInfoMinimal,
+  ActivityMetadata, 
+  ActivityMetadataCompact, 
+  ActivityMetadataMinimal,
+  ActivityActions,
+  ActivityActionsCompact,
+  ActivityActionsMinimal,
+  ActivityActionsTooltip
+} from '../src/presentation/molecules';
 
 // Helper function to get simple priority background color
 const getPriorityBgColor = (priority: Priority) => {
@@ -45,7 +60,7 @@ interface EnterpriseActivityCardProps {
 }
 
 
-// Minimal Card for high-density displays - Even More Compact
+// Minimal Card for high-density displays - Refactored with Molecules
 const MinimalCard = memo<{ 
   activity: EnterpriseActivity; 
   onSelect?: (activity: EnterpriseActivity) => void; 
@@ -66,13 +81,24 @@ const MinimalCard = memo<{
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-xs">
           <div className="space-y-1">
-            <div className="font-medium text-xs">{activity.title}</div>
-            <div className="text-xs text-muted-foreground">{activity.type}</div>
-            <div className="text-xs">{activity.location}</div>
-            <div className="text-xs">{formatTimeAgo(activity.timestamp)}</div>
-            {activity.confidence && (
-              <div className="text-xs">Confidence: {activity.confidence}%</div>
-            )}
+            <ActivityInfoMinimal 
+              activity={activity}
+              showType={true}
+              showLocation={true}
+              showTime={true}
+              showCamera={false}
+              timeFormat="relative"
+            />
+            <ActivityMetadataMinimal 
+              activity={activity}
+              showPriority={false}
+              showStatus={false}
+              showConfidence={true}
+              showBusinessImpact={false}
+              showSpecialBadges={false}
+              showExternalData={false}
+              showEscalation={false}
+            />
           </div>
         </TooltipContent>
       </Tooltip>
@@ -80,7 +106,7 @@ const MinimalCard = memo<{
   );
 });
 
-// Cluster Card for grouped activities - Compact Version
+// Cluster Card for grouped activities - Refactored with Molecules
 const ClusterCard = memo<{ 
   cluster: ActivityCluster; 
   onSelect?: (cluster: ActivityCluster) => void; 
@@ -89,6 +115,16 @@ const ClusterCard = memo<{
   variant: EnterpriseCardVariant;
 }>(({ cluster, onSelect, onAction, isSelected = false, variant }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  const handleAction = (action: string, item: any) => {
+    if (action === 'expand') {
+      setIsExpanded(true);
+    } else if (action === 'collapse') {
+      setIsExpanded(false);
+    } else {
+      onAction?.(action, item);
+    }
+  };
   
   if (variant === 'minimal') {
     return (
@@ -135,26 +171,26 @@ const ClusterCard = memo<{
               {cluster.highestPriority.toUpperCase()}
             </Badge>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-4 w-4 p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-          >
-            {isExpanded ? <Eye className="h-2 w-2" /> : <MoreVertical className="h-2 w-2" />}
-          </Button>
+          <ActivityActionsMinimal
+            activity={cluster}
+            onAction={handleAction}
+            showExpandCollapse={true}
+            isExpanded={isExpanded}
+          />
         </div>
 
-        {/* Representative Activity */}
-        <div className="space-y-0.5">
-          <div className="font-medium text-xs">{cluster.representative.title}</div>
-          <div className="text-xs text-gray-600">{cluster.location}</div>
-          <div className="text-xs text-gray-500">
-            {formatTimeAgo(cluster.timeRange.start)} - {formatTimeAgo(cluster.timeRange.end)}
-          </div>
+        {/* Representative Activity Info */}
+        <ActivityInfoCompact
+          activity={cluster.representative}
+          showType={false}
+          showTime={false}
+          showLocation={true}
+          showCamera={false}
+        />
+        
+        {/* Time Range */}
+        <div className="text-xs text-gray-500">
+          {formatTimeAgo(cluster.timeRange.start)} - {formatTimeAgo(cluster.timeRange.end)}
         </div>
 
         {/* Activity Breakdown */}
@@ -178,23 +214,22 @@ const ClusterCard = memo<{
           <div className="border-t pt-1 space-y-0.5">
             {cluster.activities.slice(0, 3).map((activity) => (
               <div key={activity.id} className="text-xs p-1 bg-gray-50 rounded">
-                <div className="font-medium">{activity.title}</div>
-                <div className="text-gray-500">{formatTimeAgo(activity.timestamp)}</div>
+                <ActivityInfoMinimal
+                  activity={activity}
+                  showType={false}
+                  showTime={true}
+                  showLocation={false}
+                  showCamera={false}
+                  timeFormat="relative"
+                />
               </div>
             ))}
-            {cluster.count > 3 && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full h-4 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAction?.('view_all', cluster);
-                }}
-              >
-                View all {cluster.count}
-              </Button>
-            )}
+            <ActivityActionsCompact
+              activity={cluster}
+              onAction={handleAction}
+              showQuickActions={true}
+              showMainActions={false}
+            />
           </div>
         )}
       </CardContent>
@@ -202,7 +237,7 @@ const ClusterCard = memo<{
   );
 });
 
-// Enhanced Stream Card for enterprise features - Always Compact Version
+// Enhanced Stream Card for enterprise features - Refactored with Molecules
 const EnterpriseStreamCard = memo<{ 
   activity: EnterpriseActivity; 
   onSelect?: (activity: EnterpriseActivity) => void; 
@@ -220,77 +255,39 @@ const EnterpriseStreamCard = memo<{
       onClick={() => onSelect?.(activity)}
     >
       <CardContent className="p-2 space-y-1">
-        {/* Enhanced Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-mono">
-              {formatTime(activity.timestamp)}
-            </span>
-            <span className="text-sm">{getTypeIcon(activity.type)}</span>
-            <span className="font-medium text-xs">
-              {activity.type}
-            </span>
-          </div>
-          <div className="flex items-center gap-0.5">
-            {activity.businessImpact && activity.businessImpact !== 'none' && (
-              <div 
-                className={`w-2 h-2 rounded-full ${getBusinessImpactColor(activity.businessImpact)}`}
-                title={`Business Impact: ${activity.businessImpact}`}
-              />
-            )}
-            {activity.isNewActivity && (
-              <Badge className="bg-red-100 text-red-800 text-xs animate-pulse">NEW</Badge>
-            )}
-            {activity.isBoloActive && (
-              <Badge className="bg-orange-100 text-orange-800 text-xs">BOLO</Badge>
-            )}
-            {activity.isMassCasualty && (
-              <Badge className="bg-red-100 text-red-800 text-xs animate-pulse">MASS</Badge>
-            )}
-            {activity.isSecurityThreat && (
-              <Badge className="bg-orange-100 text-orange-800 text-xs">THREAT</Badge>
-            )}
-          </div>
-        </div>
+        {/* Activity Information */}
+        <ActivityInfoCompact 
+          activity={activity}
+          timeFormat="absolute"
+          showType={true}
+          showTime={true}
+        />
 
-        {/* Title */}
-        <div className="font-medium text-xs">{activity.title}</div>
+        {/* Activity Metadata */}
+        <ActivityMetadataCompact 
+          activity={activity}
+          showPriority={true}
+          showStatus={true}
+          showConfidence={true}
+          showBusinessImpact={true}
+          showSpecialBadges={true}
+          showExternalData={true}
+          showEscalation={true}
+        />
 
-        {/* Location */}
-        <div className="text-xs text-gray-600">{activity.zone || activity.location}</div>
-
-        {/* Status and Assignment */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Badge className={`${getPriorityColor(activity.priority).background} ${getPriorityColor(activity.priority).text} ${getPriorityColor(activity.priority).border}`}>
-              {activity.priority.toUpperCase()}
-            </Badge>
-            {activity.escalationLevel && activity.escalationLevel > 0 && (
-              <Badge className="bg-purple-100 text-purple-800 text-xs">
-                ESC {activity.escalationLevel}
-              </Badge>
-            )}
-          </div>
-          <div className="text-xs text-gray-600">
-            {activity.assignedTo && activity.assignedTo}
-            {activity.respondingUnits && activity.respondingUnits.length > 0 && 
-              ` • ${activity.respondingUnits.length}u`}
-          </div>
-        </div>
-
-        {/* Additional Cameras */}
-        {activity.additionalCameras && activity.additionalCameras.length > 0 && (
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <Camera className="h-2 w-2" />
-            <span>+{activity.additionalCameras.length} cameras</span>
-          </div>
-        )}
+        {/* Activity Actions */}
+        <ActivityActionsCompact 
+          activity={activity}
+          onAction={onAction}
+          showQuickActions={false}
+          showMainActions={false}
+        />
       </CardContent>
     </Card>
   );
 });
 
-// Summary Card for high-level overview - Compact Version
+// Summary Card for high-level overview - Refactored with Molecules
 const SummaryCard = memo<{ 
   activity: EnterpriseActivity; 
   onSelect?: (activity: EnterpriseActivity) => void;
@@ -309,37 +306,41 @@ const SummaryCard = memo<{
       onClick={() => onSelect?.(activity)}
     >
       <div className="space-y-0.5">
+        {/* Header with type and confidence */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="font-medium text-xs">{activity.type}</span>
-            <span className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</span>
-          </div>
-          {activity.confidence && (
-            <Badge variant="outline" className="text-xs">
-              {activity.confidence}%
-            </Badge>
-          )}
+          <ActivityInfoMinimal 
+            activity={activity}
+            showType={true}
+            showTime={true}
+            showLocation={false}
+            showCamera={false}
+            timeFormat="relative"
+          />
+          <ActivityMetadataMinimal 
+            activity={activity}
+            showPriority={false}
+            showStatus={false}
+            showConfidence={true}
+            showBusinessImpact={false}
+            showSpecialBadges={false}
+            showExternalData={false}
+            showEscalation={false}
+          />
         </div>
         
+        {/* Title from ActivityInfo */}
         <div className="font-medium text-xs">{activity.title}</div>
         
-        <div className="flex items-center gap-1 text-xs text-gray-600">
-          <MapPin className="h-2 w-2" />
-          <span>{activity.location}</span>
-          {activity.cameraName && (
-            <>
-              <span>•</span>
-              <Camera className="h-2 w-2" />
-              <span>{activity.cameraName}</span>
-            </>
-          )}
-        </div>
+        {/* Location and camera info */}
+        <ActivityInfoMinimal 
+          activity={activity}
+          showType={false}
+          showTime={false}
+          showLocation={true}
+          showCamera={true}
+        />
         
-        {activity.assignedTo && (
-          <div className="text-xs text-gray-600">
-            {activity.assignedTo}
-          </div>
-        )}
+        {/* Assignment info handled by ActivityInfo */}
       </div>
     </div>
   );

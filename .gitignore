@@ -10,9 +10,50 @@ node_modules/
 # Environment variables
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
+
+# SECURITY - Never commit these sensitive files
+*.key
+*.pem
+*.p12
+*.pfx
+*accessKeys*
+*credentials*
+*secrets*
+.aws/
+.ssh/
+config/secrets*
+secrets/
+private/
+*.crt
+*.cer
+license.txt
+*.license
+
+# Large binary files that shouldn't be in git
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.pdf
+*.doc
+*.docx
+*.zip
+*.tar.gz
+*.dmg
+*.exe
+*.msi
+
+# Specifications and large documentation files
+*specifications*.txt
+*MVP*.txt
+*manual*.pdf
+*requirements*.doc*
 
 # Logs
 npm-debug.log*
@@ -48,6 +89,9 @@ Thumbs.db
 # Miscellaneous
 *.tgz
 *.tar.gz
+
+# Task management (can be regenerated)
+.taskmaster/
 .cache/
 
 logs
@@ -79,3 +123,40 @@ dev-debug.log
 # Large documentation folders (optional - uncomment if needed)
 # ai-research/**/*
 # aws-setup/**/* 
+
+# UI/UX iteration folders
+ui-iterations/**/*
+ui-ux-iterations/**/*
+design-iterations/**/*
+command-center-design-styles/**/*
+
+# Documentation and research folders
+ai-research/**/*
+ai-development-research-2025/**/*
+claude-chats/**/*
+claude-tasks/**/*
+future-features/**/*
+docs/ui-ux-analysis/**/*
+
+# Agent and configuration folders
+.claude/**/*
+.roo/**/*
+.trae/**/*
+.windsurf/**/*
+.cursor/**/*
+.clinerules/**/*
+.gemini/**/*
+
+# Markdown documentation files
+*.md
+!README.md
+!CHANGELOG.md
+
+# AWS and infrastructure
+aws-setup/**/*
+infrastructure/**/*
+lambda/**/*
+
+# Guidelines and demo files
+guidelines/**/*
+demo-users-setup.md

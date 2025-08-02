@@ -196,6 +196,16 @@ export function AIChat({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Custom Notification Div - NEW! */}
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 m-2 rounded-r-md">
+        <div className="flex items-center">
+          <Bot className="w-4 h-4 text-blue-600 mr-2" />
+          <p className="text-sm text-blue-800 font-medium">
+            AI Assistant is ready to help! 🚀
+          </p>
+        </div>
+      </div>
+
       {/* Messages Area */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-2">
         {messages.length === 0 ? (

@@ -9,6 +9,7 @@ export { useIncidentStore } from './incidentStore';
 export { useCaseStore } from './caseStore';
 export { useBOLStore } from './bolStore';
 export { useAuditStore } from './auditStore';
+export { useUserStore, useAuth, useCurrentUser, usePermissions, useDemoMode } from './userStore';
 
 // Store utilities
 export const clearAllStorage = () => {
@@ -47,6 +48,7 @@ import { useIncidentStore } from './incidentStore';
 import { useCaseStore } from './caseStore';
 import { useBOLStore } from './bolStore';
 import { useAuditStore } from './auditStore';
+import { useUserStore } from './userStore';
 
 export const useAllStores = () => ({
   activity: useActivityStore(),
@@ -54,6 +56,7 @@ export const useAllStores = () => ({
   case: useCaseStore(),
   bol: useBOLStore(),
   audit: useAuditStore(),
+  user: useUserStore(),
 });
 
 // Store initialization helper
@@ -78,6 +81,7 @@ export const resetAllStores = () => {
   useCaseStore.getState().resetStore();
   useBOLStore.getState().resetStore();
   useAuditStore.getState().resetStore();
+  useUserStore.getState().reset();
   console.log('All stores reset');
 };
 
