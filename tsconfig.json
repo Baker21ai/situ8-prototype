@@ -30,9 +30,26 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+
+    /* Test environment types */
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["components", "*.tsx", "App.tsx", "lib", "services", "stores", "src/**/*"],
-  "exclude": ["vite.config.ts", "design-iterations/**/*", "ui-ux-iterations/**/*", "command-center-design-styles/**/*", "claude-chats/**/*", "future-features/**/*", "stores/optimizedActivityStore.ts"],
+  "exclude": [
+    "vite.config.ts", 
+    "vitest.config.ts",
+    "design-iterations/**/*", 
+    "ui-ux-iterations/**/*", 
+    "command-center-design-styles/**/*", 
+    "claude-chats/**/*", 
+    "future-features/**/*", 
+    "stores/optimizedActivityStore.ts",
+    "src/test/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

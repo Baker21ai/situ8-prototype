@@ -17,8 +17,6 @@ export default defineConfig({
   },
   plugins: [
     react({
-      // Enable Fast Refresh for better development experience
-      fastRefresh: true,
       // Optimize React DevTools in production
       babel: {
         compact: true,
