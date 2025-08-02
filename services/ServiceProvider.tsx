@@ -12,9 +12,12 @@ import { AuditService } from './audit.service';
 import { VisitorService } from './visitor.service';
 import { PassdownService } from './passdown.service';
 import { AuthService } from './auth.service';
+import { CommunicationService } from './communication.service';
+import { ChatService } from './chat.service';
 import { initializeApiClient, type AWSConfig } from './aws-api';
 import { useActivityStore } from '../stores/activityStore';
 import { useUserStore, useAuth } from '../stores/userStore';
+import { useCommunicationStore } from '../stores/communicationStore';
 
 // Service context interface
 interface ServiceContextType {
@@ -26,6 +29,8 @@ interface ServiceContextType {
   visitorService: VisitorService;
   passdownService: PassdownService;
   authService: AuthService;
+  communicationService: CommunicationService;
+  chatService: ChatService;
   apiClient?: any; // AWS API client instance
   isInitialized: boolean;
 }
@@ -41,6 +46,9 @@ interface ServiceProviderProps {
 export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
   const [services, setServices] = useState<ServiceContextType | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Get communication store for service integration
+  const communicationStore = useCommunicationStore();
 
   useEffect(() => {
     if (isInitialized) return; // Prevent re-initialization
@@ -73,6 +81,28 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         const bolService = new BOLService();
         const auditService = new AuditService();
         const passdownService = new PassdownService();
+        const chatService = new ChatService();
+        
+        // Initialize communication service with API client (or null if not configured)
+        let communicationService;
+        try {
+          communicationService = new CommunicationService(apiClient);
+          // Connect communication service to the store
+          communicationStore.initializeService(communicationService);
+          console.log('Communication service initialized successfully');
+        } catch (commError) {
+          console.warn('Communication service initialization failed, using mock service:', commError);
+          // Create a mock communication service
+          communicationService = {
+            healthCheck: () => Promise.resolve({ status: 'degraded', message: 'Mock communication service' }),
+            sendMessage: () => Promise.resolve({ success: false, error: 'Communication service not available' }),
+            getChannelMessages: () => Promise.resolve({ success: false, error: 'Communication service not available' }),
+            createChannel: () => Promise.resolve({ success: false, error: 'Communication service not available' }),
+            getUserChannels: () => Promise.resolve({ success: false, error: 'Communication service not available' }),
+            joinChannel: () => Promise.resolve({ success: false, error: 'Communication service not available' }),
+            leaveChannel: () => Promise.resolve({ success: false, error: 'Communication service not available' })
+          };
+        }
         
         // Initialize auth service with graceful fallback
         let authService;
@@ -238,6 +268,8 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           visitorService,
           passdownService,
           authService,
+          communicationService,
+          chatService,
           apiClient,
           isInitialized: true
         };
@@ -252,7 +284,9 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           bolService.healthCheck(),
           auditService.healthCheck(),
           visitorService.healthCheck(),
-          passdownService.healthCheck()
+          passdownService.healthCheck(),
+          communicationService.healthCheck(),
+          chatService.healthCheck()
           // Note: AuthService doesn't implement healthCheck, it's handled by store initialization
         ]).then(results => {
           const unhealthyServices = results
@@ -281,6 +315,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           visitorService: null as any,
           passdownService: new PassdownService(),
           authService: null as any,
+          communicationService: null as any,
           apiClient: null,
           isInitialized: false
         });
@@ -289,7 +324,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
 
     initializeAllServices();
     setIsInitialized(true);
-  }, []);
+  }, [communicationStore]);
 
   if (!services) {
     return (
@@ -359,6 +394,11 @@ export const useAuthService = () => {
   return authService;
 };
 
+export const useCommunicationService = () => {
+  const { communicationService } = useServices();
+  return communicationService;
+};
+
 // AWS API Client hook
 export const useApiClient = () => {
   const { apiClient } = useServices();
@@ -400,7 +440,8 @@ export const ServiceStatus: React.FC = () => {
         services.bolService.healthCheck(),
         services.auditService.healthCheck(),
         services.visitorService.healthCheck(),
-        services.passdownService.healthCheck()
+        services.passdownService.healthCheck(),
+        services.communicationService.healthCheck()
       ]);
 
       const results = {
@@ -410,7 +451,8 @@ export const ServiceStatus: React.FC = () => {
         bol: checks[3].status === 'fulfilled' ? checks[3].value : { status: 'error' },
         audit: checks[4].status === 'fulfilled' ? checks[4].value : { status: 'error' },
         visitor: checks[5].status === 'fulfilled' ? checks[5].value : { status: 'error' },
-        passdown: checks[6].status === 'fulfilled' ? checks[6].value : { status: 'error' }
+        passdown: checks[6].status === 'fulfilled' ? checks[6].value : { status: 'error' },
+        communication: checks[7].status === 'fulfilled' ? checks[7].value : { status: 'error' }
       };
 
     setHealthChecks(results);

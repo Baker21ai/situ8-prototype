@@ -16,6 +16,9 @@ const VisitorManagementDashboard = lazy(() => import('./components/VisitorManage
 const Cases = lazy(() => import('./components/Cases').then(m => ({ default: m.Cases })));
 const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard').then(m => ({ default: m.PerformanceDashboard })));
 const Passdowns = lazy(() => import('./components/Passdowns').then(m => ({ default: m.Passdowns })));
+const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
+const MockCampusMap = lazy(() => import('./components/MockCampusMap').then(m => ({ default: m.MockCampusMap })));
+const LeafletCampusMap = lazy(() => import('./components/LeafletCampusMap').then(m => ({ default: m.LeafletCampusMap })));
 
 import { ServiceProvider } from './services/ServiceProvider';
 // Note: Commenting out for now due to compilation issues
@@ -30,7 +33,8 @@ import {
   Shield, 
   Activity, 
   AlertTriangle, 
-  MessageSquare, 
+  MessageSquare,
+  MessageCircle, 
   BarChart3, 
   Users, 
   Settings,
@@ -43,7 +47,7 @@ import {
 } from 'lucide-react';
 import { useModuleNavigation, useModuleNavigationListener, setCurrentModule, type ModuleName, type NavigationContext } from './hooks/useModuleNavigation';
 
-type Module = 'command-center' | 'activities' | 'communications' | 'visitors' | 'incidents' | 'cases' | 'bol' | 'passdowns' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings' | 'performance-test' | 'performance-dashboard';
+type Module = 'command-center' | 'activities' | 'communications' | 'chat' | 'visitors' | 'incidents' | 'cases' | 'bol' | 'passdowns' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings' | 'performance-test' | 'performance-dashboard' | 'leaflet-campus-map';
 
 // Memoize navigation items to prevent recreating on every render
 const navigationItems = [
@@ -52,9 +56,11 @@ const navigationItems = [
   { id: 'cases', label: 'Cases', icon: Briefcase, implemented: true },
   { id: 'passdowns', label: 'Passdowns', icon: ClipboardList, implemented: true },
   { id: 'communications', label: 'Communications', icon: MessageSquare, implemented: true },
+  { id: 'chat', label: 'Chat', icon: MessageCircle, implemented: true },
   { id: 'visitors', label: 'Visitor Management', icon: Users, implemented: true },
   { id: 'performance-test', label: 'Virtual Scrolling Test', icon: Zap, implemented: true },
   { id: 'performance-dashboard', label: 'Performance Dashboard', icon: BarChart3, implemented: true },
+  { id: 'leaflet-campus-map', label: 'Campus Map (OSM)', icon: MapPin, implemented: true },
   { id: 'guards', label: 'Guard Management', icon: Users, implemented: false },
   { id: 'map', label: 'Interactive Map', icon: MapPin, implemented: false },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, implemented: false },
@@ -355,6 +361,12 @@ const App = memo(() => {
             <CommunicationsPage {...moduleProps.communications} />
           </Suspense>
         );
+      case 'chat':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ChatPage />
+          </Suspense>
+        );
       case 'visitors':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -367,6 +379,12 @@ const App = memo(() => {
         return (
           <Suspense fallback={<LoadingSpinner />}>
             <PerformanceDashboard />
+          </Suspense>
+        );
+      case 'leaflet-campus-map':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <LeafletCampusMap />
           </Suspense>
         );
       default:
