@@ -324,7 +324,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           auditService: new AuditService(),
           visitorService: null as any,
           passdownService: new PassdownService(),
-          authService: authService || new AuthService(), // Use existing auth if available
+          authService: new AuthService(), // Use new auth service instance
           communicationService: null as any,
           chatService: null as any,
           apiClient: null,
@@ -339,7 +339,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
     console.log('🚀 Starting service initialization...');
     initializeAllServices();
     // Removed setIsInitialized(true) from here - it's now inside the async function
-  }, [communicationStore]);
+  }, []); // Empty dependency array - only run once on mount
 
   if (!services) {
     return (
