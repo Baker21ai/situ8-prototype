@@ -1,0 +1,43 @@
+# Console Commands to Test Demo Login
+
+## 1. First, open http://localhost:5173 in your browser
+
+## 2. Open the browser console (F12) and run these commands:
+
+### Check if demo mode is enabled:
+```javascript
+// Check user store state
+const userStore = window.__ZUSTAND_DEVTOOLS_EXTENSION__?.stores?.get('user-storage')?.api?.getState() || JSON.parse(localStorage.getItem('situ8-user-storage') || '{}')?.state;
+console.log('Demo mode enabled:', userStore?.isDemoMode);
+console.log('Available demo users:', userStore?.availableDemoUsers);
+```
+
+### Check auth service:
+```javascript
+// Check if services are available
+console.log('Services available:', window.__SITU8_SERVICES__);
+console.log('Auth service demo mode:', window.__SITU8_SERVICES__?.authService?.isInDemoMode());
+console.log('Demo users:', window.__SITU8_SERVICES__?.authService?.getDemoUsers());
+```
+
+### Manually trigger demo login:
+```javascript
+// Get the demo user switch function
+const switchDemoUser = window.__ZUSTAND_DEVTOOLS_EXTENSION__?.stores?.get('user-storage')?.api?.getState()?.switchDemoUser;
+if (switchDemoUser) {
+  switchDemoUser('demo-admin-001').then(result => {
+    console.log('Demo login result:', result);
+    console.log('Is authenticated:', window.__ZUSTAND_DEVTOOLS_EXTENSION__?.stores?.get('user-storage')?.api?.getState()?.isAuthenticated);
+  });
+} else {
+  console.error('switchDemoUser function not found');
+}
+```
+
+### Check authentication state after login:
+```javascript
+// Check if user is authenticated
+const state = window.__ZUSTAND_DEVTOOLS_EXTENSION__?.stores?.get('user-storage')?.api?.getState() || JSON.parse(localStorage.getItem('situ8-user-storage') || '{}')?.state;
+console.log('Is authenticated:', state?.isAuthenticated);
+console.log('Current user:', state?.currentUser);
+```

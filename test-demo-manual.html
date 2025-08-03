@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Login Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .log { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Demo Login Test</h1>
+    
+    <div>
+        <button onclick="testDemoLogin('demo-admin-001')">Test Admin Login</button>
+        <button onclick="testDemoLogin('demo-guard-001')">Test Security Officer Login</button>
+        <button onclick="testDemoLogin('demo-dev-001')">Test Developer Login</button>
+    </div>
+    
+    <div id="log" class="log"></div>
+    
+    <script>
+        function log(message, type = '') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logDiv.appendChild(entry);
+        }
+        
+        async function testDemoLogin(userId) {
+            log(`Testing demo login for: ${userId}`);
+            
+            // Open a new window/tab with the app
+            const appWindow = window.open('http://localhost:5173', '_blank');
+            
+            if (!appWindow) {
+                log('Failed to open app window. Please allow popups.', 'error');
+                return;
+            }
+            
+            log('Waiting for app to load...');
+            
+            // Wait for the app to load
+            setTimeout(() => {
+                log('App should be loaded. Please check the console in the app window for debug logs.');
+                log('Steps to verify:');
+                log('1. Click the demo user button');
+                log('2. Check browser console for debug logs');
+                log('3. Verify if you are redirected to the main app');
+                log('4. Check if footer with RadioTray is visible');
+            }, 3000);
+        }
+        
+        // Also log to console
+        console.log('Demo Login Test Page Loaded');
+        console.log('Click a button to test demo login');
+    </script>
+</body>
+</html>

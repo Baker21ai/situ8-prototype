@@ -147,10 +147,10 @@ export const DemoUserSwitcher: React.FC<DemoUserSwitcherProps> = ({
                 {currentUser.profile.fullName || currentUser.email}
               </p>
               <div className="flex items-center space-x-1 mt-1">
-                <Badge className={getRoleColor(currentUser.role)} size="sm">
+                <Badge className={`${getRoleColor(currentUser.role)} text-xs`}>
                   {formatRoleName(currentUser.role)}
                 </Badge>
-                <Badge variant="outline" className={getClearanceColor(currentUser.clearanceLevel)} size="sm">
+                <Badge variant="outline" className={`${getClearanceColor(currentUser.clearanceLevel)} text-xs`}>
                   L{currentUser.clearanceLevel}
                 </Badge>
               </div>
@@ -174,7 +174,7 @@ export const DemoUserSwitcher: React.FC<DemoUserSwitcherProps> = ({
                   <div className="flex items-center space-x-2">
                     <span>{user.avatar}</span>
                     <span>{user.name}</span>
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="outline" className="text-xs">
                       {formatRoleName(user.role)}
                     </Badge>
                   </div>
@@ -283,7 +283,7 @@ export const DemoUserSwitcher: React.FC<DemoUserSwitcherProps> = ({
                         <div className="flex items-center space-x-2">
                           <span className="font-medium">{user.name}</span>
                           {isCurrentUser && (
-                            <Badge variant="secondary" size="sm">
+                            <Badge variant="secondary" className="text-xs">
                               Current
                             </Badge>
                           )}
@@ -292,21 +292,21 @@ export const DemoUserSwitcher: React.FC<DemoUserSwitcherProps> = ({
                           {user.email}
                         </p>
                         <div className="flex items-center space-x-2 mt-2">
-                          <Badge className={getRoleColor(user.role)} size="sm">
+                          <Badge className={`${getRoleColor(user.role)} text-xs`}>
                             {getRoleIcon(user.role)}
                             <span className="ml-1">{formatRoleName(user.role)}</span>
                           </Badge>
-                          <Badge variant="outline" className={getClearanceColor(user.clearanceLevel)} size="sm">
+                          <Badge variant="outline" className={`${getClearanceColor(user.clearanceLevel)} text-xs`}>
                             L{user.clearanceLevel}
                           </Badge>
-                          <Badge variant="secondary" size="sm">
+                          <Badge variant="secondary" className="text-xs">
                             {user.badgeNumber}
                           </Badge>
                         </div>
                         <div className="flex items-center space-x-1 mt-1">
                           <span className="text-xs text-muted-foreground">Access:</span>
                           {user.facilityCodes.slice(0, 3).map((code) => (
-                            <Badge key={code} variant="outline" size="sm" className="text-xs">
+                            <Badge key={code} variant="outline" className="text-xs">
                               {code}
                             </Badge>
                           ))}

@@ -1,0 +1,205 @@
+# CLAUDE.MD BEST PRACTICES (2025)
+
+## OVERVIEW
+
+CLAUDE.md files are context files that Claude Code automatically loads when working in your repository. They provide essential project context without requiring repeated explanations.
+
+## KEY PRINCIPLES
+
+### 1. BE CONCISE
+- **DO**: Use bullet points, not paragraphs
+- **DON'T**: Write lengthy explanations
+- **WHY**: Every word consumes tokens and costs money
+
+### 2. BE SPECIFIC
+- **DO**: "Use 2-space indentation"
+- **DON'T**: "Format code properly"
+- **WHY**: Claude needs precise instructions
+
+### 3. AVOID REDUNDANCY
+- **DO**: Trust Claude to understand obvious things
+- **DON'T**: Explain that "components/" contains components
+- **WHY**: You're writing for Claude, not onboarding a junior dev
+
+## OPTIMAL FILE LENGTH
+
+### RECOMMENDED: 100-200 LINES
+- Core commands and critical information only
+- Link to detailed docs for additional context
+- Regular refactoring to maintain brevity
+
+### TOKEN IMPACT
+- CLAUDE.md is prepended to EVERY prompt
+- 650+ lines = significant token cost
+- Large files degrade model performance
+
+## CONTENT GUIDELINES
+
+### ALWAYS INCLUDE
+✅ Essential commands (build, test, lint, deploy)
+✅ Critical gotchas and known issues
+✅ Environment-specific configurations
+✅ Architectural decisions that affect daily work
+✅ "Do not touch" files or patterns
+
+### NEVER INCLUDE
+❌ Generic best practices
+❌ Obvious file structure explanations
+❌ Tutorial-style documentation
+❌ Implementation details available in code
+❌ Nice-to-have information
+
+## FILE STRUCTURE EXAMPLE
+
+```markdown
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working in this repository.
+
+## Commands
+- `npm run dev` - Start development server (Vite)
+- `npm test` - Run tests in watch mode
+- `npm run typecheck` - Check TypeScript
+
+## Critical Issues
+- Environment vars must use VITE_ prefix, not REACT_APP_
+- Service initialization can hang - check browser console
+- tsconfig.json excludes src/ but entry is src/main.tsx
+
+## Architecture
+- Services handle business logic (never in stores)
+- All operations create audit entries
+- No hard deletes - soft delete only
+
+## Do Not Modify
+- tasks.json (use task-master commands)
+- Service health check logic
+- Virtual scrolling implementation
+
+## Additional Documentation
+- @docs/claude/architecture.md - Service layer details
+- @docs/claude/aws-setup.md - Deployment guide
+- @docs/claude/troubleshooting.md - Common issues
+```
+
+## LINKING EXTERNAL DOCUMENTATION
+
+### HOW IT WORKS
+- Use `@path/to/file.md` syntax in CLAUDE.md
+- Files are loaded ONLY when relevant
+- Reduces initial context consumption
+
+### BEST PRACTICES
+```
+docs/claude/
+├── architecture.md      # 200+ lines of service details
+├── aws-setup.md        # Deployment scripts and commands
+├── troubleshooting.md  # Detailed debugging guides
+└── api-reference.md    # Endpoint documentation
+```
+
+## HIERARCHICAL ORGANIZATION
+
+### PROJECT STRUCTURE
+```
+~/                          # Global preferences
+├── .claude/CLAUDE.md      # User-wide settings
+└── project/
+    ├── CLAUDE.md          # Project-specific
+    └── src/
+        └── CLAUDE.md      # Module-specific
+```
+
+### PRECEDENCE
+- More specific files override general ones
+- Nested CLAUDE.md files add to parent context
+
+## MAINTENANCE STRATEGY
+
+### REGULAR REVIEW
+1. Monthly: Review and trim content
+2. When warned about size: Refactor immediately
+3. After major changes: Update relevant sections
+
+### REFACTORING CHECKLIST
+- [ ] Remove outdated information
+- [ ] Consolidate similar instructions
+- [ ] Move details to linked files
+- [ ] Convert narratives to bullets
+- [ ] Test with fresh Claude session
+
+## COST MANAGEMENT
+
+### TOKEN CALCULATION
+- Average CLAUDE.md: 500-1000 tokens
+- Cost per conversation: tokens × conversations × price
+- 650-line file ≈ 2000+ tokens per interaction
+
+### OPTIMIZATION TIPS
+1. Use file linking for detailed docs
+2. Keep core file under 200 lines
+3. Remove implementation details
+4. Trust Claude's code reading ability
+
+## COMMON MISTAKES
+
+### 1. OVER-DOCUMENTATION
+❌ Explaining every component's purpose
+✅ Documenting only non-obvious patterns
+
+### 2. GENERIC ADVICE
+❌ "Write clean, maintainable code"
+✅ "Use BaseService.audit() for all mutations"
+
+### 3. TUTORIAL WRITING
+❌ Step-by-step implementation guides
+✅ Command references and gotchas
+
+### 4. CONTEXT DUMPING
+❌ Including entire architecture docs
+✅ Linking to detailed documentation
+
+## TESTING YOUR CLAUDE.MD
+
+### VALIDATION STEPS
+1. Start fresh Claude session
+2. Ask about documented commands
+3. Verify linked files load correctly
+4. Check token usage in first interaction
+
+### PERFORMANCE METRICS
+- Initial response time
+- Context accuracy
+- Token consumption
+- Error reduction
+
+## ADVANCED TECHNIQUES
+
+### DYNAMIC UPDATES
+- Press # to add instruction to CLAUDE.md
+- Ask Claude to update based on patterns
+- Use version control for CLAUDE.md
+
+### CUSTOM COMMANDS
+```
+.claude/commands/
+├── test-all.md      # Run full test suite
+├── deploy.md        # Deployment workflow
+└── refactor.md      # Refactoring checklist
+```
+
+### PROJECT TEMPLATES
+- Create template CLAUDE.md files
+- Reuse across similar projects
+- Maintain organization standards
+
+## SUMMARY
+
+The perfect CLAUDE.md is:
+- **Concise**: Under 200 lines
+- **Specific**: Clear, actionable instructions
+- **Essential**: Only critical information
+- **Linked**: Detailed docs separate
+- **Maintained**: Regularly reviewed
+
+Remember: You're optimizing for an AI that can read code and understand context. Don't treat it like a human who needs hand-holding.

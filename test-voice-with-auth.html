@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Situ8 Voice Communication Test (With Auth)</title>
+    <script src="https://unpkg.com/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="https://unpkg.com/amazon-chime-sdk-js@3.28.0/build/amazon-chime-sdk.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .auth-section {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-weight: bold;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .authenticated { background-color: #d1ecf1; color: #0c5460; }
+        .log { 
+            background: #1a1a1a; 
+            color: #00ff00; 
+            padding: 15px; 
+            height: 300px; 
+            overflow-y: scroll; 
+            border: 1px solid #ddd; 
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        button { 
+            padding: 12px 20px; 
+            margin: 8px; 
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        button:hover { opacity: 0.8; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .primary { background: #007bff; color: white; }
+        .success { background: #28a745; color: white; }
+        .danger { background: #dc3545; color: white; }
+        .warning { background: #ffc107; color: black; }
+        input, select { 
+            padding: 8px; 
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            margin: 20px 0;
+        }
+        .section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .ptt-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: 4px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .ptt-ready {
+            background: #28a745;
+            border-color: #1e7e34;
+            color: white;
+        }
+        .ptt-active {
+            background: #dc3545;
+            border-color: #c82333;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        .ptt-disabled {
+            background: #6c757d;
+            border-color: #5a6268;
+            color: #fff;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        h1 { color: #333; text-align: center; }
+        h3 { color: #555; margin-bottom: 15px; }
+        .hidden { display: none; }
+        .step {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .step-number {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Situ8 Voice Communication Test (With Authentication)</h1>
+        
+        <!-- Authentication Section -->
+        <div class="auth-section">
+            <h3>🔐 Step 1: Authentication Required</h3>
+            <div id="loginForm">
+                <p><strong>You must log in first to use voice communication.</strong></p>
+                <div>
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" value="yamen@example.com" placeholder="Enter your email" />
+                </div>
+                <div>
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" value="TempPassword123!" placeholder="Enter your password" />
+                </div>
+                <div>
+                    <button class="primary" onclick="loginToCognito()">🔑 Login to Continue</button>
+                    <span id="loginStatus" style="margin-left: 10px; font-weight: bold;"></span>
+                </div>
+                <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                    <strong>Test Credentials:</strong><br>
+                    Email: yamen@example.com<br>
+                    Password: TempPassword123!
+                </div>
+            </div>
+            
+            <div id="authSuccess" class="hidden">
+                <div class="status authenticated">
+                    ✅ Authenticated as: <span id="userEmail"></span>
+                </div>
+                <p><strong>You can now proceed to test voice communication below.</strong></p>
+                <button class="danger" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <!-- Voice Test Section (Hidden until authenticated) -->
+        <div id="voiceTestSection" class="hidden">
+            
+            <!-- Status Overview -->
+            <div class="grid">
+                <div class="section">
+                    <h3>Connection Status</h3>
+                    <div id="status" class="status disconnected">Disconnected</div>
+                    <div>
+                        <strong>Meeting ID:</strong> <span id="meetingId">None</span><br>
+                        <strong>Attendee ID:</strong> <span id="attendeeId">None</span><br>
+                        <strong>Audio Devices:</strong> <span id="deviceCount">0</span>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Voice Session Setup</h3>
+                    <div>
+                        <label>Channel ID:</label>
+                        <input type="text" id="channelInput" value="operations-channel" />
+                    </div>
+                    <div>
+                        <label>User Name:</label>
+                        <input type="text" id="userNameInput" value="Test-User-1" />
+                    </div>
+                    <div>
+                        <button class="primary" onclick="startVoiceSession()">🚀 Start Voice Session</button>
+                        <button class="danger" onclick="endVoiceSession()">🛑 End Session</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PTT Control -->
+            <div class="section">
+                <h3>Push-to-Talk Control</h3>
+                <div style="text-align: center;">
+                    <button id="pttButton" class="ptt-button ptt-disabled" 
+                            onmousedown="startTransmit()" 
+                            onmouseup="stopTransmit()"
+                            onmouseleave="stopTransmit()"
+                            disabled>
+                        <div>🎤</div>
+                        <div>PTT</div>
+                        <div style="font-size: 12px;">DISABLED</div>
+                    </button>
+                    <div>
+                        <strong>Instructions:</strong> Hold button or press <kbd>SPACE</kbd> to talk<br>
+                        <strong>Status:</strong> <span id="pttStatus">Not Connected</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Controls -->
+            <div class="section">
+                <h3>Audio Devices</h3>
+                <div>
+                    <label>Microphone:</label>
+                    <select id="microphoneSelect" onchange="selectMicrophone()">
+                        <option value="">Select Microphone...</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Speaker:</label>
+                    <select id="speakerSelect" onchange="selectSpeaker()">
+                        <option value="">Select Speaker...</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="primary" onclick="refreshDevices()">🔄 Refresh Devices</button>
+                    <button class="warning" onclick="testConnection()">🔧 Test APIs</button>
+                </div>
+            </div>
+
+            <!-- Connection Log -->
+            <div class="section">
+                <h3>Connection Log</h3>
+                <div id="log" class="log"></div>
+                <div>
+                    <button class="primary" onclick="clearLog()">🗑️ Clear Log</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="section">
+            <h3>📋 How to Test Voice Communication</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Login:</strong> Use the test credentials above to authenticate with Cognito
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Allow Microphone:</strong> Your browser will ask for microphone permission - click "Allow"
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Start Session:</strong> Enter a channel name and click "Start Voice Session"
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Test PTT:</strong> Hold the big round button or press SPACE key to talk
+            </div>
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>Multi-User Test:</strong> Open another tab/window with the same channel ID to test conversation
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const COGNITO_CONFIG = {
+            UserPoolId: 'us-west-2_ECLKvbdSp',
+            ClientId: '5ouh548bibh1rrp11neqcvvqf6',
+            Region: 'us-west-2'
+        };
+        
+        const API_BASE = 'https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev/api/chime';
+        
+        // Global state
+        let cognitoUser = null;
+        let authToken = null;
+        let meetingSession = null;
+        let audioVideo = null;
+        let deviceController = null;
+        let isTransmitting = false;
+        let currentMeetingId = null;
+        let currentAttendeeId = null;
+        
+        // Initialize
+        window.onload = function() {
+            log('🚀 Voice communication test client loaded');
+            log('🔐 Authentication required to proceed');
+            setupKeyboardShortcuts();
+        };
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            if (logDiv) {
+                logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+            console.log(message);
+        }
+
+        function updateStatus(status, className) {
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) {
+                statusDiv.textContent = status;
+                statusDiv.className = `status ${className}`;
+            }
+        }
+
+        function clearLog() {
+            const logDiv = document.getElementById('log');
+            if (logDiv) {
+                logDiv.innerHTML = '';
+            }
+        }
+
+        // Authentication Functions
+        async function loginToCognito() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const statusSpan = document.getElementById('loginStatus');
+            
+            if (!email || !password) {
+                statusSpan.textContent = '❌ Please enter email and password';
+                statusSpan.style.color = 'red';
+                return;
+            }
+
+            statusSpan.textContent = '⏳ Logging in...';
+            statusSpan.style.color = 'orange';
+
+            try {
+                // Configure Cognito
+                const poolData = {
+                    UserPoolId: COGNITO_CONFIG.UserPoolId,
+                    ClientId: COGNITO_CONFIG.ClientId
+                };
+                
+                const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+                
+                const userData = {
+                    Username: email,
+                    Pool: userPool
+                };
+                
+                cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+                
+                const authenticationData = {
+                    Username: email,
+                    Password: password
+                };
+                
+                const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+                
+                // Authenticate
+                await new Promise((resolve, reject) => {
+                    cognitoUser.authenticateUser(authenticationDetails, {
+                        onSuccess: function(result) {
+                            authToken = result.getIdToken().getJwtToken();
+                            log('✅ Successfully authenticated with Cognito');
+                            log('🔑 JWT Token obtained');
+                            resolve(result);
+                        },
+                        onFailure: function(err) {
+                            log('❌ Authentication failed: ' + err.message);
+                            reject(err);
+                        }
+                    });
+                });
+
+                // Show success
+                statusSpan.textContent = '✅ Login successful!';
+                statusSpan.style.color = 'green';
+                
+                document.getElementById('userEmail').textContent = email;
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('authSuccess').classList.remove('hidden');
+                document.getElementById('voiceTestSection').classList.remove('hidden');
+                
+                log('🎤 Voice communication features now available');
+                
+                // Initialize audio devices
+                await refreshDevices();
+                
+            } catch (error) {
+                statusSpan.textContent = '❌ Login failed: ' + error.message;
+                statusSpan.style.color = 'red';
+                log('❌ Login error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            if (cognitoUser) {
+                cognitoUser.signOut();
+            }
+            
+            cognitoUser = null;
+            authToken = null;
+            
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('authSuccess').classList.add('hidden');
+            document.getElementById('voiceTestSection').classList.add('hidden');
+            
+            // Reset login status
+            document.getElementById('loginStatus').textContent = '';
+            
+            // End any active voice session
+            endVoiceSession();
+            
+            log('🚪 Logged out successfully');
+        }
+
+        // Voice Session Management
+        async function startVoiceSession() {
+            if (!authToken) {
+                log('❌ Please log in first');
+                return;
+            }
+
+            const channelId = document.getElementById('channelInput').value.trim();
+            const userName = document.getElementById('userNameInput').value.trim();
+            
+            if (!channelId || !userName) {
+                log('❌ Please enter both Channel ID and User Name');
+                return;
+            }
+
+            try {
+                updateStatus('Creating meeting...', 'connecting');
+                log('🎯 Starting voice session for channel: ' + channelId);
+                
+                // Step 1: Create or get meeting
+                const meetingResponse = await fetch(`${API_BASE}/meeting`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        channelId: channelId,
+                        channelType: 'voice',
+                        orgId: 'test-org'
+                    })
+                });
+
+                if (!meetingResponse.ok) {
+                    const errorText = await meetingResponse.text();
+                    throw new Error(`Meeting API failed: ${meetingResponse.status} - ${errorText}`);
+                }
+
+                const meetingData = await meetingResponse.json();
+                log('✅ Meeting created: ' + meetingData.meeting.meetingId);
+                currentMeetingId = meetingData.meeting.meetingId;
+                document.getElementById('meetingId').textContent = currentMeetingId;
+
+                // Step 2: Create attendee
+                const attendeeResponse = await fetch(`${API_BASE}/attendee`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        meetingId: currentMeetingId,
+                        externalUserId: userName
+                    })
+                });
+
+                if (!attendeeResponse.ok) {
+                    const errorText = await attendeeResponse.text();
+                    throw new Error(`Attendee API failed: ${attendeeResponse.status} - ${errorText}`);
+                }
+
+                const attendeeData = await attendeeResponse.json();
+                log('✅ Attendee created: ' + attendeeData.attendee.attendeeId);
+                currentAttendeeId = attendeeData.attendee.attendeeId;
+                document.getElementById('attendeeId').textContent = currentAttendeeId;
+
+                // Step 3: Initialize Chime SDK
+                await initializeChimeSDK(meetingData.meeting, attendeeData.attendee);
+                
+            } catch (error) {
+                log('💥 Error starting voice session: ' + error.message);
+                updateStatus('Connection Failed', 'disconnected');
+            }
+        }
+
+        async function initializeChimeSDK(meeting, attendee) {
+            try {
+                log('🔧 Initializing Chime SDK...');
+                
+                // Create meeting session configuration
+                const meetingSessionConfiguration = new ChimeSDK.MeetingSessionConfiguration(
+                    meeting,
+                    attendee
+                );
+
+                // Create device controller
+                const logger = new ChimeSDK.ConsoleLogger('VoiceTest', ChimeSDK.LogLevel.INFO);
+                deviceController = new ChimeSDK.DefaultDeviceController(logger);
+
+                // Create meeting session  
+                meetingSession = new ChimeSDK.DefaultMeetingSession(
+                    meetingSessionConfiguration,
+                    logger,
+                    deviceController
+                );
+
+                audioVideo = meetingSession.audioVideo;
+
+                // Set up observers
+                setupAudioVideoObservers();
+
+                // Start audio/video
+                await audioVideo.start();
+                
+                // Start muted (PTT mode)
+                await audioVideo.realtimeMuteLocalAudio();
+
+                log('✅ Chime SDK initialized successfully');
+                updateStatus('Connected - Ready for Voice', 'connected');
+                enablePTT();
+                
+                // Refresh device list
+                await refreshDevices();
+                
+            } catch (error) {
+                log('💥 Chime SDK initialization failed: ' + error.message);
+                throw error;
+            }
+        }
+
+        function setupAudioVideoObservers() {
+            const observer = {
+                audioVideoDidStart: () => {
+                    log('🎵 Audio/Video started');
+                },
+                audioVideoDidStop: (sessionStatus) => {
+                    log('🛑 Audio/Video stopped: ' + sessionStatus.statusCode());
+                    updateStatus('Disconnected', 'disconnected');
+                    disablePTT();
+                },
+                audioVideoDidStartConnecting: (reconnecting) => {
+                    log('🔄 Audio/Video ' + (reconnecting ? 'reconnecting' : 'connecting'));
+                    updateStatus('Connecting...', 'connecting');
+                }
+            };
+
+            audioVideo.addObserver(observer);
+        }
+
+        // PTT Controls
+        function enablePTT() {
+            const pttButton = document.getElementById('pttButton');
+            pttButton.disabled = false;
+            pttButton.className = 'ptt-button ptt-ready';
+            pttButton.innerHTML = '<div>🎤</div><div>PTT</div><div style="font-size: 12px;">READY</div>';
+            document.getElementById('pttStatus').textContent = 'Ready - Hold to Talk';
+        }
+
+        function disablePTT() {
+            const pttButton = document.getElementById('pttButton');
+            pttButton.disabled = true;
+            pttButton.className = 'ptt-button ptt-disabled';
+            pttButton.innerHTML = '<div>🎤</div><div>PTT</div><div style="font-size: 12px;">DISABLED</div>';
+            document.getElementById('pttStatus').textContent = 'Not Connected';
+        }
+
+        async function startTransmit() {
+            if (!audioVideo || isTransmitting) return;
+
+            try {
+                await audioVideo.realtimeUnmuteLocalAudio();
+                isTransmitting = true;
+                
+                const pttButton = document.getElementById('pttButton');
+                pttButton.className = 'ptt-button ptt-active';
+                pttButton.innerHTML = '<div>📢</div><div>ON AIR</div><div style="font-size: 12px;">TRANSMITTING</div>';
+                
+                document.getElementById('pttStatus').textContent = 'TRANSMITTING - Release to Stop';
+                log('📢 Started transmitting');
+                
+            } catch (error) {
+                log('❌ Failed to start transmitting: ' + error.message);
+            }
+        }
+
+        async function stopTransmit() {
+            if (!audioVideo || !isTransmitting) return;
+
+            try {
+                await audioVideo.realtimeMuteLocalAudio();
+                isTransmitting = false;
+                
+                const pttButton = document.getElementById('pttButton');
+                pttButton.className = 'ptt-button ptt-ready';
+                pttButton.innerHTML = '<div>🎤</div><div>PTT</div><div style="font-size: 12px;">READY</div>';
+                
+                document.getElementById('pttStatus').textContent = 'Ready - Hold to Talk';
+                log('🔇 Stopped transmitting');
+                
+            } catch (error) {
+                log('❌ Failed to stop transmitting: ' + error.message);
+            }
+        }
+
+        // Keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && !isTransmitting && audioVideo) {
+                    e.preventDefault();
+                    startTransmit();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.code === 'Space' && isTransmitting) {
+                    e.preventDefault();
+                    stopTransmit();
+                }
+            });
+        }
+
+        // Device Management
+        async function refreshDevices() {
+            if (!deviceController) {
+                try {
+                    const logger = new ChimeSDK.ConsoleLogger('DeviceTest', ChimeSDK.LogLevel.INFO);
+                    deviceController = new ChimeSDK.DefaultDeviceController(logger);
+                } catch (error) {
+                    log('❌ Cannot initialize device controller: ' + error.message);
+                    return;
+                }
+            }
+
+            try {
+                const audioInputDevices = await deviceController.listAudioInputDevices();
+                const audioOutputDevices = await deviceController.listAudioOutputDevices();
+
+                populateDeviceSelect('microphoneSelect', audioInputDevices);
+                populateDeviceSelect('speakerSelect', audioOutputDevices);
+
+                const deviceCount = audioInputDevices.length + audioOutputDevices.length;
+                document.getElementById('deviceCount').textContent = deviceCount;
+
+                log(`🎤 Found ${audioInputDevices.length} microphones, ${audioOutputDevices.length} speakers`);
+
+            } catch (error) {
+                log('❌ Failed to refresh devices: ' + error.message);
+            }
+        }
+
+        function populateDeviceSelect(selectId, devices) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select device...</option>';
+
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.label || `Device ${device.deviceId}`;
+                select.appendChild(option);
+            });
+        }
+
+        async function selectMicrophone() {
+            const deviceId = document.getElementById('microphoneSelect').value;
+            if (!deviceController || !deviceId) return;
+
+            try {
+                await deviceController.chooseAudioInputDevice(deviceId);
+                log('🎤 Selected microphone: ' + deviceId);
+            } catch (error) {
+                log('❌ Failed to select microphone: ' + error.message);
+            }
+        }
+
+        async function selectSpeaker() {
+            const deviceId = document.getElementById('speakerSelect').value;
+            if (!deviceController || !deviceId) return;
+
+            try {
+                await deviceController.chooseAudioOutputDevice(deviceId);
+                log('🔊 Selected speaker: ' + deviceId);
+            } catch (error) {
+                log('❌ Failed to select speaker: ' + error.message);
+            }
+        }
+
+        // Session Management
+        async function endVoiceSession() {
+            try {
+                if (audioVideo) {
+                    audioVideo.stop();
+                }
+                
+                meetingSession = null;
+                audioVideo = null;
+                currentMeetingId = null;
+                currentAttendeeId = null;
+                isTransmitting = false;
+                
+                document.getElementById('meetingId').textContent = 'None';
+                document.getElementById('attendeeId').textContent = 'None';
+                
+                updateStatus('Disconnected', 'disconnected');
+                disablePTT();
+                
+                log('✅ Voice session ended');
+                
+            } catch (error) {
+                log('❌ Error ending session: ' + error.message);
+            }
+        }
+
+        // Connection Testing
+        async function testConnection() {
+            if (!authToken) {
+                log('❌ Please log in first to test API connections');
+                return;
+            }
+            
+            log('🔧 Testing API connectivity...');
+            
+            try {
+                // Test meeting API
+                const response = await fetch(`${API_BASE}/meeting`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        channelId: 'connection-test-' + Date.now(),
+                        channelType: 'test'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Meeting API working - Meeting ID: ' + data.meeting.meetingId);
+                } else {
+                    const errorText = await response.text();
+                    log('❌ Meeting API failed: ' + response.status + ' - ' + errorText);
+                }
+
+            } catch (error) {
+                log('❌ Connection test failed: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -337,13 +337,34 @@ export function CommandCenter() {
     userRole: 'officer' as const
   };
   
-  // Collapsible sections state
+  // Collapsible sections state for activity priorities
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     critical: false, // Critical starts expanded
     high: false,     // High starts expanded
     medium: true,    // Medium starts collapsed
     low: true        // Low starts collapsed
   });
+
+  // Universal Panel Collapse State - NEW FEATURE! 🎯
+  const [collapsedPanels, setCollapsedPanels] = useState<Record<string, boolean>>({
+    activityStream: false,  // Activity Stream starts expanded
+    mapView: false,         // Map View starts expanded
+    guardManagement: false, // Guard Management starts expanded
+    timeline: false         // Timeline starts expanded
+  });
+
+  // Panel Toggle Functions 🎛️
+  const togglePanel = useCallback((panelName: string) => {
+    setCollapsedPanels(prev => ({
+      ...prev,
+      [panelName]: !prev[panelName]
+    }));
+  }, []);
+
+  // Helper function to get panel height based on collapse state
+  const getPanelHeight = useCallback((panelName: string, expandedHeight: string, collapsedHeight: string = 'h-12') => {
+    return collapsedPanels[panelName] ? collapsedHeight : expandedHeight;
+  }, [collapsedPanels]);
 
   // Guard Management handlers
   const handleGuardUpdate = useCallback((guardId: number, updates: any) => {
@@ -642,7 +663,7 @@ export function CommandCenter() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-3 border-b bg-background">
         <div className="flex items-center justify-between">
@@ -762,52 +783,69 @@ export function CommandCenter() {
         </div>
       </div>
 
-      {/* Main Layout - Full height grid */}
-      <div className="flex-1 grid grid-cols-12 gap-2 p-2 min-h-0">
-        {/* Left Panel - Activity Stream (25%) */}
-        <div className="col-span-3">
+      {/* Main Layout - Fixed height grid with internal scrolling */}
+      <div className="flex-1 grid grid-cols-12 gap-2 p-2 h-[calc(100vh-140px)] max-h-[800px]">
+        {/* Left Panel - Activity Stream (25%) - COLLAPSIBLE! */}
+        <div className={`col-span-3 ${getPanelHeight('activityStream', 'h-full', 'h-12')} transition-all duration-300`}>
           <Card className="h-full flex flex-col max-w-full">
-            <CardHeader className="pb-2 flex-shrink-0">
+            <CardHeader className="pb-2 flex-shrink-0 max-h-[140px]">
               <div className="space-y-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Activity Stream
-                </CardTitle>
+                <Button
+                  variant="ghost"
+                  onClick={() => togglePanel('activityStream')}
+                  className="w-full justify-between p-0 h-auto hover:bg-transparent"
+                >
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Activity Stream
+                    <Badge variant="secondary" className="ml-2">
+                      {activities.length}
+                    </Badge>
+                  </CardTitle>
+                  {collapsedPanels.activityStream ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
                 
-                {/* Integrated Filter Controls */}
-                <div className="bg-muted/30 rounded-lg p-2 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground">Show:</span>
-                    <Button
-                      size="sm"
-                      variant={showCriticalOnly ? "default" : "outline"}
-                      onClick={() => setShowCriticalOnly(!showCriticalOnly)}
-                      className="h-7 px-2 text-xs"
-                    >
-                      <Target className="h-3 w-3 mr-1" />
-                      Critical Only
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      title="Filter by time range"
-                    >
-                      Last 1h
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      title="Filter by assignment"
-                    >
-                      Assigned
-                    </Button>
+                {/* Collapsible Filter Controls */}
+                {!collapsedPanels.activityStream && (
+                  <div className="bg-muted/30 rounded-lg p-2 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-foreground">Show:</span>
+                      <Button
+                        size="sm"
+                        variant={showCriticalOnly ? "default" : "outline"}
+                        onClick={() => setShowCriticalOnly(!showCriticalOnly)}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Target className="h-3 w-3 mr-1" />
+                        Critical Only
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        title="Filter by time range"
+                      >
+                        Last 1h
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-xs"
+                        title="Filter by assignment"
+                      >
+                        Assigned
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardHeader>
-            <CardContent className="p-0 flex-1 min-h-0 max-w-full">
+            {!collapsedPanels.activityStream && (
+              <CardContent className="p-0 flex-1 min-h-0 max-w-full overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-2 max-w-full">
                   {Object.entries(getActivitiesByPriority()).map(([priority, priorityActivities]) => {
@@ -881,46 +919,112 @@ export function CommandCenter() {
                   )}
                 </div>
               </ScrollArea>
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
         </div>
 
-        {/* Center Panel - Map + Guard Management (50%) */}
-        <div className="col-span-6 flex flex-col gap-2">
-          {/* Map View - Responsive sizing based on content */}
-          <div className="flex-1 min-h-0">
+        {/* Center Panel - Map + Guard Management (50%) - COLLAPSIBLE! */}
+        <div className="col-span-6 flex flex-col gap-2 h-full">
+          {/* Map View - COLLAPSIBLE! */}
+          <div className={`${getPanelHeight('mapView', 'h-[600px]', 'h-12')} flex-shrink-0 transition-all duration-300`}>
             <Card className="h-full max-w-full">
-              <CardContent className="p-0 h-full max-w-full">
-                <InteractiveMap onZoneClick={handleZoneClick} onGuardClick={handleGuardClick} />
-              </CardContent>
+              <CardHeader className="pb-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => togglePanel('mapView')}
+                  className="w-full justify-between p-0 h-auto hover:bg-transparent"
+                >
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    🗺️ Campus Map
+                    <Badge variant="secondary" className="ml-2">
+                      {guards.filter(g => g.status !== 'off_duty').length} Active Guards
+                    </Badge>
+                  </CardTitle>
+                  {collapsedPanels.mapView ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CardHeader>
+              {!collapsedPanels.mapView && (
+                <CardContent className="p-0 flex-1 max-w-full overflow-hidden">
+                  <InteractiveMap onZoneClick={handleZoneClick} onGuardClick={handleGuardClick} />
+                </CardContent>
+              )}
             </Card>
           </div>
 
-          {/* Guard Management - Compact footer section */}
-          <div className="flex-shrink-0 h-48">
+          {/* Guard Management - COLLAPSIBLE! */}
+          <div className={`${getPanelHeight('guardManagement', 'h-[180px]', 'h-12')} flex-shrink-0 transition-all duration-300`}>
             <Card className="h-full max-w-full">
-              <GuardManagement
-                guards={guards as any}
-                onGuardUpdate={handleGuardUpdate}
-                onGuardAssign={handleGuardAssign}
-                onGuardStatusChange={handleGuardStatusChange}
-                onGuardSelect={setSelectedGuard as any}
-              />
+              <CardHeader className="pb-2 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => togglePanel('guardManagement')}
+                  className="w-full justify-between p-0 h-auto hover:bg-transparent"
+                >
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    👮‍♂️ Guard Management
+                    <Badge variant="secondary" className="ml-2">
+                      {guards.filter(g => g.status === 'available').length} Available
+                    </Badge>
+                  </CardTitle>
+                  {collapsedPanels.guardManagement ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CardHeader>
+              {!collapsedPanels.guardManagement && (
+                <div className="flex-1 overflow-hidden">
+                  <GuardManagement
+                    guards={guards as any}
+                    onGuardUpdate={handleGuardUpdate}
+                    onGuardAssign={handleGuardAssign}
+                    onGuardStatusChange={handleGuardStatusChange}
+                    onGuardSelect={setSelectedGuard as any}
+                  />
+                </div>
+              )}
             </Card>
           </div>
         </div>
 
-        {/* Right Panel - Timeline (25%) */}
-        <div className="col-span-3">
+        {/* Right Panel - Timeline (25%) - COLLAPSIBLE! */}
+        <div className={`col-span-3 ${getPanelHeight('timeline', 'h-full', 'h-12')} transition-all duration-300`}>
           <Card className="h-full max-w-full">
-            <CardContent className="p-0 h-full max-w-full">
-              <Timeline 
-                className="h-full"
-                onOpenModal={() => setShowRadioModal(true)}
-                onOpenFullPage={() => setShowCommunicationsPage(true)}
-                activities={activities}
-              />
-            </CardContent>
+            <CardHeader className="pb-2 flex-shrink-0">
+              <Button
+                variant="ghost"
+                onClick={() => togglePanel('timeline')}
+                className="w-full justify-between p-0 h-auto hover:bg-transparent"
+              >
+                <CardTitle className="text-lg flex items-center gap-2">
+                  📋 Unified Timeline
+                  <Badge variant="secondary" className="ml-2">
+                    {timelineEvents.length} Events
+                  </Badge>
+                </CardTitle>
+                {collapsedPanels.timeline ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </CardHeader>
+            {!collapsedPanels.timeline && (
+              <CardContent className="p-0 flex-1 max-w-full overflow-hidden">
+                <Timeline 
+                  className="h-full"
+                  onOpenModal={() => setShowRadioModal(true)}
+                  onOpenFullPage={() => setShowCommunicationsPage(true)}
+                  activities={activities}
+                />
+              </CardContent>
+            )}
           </Card>
         </div>
       </div>

@@ -146,7 +146,7 @@ export class MockRepository<T> {
 
   // Mock methods with jest spies
   create = jest.fn(async (entity: T & { id?: string }): Promise<T> => {
-    const id = entity.id || this.nextId++.toString();
+    const id = entity.id || (this.nextId++).toString();
     const entityWithId = { ...entity, id } as T;
     this.entities.set(id, entityWithId);
     return entityWithId;

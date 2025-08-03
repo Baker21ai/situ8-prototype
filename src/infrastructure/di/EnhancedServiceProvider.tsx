@@ -294,7 +294,7 @@ export const useDIServices = () => {
 /**
  * Hook to use a specific service from DI
  */
-export const useDIService = <T>(token: string | symbol): T | null => {
+export const useDIService = function<T>(token: string | symbol): T | null {
   try {
     return useService(token as any);
   } catch {

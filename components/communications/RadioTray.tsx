@@ -16,6 +16,7 @@ interface RadioTrayProps {
   token: string;
   onOpenModal?: () => void;
   className?: string;
+  isFooterIntegrated?: boolean;
 }
 
 type TrayState = 'minimized' | 'compact' | 'expanded';
@@ -27,7 +28,8 @@ export function RadioTray({
   userClearance = 1,
   token,
   onOpenModal,
-  className
+  className,
+  isFooterIntegrated = false
 }: RadioTrayProps) {
   const [trayState, setTrayState] = useState<TrayState>('compact');
   const [isConnected, setIsConnected] = useState(false);
@@ -68,8 +70,42 @@ export function RadioTray({
     onOpenModal?.();
   };
 
-  // Minimized state - professional radio button
-  if (trayState === 'minimized') {
+  // Footer integrated mode - simple button that opens the tray
+  if (isFooterIntegrated && trayState === 'minimized') {
+    return (
+      <Button
+        onClick={() => setTrayState('compact')}
+        variant="outline"
+        size="sm"
+        className={cn(
+          'flex items-center gap-2',
+          isConnected 
+            ? 'border-blue-200 text-blue-700 hover:bg-blue-50' 
+            : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+          className
+        )}
+      >
+        <Radio className={cn(
+          'w-4 h-4',
+          isConnected && 'text-blue-600 animate-pulse'
+        )} />
+        <span className="font-medium">Radio</span>
+        {currentChannel && (
+          <Badge variant="secondary" className="text-xs">
+            {currentChannel}
+          </Badge>
+        )}
+        {unreadMessages > 0 && (
+          <Badge variant="destructive" className="h-5 w-5 p-0 text-xs">
+            {unreadMessages > 9 ? '9+' : unreadMessages}
+          </Badge>
+        )}
+      </Button>
+    );
+  }
+
+  // Original floating minimized state
+  if (!isFooterIntegrated && trayState === 'minimized') {
     return (
       <div className={cn(
         'fixed bottom-4 right-4 z-50',
@@ -124,7 +160,8 @@ export function RadioTray({
       
       <div
         className={cn(
-          'fixed bottom-4 right-4 z-50',
+          'fixed z-50',
+          isFooterIntegrated ? 'bottom-16 right-4' : 'bottom-4 right-4',
           'bg-background border-2 rounded-lg shadow-2xl',
           'transition-all duration-300 ease-in-out',
           'backdrop-blur-md',

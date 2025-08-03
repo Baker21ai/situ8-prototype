@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -6,6 +6,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { 
   Navigation, 
   MapPin, 
@@ -35,6 +36,9 @@ import {
   Search,
   X
 } from 'lucide-react';
+
+// Lazy load the LeafletCampusMap component
+const LeafletCampusMap = lazy(() => import('./LeafletCampusMap'));
 
 // Hierarchical data structure for Russian Doll navigation
 interface Asset {
@@ -123,7 +127,7 @@ const mockSites: Site[] = [
                 id: 'a-1-lobby',
                 name: 'Main Lobby',
                 x: 20, y: 25, width: 30, height: 20,
-                hasIncident: true, incidentType: 'critical', hasGuard: true, guardName: 'Officer Johnson',
+                hasIncident: true, incidentType: 'critical', hasGuard: true, guardName: 'Garcia, M.',
                 assets: [
                   { id: 'cam-001', name: 'Entry Camera', type: 'camera', x: 30, y: 35, status: 'online' },
                   { id: 'door-001', name: 'Main Entrance', type: 'door', x: 40, y: 30, status: 'alert' },
@@ -261,6 +265,7 @@ export function InteractiveMap({ onZoneClick, onGuardClick }: InteractiveMapProp
   const [zoom, setZoom] = useState(5);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [_emergencyMode, setEmergencyMode] = useState(false);
+  const [viewMode, setViewMode] = useState<'map' | 'grid'>('grid');
 
   // Navigation helpers
   const getCurrentData = () => {
@@ -323,42 +328,67 @@ export function InteractiveMap({ onZoneClick, onGuardClick }: InteractiveMapProp
 
   const currentData = getCurrentData();
 
-  const renderSites = () => (
-    <div className="grid grid-cols-2 gap-4 p-4">
-      {currentData.sites?.map((site) => (
-        <Card 
-          key={site.id}
-          className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
-            site.buildings.some(b => b.hasIncident) ? getIncidentColor('critical') : 'border-gray-300 hover:border-blue-300'
-          }`}
-          onClick={() => navigateToLevel('buildings', { siteId: site.id })}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <div>
-                <h3 className="font-semibold">{site.name}</h3>
-                <p className="text-sm text-muted-foreground">{site.buildings.length} buildings</p>
+  const renderSites = () => {
+    if (viewMode === 'map' && navigation.level === 'sites') {
+      return (
+        <div className="h-full w-full">
+          <Suspense fallback={<div className="flex items-center justify-center h-full">Loading map...</div>}>
+            <LeafletCampusMap 
+              onGuardClick={(guardId) => {
+                // Handle guard click if needed
+                if (onGuardClick) {
+                  const guardName = `Guard ${guardId}`;
+                  onGuardClick(guardName);
+                }
+              }}
+              onBuildingClick={(buildingId) => {
+                // Navigate to building when clicked on map
+                console.log('Building clicked:', buildingId);
+              }}
+            />
+          </Suspense>
+        </div>
+      );
+    }
+
+    // Default grid view
+    return (
+      <div className="grid grid-cols-2 gap-4 p-4">
+        {currentData.sites?.map((site) => (
+          <Card 
+            key={site.id}
+            className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+              site.buildings.some(b => b.hasIncident) ? getIncidentColor('critical') : 'border-gray-300 hover:border-blue-300'
+            }`}
+            onClick={() => navigateToLevel('buildings', { siteId: site.id })}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Building2 className="h-8 w-8 text-blue-600" />
+                <div>
+                  <h3 className="font-semibold">{site.name}</h3>
+                  <p className="text-sm text-muted-foreground">{site.buildings.length} buildings</p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {site.buildings.filter(b => b.hasIncident).map(b => (
-                <Badge key={b.id} variant="destructive" className="text-xs">
-                  {b.incidentType?.toUpperCase()}
-                </Badge>
-              ))}
-              {site.buildings.filter(b => b.hasGuard).map(b => (
-                <Badge key={b.id} variant="secondary" className="text-xs">
-                  <Shield className="h-3 w-3 mr-1" />
-                  Guard
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+              <div className="flex gap-2 flex-wrap">
+                {site.buildings.filter(b => b.hasIncident).map(b => (
+                  <Badge key={b.id} variant="destructive" className="text-xs">
+                    {b.incidentType?.toUpperCase()}
+                  </Badge>
+                ))}
+                {site.buildings.filter(b => b.hasGuard).map(b => (
+                  <Badge key={b.id} variant="secondary" className="text-xs">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Guard
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   const renderBuildings = () => (
     <div className="p-4">
@@ -615,6 +645,25 @@ export function InteractiveMap({ onZoneClick, onGuardClick }: InteractiveMapProp
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View Mode Toggle - Only show at sites level */}
+            {navigation.level === 'sites' && (
+              <ToggleGroup 
+                type="single" 
+                value={viewMode} 
+                onValueChange={(value) => value && setViewMode(value as 'map' | 'grid')}
+                className="border rounded-md"
+              >
+                <ToggleGroupItem value="grid" size="sm" className="gap-2">
+                  <Grid3X3 className="h-4 w-4" />
+                  Grid
+                </ToggleGroupItem>
+                <ToggleGroupItem value="map" size="sm" className="gap-2">
+                  <Map className="h-4 w-4" />
+                  Map
+                </ToggleGroupItem>
+              </ToggleGroup>
+            )}
+            
             {/* Back Button */}
             {navigation.level !== 'sites' && (
               <Button 

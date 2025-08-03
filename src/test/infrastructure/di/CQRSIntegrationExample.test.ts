@@ -326,7 +326,7 @@ const ActivityManagementComponent: React.FC = () => {
     loadActivities();
   }, [services]);
 
-  return <div>Activity Management</div>;
+  return React.createElement('div', {}, 'Activity Management');
 };
 
 describe('React Integration with DI', () => {

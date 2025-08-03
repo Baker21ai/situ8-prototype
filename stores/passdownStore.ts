@@ -18,7 +18,7 @@ import {
   PassdownReceipt
 } from '../lib/types/passdown';
 import { PassdownService } from '../services/passdown.service';
-import { useServices } from '../services/ServiceProvider';
+// Services are accessed via window.__SITU8_SERVICES__
 
 interface PassdownState {
   // Data
@@ -94,7 +94,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Fetch passdowns with filters
       fetchPassdowns: async (filters?: PassdownFilters) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return;
@@ -151,7 +152,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Fetch single passdown by ID
       fetchPassdownById: async (id: string, includeRelated = false) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return;
@@ -195,7 +197,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Fetch passdowns for current shift
       fetchCurrentShiftPassdowns: async () => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return;
@@ -238,7 +241,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Fetch urgent passdowns
       fetchUrgentPassdowns: async () => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return;
@@ -281,7 +285,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Create new passdown
       createPassdown: async (data: CreatePassdownRequest) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return false;
@@ -326,7 +331,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Update existing passdown
       updatePassdown: async (id: string, data: UpdatePassdownRequest) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return false;
@@ -379,7 +385,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Acknowledge passdown
       acknowledgePassdown: async (id: string, acknowledged: boolean, notes?: string) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return false;
@@ -440,7 +447,8 @@ export const usePassdownStore = create<PassdownStore>()(
       
       // Archive old passdowns
       archiveOldPassdowns: async (daysOld: number) => {
-        const { passdownService } = useServices.getState();
+        // @ts-ignore - Service will be injected by ServiceProvider
+        const passdownService = (window as any).__SITU8_SERVICES__?.passdownService;
         if (!passdownService) {
           set({ error: 'Passdown service not initialized' });
           return 0;

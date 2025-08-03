@@ -1,0 +1,84 @@
+/* Map-related styles and animations */
+
+/* Pulsing animation for critical incidents */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Custom marker styles */
+.guard-marker {
+  transition: all 0.3s ease;
+}
+
+.incident-marker {
+  z-index: 1000 !important;
+}
+
+/* Leaflet popup customizations */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  min-width: 200px;
+}
+
+/* Map container styles */
+.leaflet-campus-map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Custom control styles */
+.leaflet-control-zoom {
+  border: 2px solid rgba(0, 0, 0, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: white !important;
+  color: #333 !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Dark mode support */
+.dark .leaflet-control-zoom {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .leaflet-control-zoom a {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .leaflet-control-zoom a:hover {
+  background-color: #374151 !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+.dark .leaflet-popup-tip {
+  background-color: #1f2937;
+}

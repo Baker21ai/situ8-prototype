@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Fix - Force Login</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        button { padding: 15px 30px; margin: 10px; font-size: 16px; cursor: pointer; }
+        .admin { background: #dc2626; color: white; border: none; }
+        .guard { background: #2563eb; color: white; border: none; }
+        .dev { background: #16a34a; color: white; border: none; }
+        .output { margin-top: 20px; padding: 15px; background: #000; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Quick Fix - Force Demo Login</h1>
+    
+    <p>Open the white screen tab and run one of these fixes:</p>
+    
+    <h2>Option 1: Force Admin Login</h2>
+    <button class="admin" onclick="copyAdminFix()">Copy Admin Fix</button>
+    
+    <h2>Option 2: Force Guard Login</h2>
+    <button class="guard" onclick="copyGuardFix()">Copy Guard Fix</button>
+    
+    <h2>Option 3: Force Developer Login</h2>
+    <button class="dev" onclick="copyDevFix()">Copy Dev Fix</button>
+    
+    <h2>Option 4: Clear Everything and Retry</h2>
+    <button onclick="copyClearFix()">Copy Clear & Retry</button>
+    
+    <div class="output" id="output">Click a button to copy the fix code...</div>
+    
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            document.getElementById('output').innerHTML = '<span style="color: #4caf50;">✅ Copied to clipboard! Paste in the browser console of the white screen tab.</span>';
+        }
+        
+        function copyAdminFix() {
+            const code = `// Force Admin Login
+localStorage.setItem('situ8-user-store', JSON.stringify({
+  state: {
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+    currentUser: {
+      id: 'demo-admin-001',
+      email: 'lisa.thompson@demo.situ8.com',
+      emailVerified: true,
+      role: 'admin',
+      department: 'management',
+      clearanceLevel: 5,
+      badgeNumber: 'ADM-001',
+      facilityCodes: ['ALL'],
+      profile: {
+        fullName: 'Lisa Thompson',
+        avatar: '👩‍💼'
+      }
+    },
+    sessionInfo: {
+      sessionId: 'demo-session-' + Date.now(),
+      loginTime: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    },
+    isDemoMode: true,
+    currentDemoUser: {
+      id: 'demo-admin-001',
+      email: 'lisa.thompson@demo.situ8.com',
+      name: 'Lisa Thompson',
+      role: 'admin',
+      isDemoUser: true
+    }
+  }
+}));
+location.reload();`;
+            copyToClipboard(code);
+        }
+        
+        function copyGuardFix() {
+            const code = `// Force Security Officer Login
+localStorage.setItem('situ8-user-store', JSON.stringify({
+  state: {
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+    currentUser: {
+      id: 'demo-guard-001',
+      email: 'mike.johnson@demo.situ8.com',
+      emailVerified: true,
+      role: 'security-officer',
+      department: 'security',
+      clearanceLevel: 2,
+      badgeNumber: 'SEC-001',
+      facilityCodes: ['MAIN', 'WAREHOUSE'],
+      profile: {
+        fullName: 'Mike Johnson',
+        avatar: '👮‍♂️'
+      }
+    },
+    sessionInfo: {
+      sessionId: 'demo-session-' + Date.now(),
+      loginTime: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    },
+    isDemoMode: true,
+    currentDemoUser: {
+      id: 'demo-guard-001',
+      email: 'mike.johnson@demo.situ8.com',
+      name: 'Mike Johnson',
+      role: 'security-officer',
+      isDemoUser: true
+    }
+  }
+}));
+location.reload();`;
+            copyToClipboard(code);
+        }
+        
+        function copyDevFix() {
+            const code = `// Force Developer Login
+localStorage.setItem('situ8-user-store', JSON.stringify({
+  state: {
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+    currentUser: {
+      id: 'demo-dev-001',
+      email: 'yamen.k@demo.situ8.com',
+      emailVerified: true,
+      role: 'developer',
+      department: 'it',
+      clearanceLevel: 3,
+      badgeNumber: 'DEV-001',
+      facilityCodes: ['MAIN', 'LAB'],
+      profile: {
+        fullName: 'Yamen K',
+        avatar: '👨‍💻'
+      }
+    },
+    sessionInfo: {
+      sessionId: 'demo-session-' + Date.now(),
+      loginTime: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    },
+    isDemoMode: true,
+    currentDemoUser: {
+      id: 'demo-dev-001',
+      email: 'yamen.k@demo.situ8.com',
+      name: 'Yamen K',
+      role: 'developer',
+      isDemoUser: true
+    }
+  }
+}));
+location.reload();`;
+            copyToClipboard(code);
+        }
+        
+        function copyClearFix() {
+            const code = `// Clear all auth data and retry
+localStorage.clear();
+sessionStorage.clear();
+// Clear service worker cache if exists
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => caches.delete(name));
+  });
+}
+location.reload();`;
+            copyToClipboard(code);
+        }
+    </script>
+</body>
+</html>

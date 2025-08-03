@@ -22,6 +22,10 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
+  // Check if WebSocket is enabled
+  const isWebSocketEnabled = import.meta.env.VITE_ENABLE_WEBSOCKET === 'true' || 
+                            import.meta.env.VITE_ENABLE_WEBSOCKET === true;
+  
   // Use proper environment variable prefix for Vite
   const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL || 
                       import.meta.env.REACT_APP_WEBSOCKET_URL ||
@@ -53,6 +57,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   // Check if we're in development mode and should use mock data
   const isDevelopment = import.meta.env.DEV;
   const useMockWebSocket = isDevelopment && !import.meta.env.VITE_WEBSOCKET_URL && !import.meta.env.REACT_APP_WEBSOCKET_URL;
+
+  // If WebSocket is disabled, return offline state
+  if (!isWebSocketEnabled) {
+    if (import.meta.env.VITE_DEBUG_WEBSOCKET === 'true') {
+      console.log('WebSocket is disabled via VITE_ENABLE_WEBSOCKET environment variable');
+    }
+    return {
+      isConnected: false,
+      connectionState: 'disconnected' as const,
+      error: null,
+      connect: () => {},
+      disconnect: () => {},
+      sendMessage: () => {},
+      subscribe: () => (() => {}),
+    };
+  }
 
   // Connect to WebSocket
   const connect = useCallback((authToken?: string) => {
@@ -126,13 +146,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        if (import.meta.env.VITE_DEBUG_WEBSOCKET === 'true') {
+          console.error('WebSocket error:', error);
+        }
         communicationStore.setError('Connection error');
         setState(prev => ({ ...prev, error: 'Connection error' }));
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
+        if (import.meta.env.VITE_DEBUG_WEBSOCKET === 'true') {
+          console.log('WebSocket closed:', event.code, event.reason);
+        }
         wsRef.current = null;
         
         // Update communication store connection state

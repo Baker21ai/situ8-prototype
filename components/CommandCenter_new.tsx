@@ -94,6 +94,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['Medical', 'Supervisor'],
+    // Campus coordinates for MappedIn integration
+    latitude: 37.7749,
+    longitude: -122.4194,
+    accuracy: 5,
     metrics: {
       activitiesCreated: 34,
       incidentsResponded: 2,
@@ -116,6 +120,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['K9'],
+    // Campus coordinates for MappedIn integration - Building A, Zone A-3
+    latitude: 37.7751,
+    longitude: -122.4196,
+    accuracy: 3,
     metrics: {
       activitiesCreated: 28,
       incidentsResponded: 1,
@@ -138,6 +146,10 @@ const initialGuards = [
     shift: '14:00 - 22:00',
     department: 'Security',
     skills: ['Medical'],
+    // Campus coordinates for MappedIn integration - Building A, Zone A-1
+    latitude: 37.7747,
+    longitude: -122.4192,
+    accuracy: 4,
     metrics: {
       activitiesCreated: 22,
       incidentsResponded: 1,
@@ -160,6 +172,10 @@ const initialGuards = [
     shift: '22:00 - 06:00',
     department: 'Security',
     skills: ['Tactical'],
+    // Campus coordinates for MappedIn integration - Off duty (Building A parking)
+    latitude: 37.7745,
+    longitude: -122.4190,
+    accuracy: 10,
     metrics: {
       activitiesCreated: 18,
       incidentsResponded: 0,
@@ -182,6 +198,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['Investigations'],
+    // Campus coordinates for MappedIn integration - Building B, Zone B-1
+    latitude: 37.7753,
+    longitude: -122.4198,
+    accuracy: 3,
     metrics: {
       activitiesCreated: 31,
       incidentsResponded: 3,
@@ -204,6 +224,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['Medical', 'K9'],
+    // Campus coordinates for MappedIn integration - Building B, Zone B-2
+    latitude: 37.7755,
+    longitude: -122.4200,
+    accuracy: 2,
     metrics: {
       activitiesCreated: 26,
       incidentsResponded: 2,
@@ -226,6 +250,10 @@ const initialGuards = [
     shift: '14:00 - 22:00',
     department: 'Security',
     skills: ['Supervisor'],
+    // Campus coordinates for MappedIn integration - Building B, Zone B-3
+    latitude: 37.7757,
+    longitude: -122.4202,
+    accuracy: 4,
     metrics: {
       activitiesCreated: 29,
       incidentsResponded: 1,
@@ -248,6 +276,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['Tactical'],
+    // Campus coordinates for MappedIn integration - Parking Lot, Sector P-1
+    latitude: 37.7743,
+    longitude: -122.4188,
+    accuracy: 8,
     metrics: {
       activitiesCreated: 15,
       incidentsResponded: 0,
@@ -270,6 +302,10 @@ const initialGuards = [
     shift: '06:00 - 14:00',
     department: 'Security',
     skills: ['K9', 'Supervisor'],
+    // Campus coordinates for MappedIn integration - Perimeter, North Gate
+    latitude: 37.7760,
+    longitude: -122.4195,
+    accuracy: 5,
     metrics: {
       activitiesCreated: 24,
       incidentsResponded: 1,
@@ -292,6 +328,10 @@ const initialGuards = [
     shift: '14:00 - 22:00',
     department: 'Security',
     skills: ['Medical', 'Investigations'],
+    // Campus coordinates for MappedIn integration - Perimeter, South Gate
+    latitude: 37.7740,
+    longitude: -122.4185,
+    accuracy: 6,
     metrics: {
       activitiesCreated: 33,
       incidentsResponded: 2,
@@ -369,27 +409,22 @@ const formatTime = (date: Date) => {
   });
 };
 
+import { useGuardStore } from '../stores/guardStore';
+
 export function CommandCenter() {
   const [activities, setActivities] = useState(initialActivities);
-  const [guards, setGuards] = useState(initialGuards);
+  const { guards, selectedGuard, setSelectedGuard, updateGuard, assignGuardToActivity, updateGuardStatus } = useGuardStore();
   const [timelineEvents, setTimelineEvents] = useState(initialTimelineEvents);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
-  const [selectedGuard, setSelectedGuard] = useState<typeof initialGuards[0] | null>(null);
   const [showCriticalOnly, setShowCriticalOnly] = useState(false);
 
   // Guard Management handlers
-  const handleGuardUpdate = useCallback((guardId: number, updates: Partial<typeof initialGuards[0]>) => {
-    setGuards((prev: any) => prev.map((guard: any) => 
-      guard.id === guardId ? { ...guard, ...updates } : guard
-    ));
-  }, []);
+  const handleGuardUpdate = useCallback((guardId: number, updates: Partial<typeof guards[0]>) => {
+    updateGuard(guardId, updates);
+  }, [updateGuard]);
 
   const handleGuardAssign = useCallback((guardId: number, activityId: number) => {
-    setGuards((prev: any) => prev.map((guard: any) => ({
-      ...guard,
-      assignedActivity: guard.id === guardId ? activityId : guard.assignedActivity,
-      status: guard.id === guardId ? 'responding' : guard.status
-    })));
+    assignGuardToActivity(guardId, activityId);
 
     setActivities(prev => prev.map(activity => ({
       ...activity,
@@ -409,12 +444,10 @@ export function CommandCenter() {
       };
       setTimelineEvents(prev => [newEvent, ...prev]);
     }
-  }, [guards, activities]);
+  }, [guards, activities, assignGuardToActivity]);
 
-  const handleGuardStatusChange = useCallback((guardId: number, status: typeof initialGuards[0]['status']) => {
-    setGuards((prev: any) => prev.map((guard: any) => 
-      guard.id === guardId ? { ...guard, status, lastUpdate: new Date() } : guard
-    ));
+  const handleGuardStatusChange = useCallback((guardId: number, status: typeof guards[0]['status']) => {
+    updateGuardStatus(guardId, status);
     
     // Add to timeline
     const guard = guards.find(g => g.id === guardId);
@@ -427,7 +460,7 @@ export function CommandCenter() {
       };
       setTimelineEvents(prev => [newEvent, ...prev]);
     }
-  }, [guards]);
+  }, [guards, updateGuardStatus]);
 
   const getFilteredActivities = useCallback(() => {
     let filtered = activities;

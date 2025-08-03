@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import 'leaflet-defaulticon-compatibility';
+import '../styles/map.css';
+import { useGuardStore } from '../stores/guardStore';
+import { IncidentOverlay } from './map/IncidentOverlay';
+import { MapTestData } from './map/MapTestData';
 
 // Fix for default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -72,48 +77,43 @@ interface LeafletCampusMapProps {
 }
 
 export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
-  guards = [],
+  guards: propsGuards = [],
   onGuardClick,
   onBuildingClick,
   className
 }) => {
+  // Get guards from store
+  const { guards: storeGuards, setSelectedGuard } = useGuardStore();
+  
   // Default campus center (San Francisco Bay Area)
   const defaultCenter: [number, number] = [37.7749, -122.4194];
   const defaultZoom = 16;
 
-  // Mock guard data for testing (will be removed when integrated with stores)
-  const mockGuards: Guard[] = useMemo(() => [
-    {
-      id: '1',
-      name: 'Garcia, M.',
-      latitude: 37.7749,
-      longitude: -122.4194,
-      status: 'available',
-      badge: 'SEC-4782'
-    },
-    {
-      id: '2', 
-      name: 'Chen, L.',
-      latitude: 37.7751,
-      longitude: -122.4196,
-      status: 'patrolling',
-      badge: 'SEC-4783'
-    },
-    {
-      id: '3',
-      name: 'Rodriguez, A.',
-      latitude: 37.7747,
-      longitude: -122.4192,
-      status: 'investigating',
-      badge: 'SEC-4784'
+  // Use store guards if available, otherwise fall back to props
+  const guards = useMemo(() => {
+    if (storeGuards && storeGuards.length > 0) {
+      return storeGuards.map(guard => ({
+        id: guard.id.toString(),
+        name: guard.name,
+        latitude: guard.latitude,
+        longitude: guard.longitude,
+        status: guard.status,
+        badge: guard.badge,
+        lastUpdate: guard.lastUpdate
+      }));
     }
-  ], []);
-
-  // Use provided guards or fallback to mock data
-  const displayGuards = guards.length > 0 ? guards : mockGuards;
+    return propsGuards;
+  }, [storeGuards, propsGuards]);
 
   // Handle guard marker click
   const handleGuardClick = (guard: Guard) => {
+    // Set selected guard in store
+    const selectedGuard = storeGuards.find(g => g.id.toString() === guard.id);
+    if (selectedGuard) {
+      setSelectedGuard(selectedGuard);
+    }
+    
+    // Call callback if provided
     if (onGuardClick) {
       onGuardClick(guard.id);
     }
@@ -129,34 +129,78 @@ export const LeafletCampusMap: React.FC<LeafletCampusMapProps> = ({
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
         />
         
-        {/* Render guard markers */}
-        {displayGuards.map((guard) => (
-          <Marker
-            key={guard.id}
-            position={[guard.latitude, guard.longitude]}
-            icon={createGuardIcon(guard.status)}
-            eventHandlers={{
-              click: () => handleGuardClick(guard)
-            }}
-          >
-            <Popup>
-              <div className="p-2">
-                <h3 className="font-semibold text-sm">{guard.name}</h3>
-                <p className="text-xs text-gray-600">Badge: {guard.badge}</p>
-                <p className="text-xs text-gray-600">Status: {guard.status}</p>
-                {guard.lastUpdate && (
-                  <p className="text-xs text-gray-500">
-                    Last update: {guard.lastUpdate.toLocaleTimeString()}
-                  </p>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {/* Render guard markers with clustering */}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            const size = count < 10 ? 'small' : count < 20 ? 'medium' : 'large';
+            const sizeClass = size === 'small' ? 30 : size === 'medium' ? 40 : 50;
+            
+            return L.divIcon({
+              html: `<div style="
+                background: #3B82F6;
+                color: white;
+                width: ${sizeClass}px;
+                height: ${sizeClass}px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: ${size === 'small' ? 12 : size === 'medium' ? 14 : 16}px;
+                border: 3px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              ">${count}</div>`,
+              className: 'marker-cluster-custom',
+              iconSize: L.point(sizeClass, sizeClass, true),
+            });
+          }}
+        >
+          {guards.map((guard) => (
+            <Marker
+              key={guard.id}
+              position={[guard.latitude, guard.longitude]}
+              icon={createGuardIcon(guard.status)}
+              eventHandlers={{
+                click: () => handleGuardClick(guard)
+              }}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-semibold text-sm">{guard.name}</h3>
+                  <p className="text-xs text-gray-600">Badge: {guard.badge}</p>
+                  <p className="text-xs text-gray-600">Status: {guard.status}</p>
+                  {guard.lastUpdate && (
+                    <p className="text-xs text-gray-500">
+                      Last update: {guard.lastUpdate.toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+        
+        {/* Incident overlay */}
+        <IncidentOverlay 
+          onIncidentClick={(incidentId) => {
+            console.log('Incident clicked:', incidentId);
+            // TODO: Navigate to incident details or open incident panel
+          }}
+        />
       </MapContainer>
+      
+      {/* Test data controls for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <MapTestData />
+      )}
     </div>
   );
 };

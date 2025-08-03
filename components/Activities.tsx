@@ -273,7 +273,7 @@ export function Activities() {
 
   return (
     <ActivityErrorBoundaryWrapper context="Activities Page Root">
-      <div className="h-screen flex flex-col bg-gray-50">
+      <div className="h-full flex flex-col bg-gray-50">
         {/* Breadcrumb Navigation */}
         <div className="flex-shrink-0 bg-white border-b px-3 py-2">
           <BreadcrumbNavigation />

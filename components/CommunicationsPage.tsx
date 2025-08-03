@@ -14,13 +14,17 @@ import {
 import { useCommunications } from '../hooks/useCommunications';
 import { useUserStore } from '../stores/userStore';
 
-export function CommunicationsPage() {
+interface CommunicationsPageProps {
+  onBackToCommandCenter?: () => void;
+}
+
+export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPageProps = {}) {
   const [activeTab, setActiveTab] = useState('channels');
   const { currentUser: user } = useUserStore();
   const { channels, messages, guards } = useCommunications();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="flex items-center justify-between px-6 py-4">

@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import viteCompression from 'vite-plugin-compression'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -37,16 +36,27 @@ export default defineConfig(({ mode }) => ({
         return null;
       }
     })()] : []),
-    // Enable gzip compression
-    viteCompression({
-      algorithm: 'gzip',
-      ext: '.gz'
-    }),
-    // Enable brotli compression for better compression ratio
-    viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br'
-    })
+    // Enable compression plugins only if available (for production builds)
+    ...(mode === 'production' ? (() => {
+      try {
+        const viteCompression = require('vite-plugin-compression');
+        return [
+          // Enable gzip compression
+          viteCompression({
+            algorithm: 'gzip',
+            ext: '.gz'
+          }),
+          // Enable brotli compression for better compression ratio
+          viteCompression({
+            algorithm: 'brotliCompress',
+            ext: '.br'
+          })
+        ];
+      } catch (e) {
+        console.log('Compression plugin not available, skipping compression');
+        return [];
+      }
+    })() : [])
   ],
   resolve: {
     alias: {
