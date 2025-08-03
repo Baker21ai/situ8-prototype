@@ -1,11 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   // Support REACT_APP_ environment variables for compatibility
   define: {
     'process.env': Object.keys(process.env)
@@ -23,13 +22,21 @@ export default defineConfig({
         minified: true
       }
     }),
-    // Bundle analyzer for optimization insights
-    visualizer({
-      filename: 'dist/stats.html',
-      open: true,
-      gzipSize: true,
-      brotliSize: true,
-    }),
+    // Bundle analyzer for optimization insights (only in dev)
+    ...(mode === 'development' ? [(() => {
+      try {
+        const { visualizer } = require('rollup-plugin-visualizer');
+        return visualizer({
+          filename: 'dist/stats.html',
+          open: true,
+          gzipSize: true,
+          brotliSize: true,
+        });
+      } catch (e) {
+        console.log('Visualizer plugin not available');
+        return null;
+      }
+    })()] : []),
     // Enable gzip compression
     viteCompression({
       algorithm: 'gzip',
@@ -172,4 +179,4 @@ export default defineConfig({
     minifyWhitespace: true,
     treeShaking: true,
   },
-})
+}))
