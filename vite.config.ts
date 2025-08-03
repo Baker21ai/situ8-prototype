@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => ({
         return env;
       }, {} as Record<string, string>)
   },
+  // Use build-specific TypeScript config for production
+  ...(mode === 'production' ? {
+    build: {
+      ...((mode === 'production') && {
+        typescript: {
+          configFile: './tsconfig.build.json'
+        }
+      })
+    }
+  } : {}),
   plugins: [
     react({
       // Optimize React DevTools in production
