@@ -275,6 +275,16 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         };
 
         setServices(serviceContext);
+        console.log('✅ Services set successfully');
+
+        // Expose services to window for stores
+        if (typeof window !== 'undefined') {
+          (window as any).__SITU8_SERVICES__ = serviceContext;
+        }
+
+        // Mark as initialized AFTER setting services
+        setIsInitialized(true);
+        console.log('✅ ServiceProvider initialization complete')
 
         // Run health checks on all services
         Promise.allSettled([
@@ -306,7 +316,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       } catch (error) {
         console.error('Service initialization failed:', error);
         // Set minimal services to prevent app crash
-        setServices({
+        const fallbackServices = {
           activityService: new ActivityService(),
           incidentService: new IncidentService(),
           caseService: new CaseService(),
@@ -314,16 +324,21 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           auditService: new AuditService(),
           visitorService: null as any,
           passdownService: new PassdownService(),
-          authService: null as any,
+          authService: authService || new AuthService(), // Use existing auth if available
           communicationService: null as any,
+          chatService: null as any,
           apiClient: null,
-          isInitialized: false
-        });
+          isInitialized: true // Set to true so app can proceed
+        };
+        setServices(fallbackServices);
+        setIsInitialized(true);
+        console.warn('⚠️ Using fallback services due to initialization error');
       }
     };
 
+    console.log('🚀 Starting service initialization...');
     initializeAllServices();
-    setIsInitialized(true);
+    // Removed setIsInitialized(true) from here - it's now inside the async function
   }, [communicationStore]);
 
   if (!services) {

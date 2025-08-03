@@ -48,6 +48,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   // Demo mode state
   const [showDemoUsers, setShowDemoUsers] = useState(false);
+  
+  // Enable demo mode by default for easy access
+  useEffect(() => {
+    if (showDemoMode && !isDemoMode) {
+      enableDemoMode();
+    }
+  }, [showDemoMode, isDemoMode, enableDemoMode]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -94,9 +101,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   // Handle demo user selection
   const handleDemoUserSelect = async (userId: string) => {
+    console.log(`🎯 Demo user button clicked: ${userId}`);
     const success = await switchDemoUser(userId);
+    console.log(`🔄 switchDemoUser result: ${success}`);
     if (success && onSuccess) {
+      console.log('✅ Login successful, calling onSuccess callback');
       onSuccess();
+    } else if (!success) {
+      console.error('❌ Demo login failed');
     }
   };
 
@@ -164,10 +176,71 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             </div>
           )}
 
+          {/* Quick Role Login Buttons - Always Visible */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Quick Access</Label>
+            <div className="grid gap-2">
+              <Button
+                variant="default"
+                className="justify-start h-auto p-4 bg-red-600 hover:bg-red-700"
+                onClick={() => handleDemoUserSelect('demo-admin-001')}
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-3 text-left w-full">
+                  <span className="text-xl">👑</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">Admin Access</p>
+                    <p className="text-xs text-red-100">Full system control</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs border-red-300 text-red-100">
+                    L5
+                  </Badge>
+                </div>
+              </Button>
+              
+              <Button
+                variant="default"
+                className="justify-start h-auto p-4 bg-blue-600 hover:bg-blue-700"
+                onClick={() => handleDemoUserSelect('demo-guard-001')}
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-3 text-left w-full">
+                  <span className="text-xl">👮‍♂️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">Security Officer Access</p>
+                    <p className="text-xs text-blue-100">Field operations</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-100">
+                    L2
+                  </Badge>
+                </div>
+              </Button>
+              
+              <Button
+                variant="default"
+                className="justify-start h-auto p-4 bg-green-600 hover:bg-green-700"
+                onClick={() => handleDemoUserSelect('demo-dev-001')}
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-3 text-left w-full">
+                  <span className="text-xl">🛡️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">Developer Access</p>
+                    <p className="text-xs text-green-100">Technical operations</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs border-green-300 text-green-100">
+                    L3
+                  </Badge>
+                </div>
+              </Button>
+            </div>
+          </div>
+
           {/* Demo User Selection */}
           {isDemoMode && showDemoUsers && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Quick Demo Users</Label>
+              <Separator className="my-4" />
+              <Label className="text-sm font-medium">All Demo Users</Label>
               <div className="grid gap-2">
                 {availableDemoUsers.map((user) => (
                   <Button
@@ -197,8 +270,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               
               <Separator className="my-4" />
               <p className="text-xs text-muted-foreground text-center">
-                Or sign in with any email below
-              </p>
+                Or sign in with any email below</p>
             </div>
           )}
 

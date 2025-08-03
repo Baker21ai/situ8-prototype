@@ -3,8 +3,35 @@ import ReactDOM from 'react-dom/client'
 import App from '../App.tsx'
 import '../styles/globals.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+// Add error boundary and logging
+console.log('🚀 main.tsx: Starting app initialization');
+
+// Check if root element exists
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  console.error('❌ Root element not found!');
+  document.body.innerHTML = '<h1 style="color: red;">Root element not found!</h1>';
+} else {
+  console.log('✅ Root element found');
+  
+  try {
+    const root = ReactDOM.createRoot(rootElement);
+    console.log('✅ React root created');
+    
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.log('✅ App rendered');
+  } catch (error) {
+    console.error('❌ Failed to render app:', error);
+    rootElement.innerHTML = `
+      <div style="padding: 20px; font-family: monospace; background: #1a1a1a; color: white; height: 100vh;">
+        <h1 style="color: #ff6b6b;">Failed to start app</h1>
+        <pre style="background: #000; padding: 20px; border-radius: 5px; overflow: auto;">${error}</pre>
+        <p>Check the browser console for more details.</p>
+      </div>
+    `;
+  }
+}

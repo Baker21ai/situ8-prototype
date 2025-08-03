@@ -282,6 +282,10 @@ export class AuthService extends BaseService<AuthenticatedUser> {
     this.tokens = tokens;
     this.sessionInfo = sessionInfo;
 
+    // IMPORTANT: Persist the session so the user stays logged in
+    this.persistSession();
+    console.log('💾 AuthService: Demo session persisted');
+
     return {
       success: true,
       data: {
@@ -465,15 +469,24 @@ export class AuthService extends BaseService<AuthenticatedUser> {
    * Switch to demo user
    */
   async switchDemoUser(userId: string): ServiceMethod<LoginResponse> {
+    console.log(`🔐 AuthService: switchDemoUser called with userId: ${userId}`);
+    
     if (!this.isDemoMode) {
+      console.error('❌ AuthService: Demo mode not enabled');
       return this.createErrorResponse('Demo mode not enabled', 'DEMO_MODE_DISABLED');
     }
 
+    console.log('🔍 AuthService: Looking for demo user...');
     const demoUser = this.getDemoUserById(userId);
+    console.log('🔍 AuthService: Demo user found:', demoUser);
+    
     if (!demoUser) {
+      console.error(`❌ AuthService: Demo user not found for ID: ${userId}`);
+      console.log('📋 Available demo users:', this.getDemoUsers().map(u => u.id));
       return this.createErrorResponse('Demo user not found', 'DEMO_USER_NOT_FOUND');
     }
 
+    console.log('✅ AuthService: Logging in demo user:', demoUser.email);
     return this.loginDemoUser(demoUser.email);
   }
 

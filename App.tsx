@@ -29,6 +29,7 @@ import { RadioTray } from './components/communications/RadioTray';
 import { CommunicationsModal } from './components/communications/CommunicationsModal';
 import { VirtualScrollingPerformanceTest } from './components/VirtualScrollingPerformanceTest';
 import { AWSStatusIndicator } from './components/AWSStatusIndicator';
+import { ConnectionStatus } from './components/ConnectionStatus';
 import { 
   Shield, 
   Activity, 
@@ -233,46 +234,17 @@ const QuickStats = memo<{ collapsed: boolean }>(({ collapsed }) => {
 });
 QuickStats.displayName = 'QuickStats';
 
-// Main App component with optimizations
-const App = memo(() => {
+// Inner App component that uses auth
+const AppContent = memo(() => {
   // Authentication state
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  console.log('🔍 App.tsx: Auth state:', { isAuthenticated, user: user?.email, authLoading });
   
   const [activeModule, setActiveModule] = useState<Module>('command-center');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [communicationsModalOpen, setCommunicationsModalOpen] = useState(false);
-  
-  // If authentication is loading, show loading spinner
-  if (authLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center dark">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-muted-foreground">Initializing services...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // If not authenticated, show login form
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="dark">
-        <LoginForm 
-          onSuccess={() => {
-            // Authentication successful, component will re-render with authenticated state
-            console.log('Login successful, redirecting to main app');
-          }}
-          showDemoMode={true}
-        />
-      </div>
-    );
-  }
-  
-  // Extract user role for UI (convert from auth service format)
-  const userRole = user.role.toLowerCase().replace('_', '-') as 'admin' | 'supervisor' | 'officer';
 
-  // Enable dark mode for 24/7 operations (memoized)
+  // Enable dark mode for 24/7 operations (memoized) - MUST be before conditionals
   const enableDarkMode = useCallback(() => {
     document.documentElement.classList.add('dark');
   }, []);
@@ -324,12 +296,13 @@ const App = memo(() => {
     navigation.navigateToModule(moduleId as ModuleName);
   }, [navigation]);
 
+  // Module props - moved outside of callback to fix hooks error
+  const moduleProps = useMemo(() => ({
+    communications: { onBackToCommandCenter: () => setActiveModule('command-center') }
+  }), []);
+
   // Memoized module content renderer with Suspense
   const renderModuleContent = useCallback(() => {
-    const moduleProps = useMemo(() => ({
-      communications: { onBackToCommandCenter: () => setActiveModule('command-center') }
-    }), []);
-
     switch (activeModule) {
       case 'command-center':
         return (
@@ -406,7 +379,7 @@ const App = memo(() => {
           </div>
         );
     }
-  }, [activeModule]);
+  }, [activeModule, moduleProps]);
 
   // Memoized navigation items with callbacks
   const navigationItemsWithCallbacks = useMemo(() => 
@@ -416,14 +389,57 @@ const App = memo(() => {
     })), [handleModuleChange]
   );
 
+  // Derived values that depend on auth state
+  const userRole = useMemo(() => user?.role || 'guest', [user]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 App.tsx: Auth state changed:', { 
+      isAuthenticated, 
+      user: user?.email, 
+      authLoading,
+      hasUser: !!user
+    });
+  }, [isAuthenticated, user, authLoading]);
+
+  // NOW we can have conditional returns - AFTER all hooks
+  if (authLoading) {
+    console.log('🔄 App.tsx: Showing loading screen');
+    return (
+      <div className="h-screen flex items-center justify-center dark">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    console.log('🔐 App.tsx: Not authenticated, showing login form');
+    return (
+      <div className="h-screen dark">
+        <LoginForm 
+          onSuccess={() => {
+            console.log('✅ LoginForm onSuccess callback triggered');
+            // The auth state will automatically update via Zustand
+          }} 
+          showDemoMode={true} 
+        />
+      </div>
+    );
+  }
+
+  console.log('🎉 App.tsx: Authenticated! Rendering main app');
+  
   return (
-    <ServiceProvider>
-      <div className="h-screen flex flex-col dark">
+    <div className="h-screen grid grid-rows-[auto_1fr_auto] dark">
         {/* Header */}
         <header className="border-b px-6 py-4 bg-background">
           <div className="flex items-center justify-between">
             <HeaderLogo />
             <div className="flex items-center gap-4">
+              <ConnectionStatus showLabel />
               <AWSStatusIndicator />
               <Clock />
               <UserBadge userRole={userRole} user={user} />
@@ -431,10 +447,11 @@ const App = memo(() => {
           </div>
         </header>
 
-        <div className="flex flex-1 overflow-hidden">
+        {/* Main Content Area */}
+        <div className="flex overflow-hidden">
           {/* Sidebar Navigation */}
-          <nav className={`${sidebarCollapsed ? 'w-16' : 'w-64'} border-r bg-background transition-all duration-300 ease-in-out`}>
-            <div className="p-4">
+          <nav className={`${sidebarCollapsed ? 'w-16' : 'w-64'} border-r bg-background transition-all duration-300 ease-in-out flex-shrink-0`}>
+            <div className="p-4 h-full flex flex-col">
               {/* Toggle Button */}
               <div className={`flex ${sidebarCollapsed ? 'justify-center' : 'justify-end'} mb-4`}>
                 <Button
@@ -454,7 +471,7 @@ const App = memo(() => {
 
               {/* Navigation Items - Optimized */}
               <TooltipProvider>
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   {navigationItemsWithCallbacks.map((item) => (
                     <NavigationItem
                       key={item.id}
@@ -477,33 +494,57 @@ const App = memo(() => {
           </main>
         </div>
         
+        {/* Footer with Radio Tray */}
+        <footer className="border-t bg-background px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>© 2024 Situ8 Security Platform</span>
+              <Badge variant="outline" className="text-xs">
+                v0.0.0
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Status indicators can go here */}
+              <RadioTray
+                userId={user?.id || ''}
+                userName={user?.profile?.fullName || user?.email || 'User'}
+                userRole={user?.role || 'viewer'}
+                userClearance={user?.clearanceLevel || 1}
+                token="authenticated-token" // Would be real token from auth service
+                onOpenModal={() => setCommunicationsModalOpen(true)}
+                isFooterIntegrated={true}
+              />
+            </div>
+          </div>
+        </footer>
+        
         {/* Toast Notifications */}
         <Toaster />
 
         {/* AI Assistant - Floating Panel */}
         <AIAssistantPanel />
         
-        {/* Radio Tray - Docked PTT Interface */}
-        <RadioTray
-          userId={user.id}
-          userName={user.profile?.fullName || user.email}
-          userRole={user.role}
-          userClearance={user.clearanceLevel}
-          token="authenticated-token" // Would be real token from auth service
-          onOpenModal={() => setCommunicationsModalOpen(true)}
-        />
-        
         {/* Communications Modal */}
         <CommunicationsModal
           open={communicationsModalOpen}
           onOpenChange={setCommunicationsModalOpen}
-          userId={user.id}
-          userName={user.profile?.fullName || user.email}
-          userRole={user.role}
-          userClearance={user.clearanceLevel}
+          userId={user?.id || ''}
+          userName={user?.profile?.fullName || user?.email || 'User'}
+          userRole={user?.role || 'viewer'}
+          userClearance={user?.clearanceLevel || 1}
           token="authenticated-token" // Would be real token from auth service
         />
       </div>
+  );
+});
+
+AppContent.displayName = 'AppContent';
+
+// Main App component wrapped with ServiceProvider
+const App = memo(() => {
+  return (
+    <ServiceProvider>
+      <AppContent />
     </ServiceProvider>
   );
 });

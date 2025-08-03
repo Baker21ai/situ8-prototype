@@ -193,11 +193,20 @@ export const useUserStore = create<UserState>()(
 
       // Demo mode actions
       enableDemoMode: () => {
+        console.log('🎬 UserStore: enableDemoMode called');
         const { authService } = get();
         if (authService) {
+          console.log('✅ UserStore: AuthService available, enabling demo mode');
           authService.enableDemoMode();
-          set({ isDemoMode: true });
+          const demoUsers = authService.getDemoUsers();
+          console.log('📋 UserStore: Available demo users:', demoUsers.map(u => ({ id: u.id, name: u.name })));
+          set({ 
+            isDemoMode: true,
+            availableDemoUsers: demoUsers
+          });
           console.log('🎭 Demo mode enabled');
+        } else {
+          console.error('❌ UserStore: AuthService not available for demo mode');
         }
       },
 
@@ -214,8 +223,17 @@ export const useUserStore = create<UserState>()(
       },
 
       switchDemoUser: async (userId: string): Promise<boolean> => {
+        console.log(`🔍 UserStore: switchDemoUser called with userId: ${userId}`);
         const { authService } = get();
-        if (!authService || !authService.isInDemoMode()) {
+        
+        if (!authService) {
+          console.error('❌ UserStore: AuthService not initialized');
+          set({ error: 'Auth service not initialized' });
+          return false;
+        }
+        
+        if (!authService.isInDemoMode()) {
+          console.error('❌ UserStore: Demo mode not enabled');
           set({ error: 'Demo mode not enabled' });
           return false;
         }
@@ -223,15 +241,20 @@ export const useUserStore = create<UserState>()(
         set({ isLoading: true, error: null });
 
         try {
+          console.log('📡 UserStore: Calling authService.switchDemoUser...');
           const result = await authService.switchDemoUser(userId);
+          
+          console.log('📨 UserStore: AuthService result:', result);
           
           if (result.success && result.data) {
             const { user } = result.data;
             const demoUser = authService.getDemoUsers().find(u => u.id === userId);
             
+            console.log('✅ UserStore: Setting authenticated state with user:', user);
             set({
               currentUser: user,
               currentDemoUser: demoUser || null,
+              isAuthenticated: true,
               isLoading: false,
               error: null
             });
@@ -239,6 +262,7 @@ export const useUserStore = create<UserState>()(
             console.log('🎭 Switched to demo user:', user.email, user.role);
             return true;
           } else {
+            console.error('❌ UserStore: Switch failed:', result.message);
             set({
               isLoading: false,
               error: result.message || 'Failed to switch demo user'
