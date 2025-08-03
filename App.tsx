@@ -17,6 +17,7 @@ const Cases = lazy(() => import('./components/Cases').then(m => ({ default: m.Ca
 const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard').then(m => ({ default: m.PerformanceDashboard })));
 const Passdowns = lazy(() => import('./components/Passdowns').then(m => ({ default: m.Passdowns })));
 const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
+// Fixed: MockCampusMap uses named export, not default export
 const MockCampusMap = lazy(() => import('./components/MockCampusMap').then(m => ({ default: m.MockCampusMap })));
 const LeafletCampusMap = lazy(() => import('./components/LeafletCampusMap').then(m => ({ default: m.LeafletCampusMap })));
 
