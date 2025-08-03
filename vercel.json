@@ -16,6 +16,7 @@
       "SKIP_TYPE_CHECK": "true"
     }
   },
+
   "rewrites": [
     {
       "source": "/(.*)",
