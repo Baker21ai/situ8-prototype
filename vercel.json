@@ -16,11 +16,6 @@
       "SKIP_TYPE_CHECK": "true"
     }
   },
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
