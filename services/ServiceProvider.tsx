@@ -53,6 +53,29 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
   useEffect(() => {
     if (isInitialized) return; // Prevent re-initialization
     
+    // Set a timeout to force initialization after 5 seconds
+    const timeout = setTimeout(() => {
+      if (!services) {
+        console.warn('Service initialization timeout - using fallback services');
+        const fallbackServices = {
+          activityService: new ActivityService(),
+          incidentService: new IncidentService(),
+          caseService: new CaseService(),
+          bolService: new BOLService(),
+          auditService: new AuditService(),
+          visitorService: null as any,
+          passdownService: new PassdownService(),
+          authService: new AuthService(),
+          communicationService: null as any,
+          chatService: null as any,
+          apiClient: null,
+          isInitialized: true
+        };
+        setServices(fallbackServices);
+        setIsInitialized(true);
+      }
+    }, 5000);
+    
     const initializeAllServices = async () => {
       try {
         // Initialize AWS API client if configured
@@ -284,7 +307,8 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
 
         // Mark as initialized AFTER setting services
         setIsInitialized(true);
-        console.log('✅ ServiceProvider initialization complete')
+        clearTimeout(timeout);
+        if (import.meta.env.DEV) console.log('✅ ServiceProvider initialization complete')
 
         // Run health checks on all services
         Promise.allSettled([
@@ -332,13 +356,15 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         };
         setServices(fallbackServices);
         setIsInitialized(true);
-        console.warn('⚠️ Using fallback services due to initialization error');
+        clearTimeout(timeout);
+        if (import.meta.env.DEV) console.warn('⚠️ Using fallback services due to initialization error');
       }
     };
 
-    console.log('🚀 Starting service initialization...');
+    if (import.meta.env.DEV) console.log('🚀 Starting service initialization...');
     initializeAllServices();
-    // Removed setIsInitialized(true) from here - it's now inside the async function
+    
+    return () => clearTimeout(timeout); // Cleanup timeout on unmount
   }, []); // Empty dependency array - only run once on mount
 
   if (!services) {

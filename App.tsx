@@ -17,7 +17,6 @@ const Cases = lazy(() => import('./components/Cases').then(m => ({ default: m.Ca
 const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard').then(m => ({ default: m.PerformanceDashboard })));
 const Passdowns = lazy(() => import('./components/Passdowns').then(m => ({ default: m.Passdowns })));
 const ChatPage = lazy(() => import('./components/ChatPage').then(m => ({ default: m.ChatPage })));
-// Fixed: MockCampusMap uses named export, not default export
 const MockCampusMap = lazy(() => import('./components/MockCampusMap').then(m => ({ default: m.MockCampusMap })));
 const LeafletCampusMap = lazy(() => import('./components/LeafletCampusMap').then(m => ({ default: m.LeafletCampusMap })));
 
@@ -395,17 +394,19 @@ const AppContent = memo(() => {
 
   // Debug logging
   useEffect(() => {
-    console.log('🔍 App.tsx: Auth state changed:', { 
-      isAuthenticated, 
-      user: user?.email, 
-      authLoading,
-      hasUser: !!user
-    });
+    if (import.meta.env.DEV) {
+      console.log('🔍 App.tsx: Auth state changed:', { 
+        isAuthenticated, 
+        user: user?.email, 
+        authLoading,
+        hasUser: !!user
+      });
+    }
   }, [isAuthenticated, user, authLoading]);
 
   // NOW we can have conditional returns - AFTER all hooks
   if (authLoading) {
-    console.log('🔄 App.tsx: Showing loading screen');
+    if (import.meta.env.DEV) console.log('🔄 App.tsx: Showing loading screen');
     return (
       <div className="h-screen flex items-center justify-center dark">
         <div className="text-center">
@@ -417,7 +418,7 @@ const AppContent = memo(() => {
   }
 
   if (!isAuthenticated) {
-    console.log('🔐 App.tsx: Not authenticated, showing login form');
+    if (import.meta.env.DEV) console.log('🔐 App.tsx: Not authenticated, showing login form');
     return (
       <div className="h-screen dark">
         <LoginForm 
@@ -431,7 +432,7 @@ const AppContent = memo(() => {
     );
   }
 
-  console.log('🎉 App.tsx: Authenticated! Rendering main app');
+  if (import.meta.env.DEV) console.log('🎉 App.tsx: Authenticated! Rendering main app');
   
   return (
     <div className="h-screen grid grid-rows-[auto_1fr_auto] dark">

@@ -121,7 +121,7 @@ export class AuthService extends BaseService<AuthenticatedUser> {
   private currentUser: AuthenticatedUser | null = null;
   private tokens: AuthTokens | null = null;
   private sessionInfo: SessionInfo | null = null;
-  private isDemoMode = false;
+  private isDemoMode = true; // Enable demo mode by default
   private currentDemoUser: DemoUser | null = null;
 
   constructor() {

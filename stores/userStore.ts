@@ -79,18 +79,23 @@ export const useUserStore = create<UserState>()(
           const service = new AuthService();
           const demoUsers = service.getDemoUsers();
           
+          // Always enable demo mode for now
+          service.enableDemoMode();
+          
           set({
             authService: service,
             availableDemoUsers: demoUsers,
             isAuthenticated: service.isAuthenticated(),
             currentUser: service.getCurrentUser(),
             sessionInfo: service.getSessionInfo(),
-            isDemoMode: service.isInDemoMode()
+            isDemoMode: true // Force demo mode
           });
 
           // Check if we have a valid session on initialization
           if (service.isAuthenticated() && service.getCurrentUser()) {
-            console.log('🔐 Restored authentication session:', service.getCurrentUser()?.email);
+            if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+              console.log('🔐 Restored authentication session:', service.getCurrentUser()?.email);
+            }
           }
         }
       },
