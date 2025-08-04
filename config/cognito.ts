@@ -88,13 +88,13 @@ const cognitoConfigs: Record<string, CognitoConfig> = {
     userPoolWebClientId: import.meta.env.VITE_COGNITO_CLIENT_ID || '5ouh548bibh1rrp11neqcvvqf6',
     identityPoolId: import.meta.env.VITE_COGNITO_IDENTITY_POOL_ID || 'us-west-2:4b69b0bd-8420-461e-adfa-ad6b9779d7a4',
     domain: import.meta.env.VITE_COGNITO_DOMAIN || 'https://situ8-platform-auth-dev.auth.us-west-2.amazoncognito.com',
-    redirectSignIn: 'https://situ8-prototype-byr6wuo08-yks-projects-7d095ede.vercel.app/auth/callback',
-    redirectSignOut: 'https://situ8-prototype-byr6wuo08-yks-projects-7d095ede.vercel.app/auth/logout',
+    redirectSignIn: 'https://situ8-prototype.vercel.app/auth/callback',
+    redirectSignOut: 'https://situ8-prototype.vercel.app/auth/logout',
     responseType: 'code',
     oauth: {
       scope: ['email', 'openid', 'profile'],
-      redirectSignIn: 'https://situ8-prototype-byr6wuo08-yks-projects-7d095ede.vercel.app/auth/callback',
-      redirectSignOut: 'https://situ8-prototype-byr6wuo08-yks-projects-7d095ede.vercel.app/auth/logout',
+      redirectSignIn: 'https://situ8-prototype.vercel.app/auth/callback',
+      redirectSignOut: 'https://situ8-prototype.vercel.app/auth/logout',
       responseType: 'code'
     }
   }
