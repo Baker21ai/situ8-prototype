@@ -1,0 +1,138 @@
+=====================================
+VERCEL ENVIRONMENT VARIABLES REQUIRED
+=====================================
+
+INSTRUCTIONS: Add these to your Vercel project settings under "Environment Variables"
+Go to: Your Vercel Project → Settings → Environment Variables → Add each one below
+
+=====================================
+MOCK MODE VARIABLES (TO GET IT WORKING NOW)
+=====================================
+
+REACT_APP_ENVIRONMENT=production
+REACT_APP_DEBUG=false
+REACT_APP_ENABLE_MOCK_DATA=true
+REACT_APP_USE_LOCAL_DYNAMODB=true
+REACT_APP_USE_LOCAL_LAMBDA=true
+REACT_APP_USE_AWS_API=false
+VITE_USE_AWS_API=false
+VITE_ENVIRONMENT=production
+
+# Fake AWS values (needed even in mock mode)
+REACT_APP_AWS_REGION=us-west-2
+REACT_APP_API_BASE_URL=https://mock-api.example.com
+REACT_APP_WEBSOCKET_URL=wss://mock-websocket.example.com
+REACT_APP_COGNITO_USER_POOL_ID=mock-pool-id
+REACT_APP_COGNITO_CLIENT_ID=mock-client-id
+
+# Performance settings
+REACT_APP_VIRTUAL_SCROLL_ENABLED=true
+REACT_APP_BATCH_SIZE=100
+
+=====================================
+PRODUCTION MODE VARIABLES (WHEN AWS IS READY)
+=====================================
+
+# Change these from mock mode:
+REACT_APP_ENABLE_MOCK_DATA=false
+REACT_APP_USE_LOCAL_DYNAMODB=false
+REACT_APP_USE_LOCAL_LAMBDA=false
+REACT_APP_USE_AWS_API=true
+VITE_USE_AWS_API=true
+
+# Real AWS Configuration
+REACT_APP_API_BASE_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+REACT_APP_WEBSOCKET_URL=wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev
+REACT_APP_CHIME_API_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+VITE_CHIME_API_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+
+# Real Cognito Configuration
+REACT_APP_COGNITO_USER_POOL_ID=us-west-2_ECLKvbdSp
+REACT_APP_COGNITO_CLIENT_ID=5ouh548bibh1rrp11neqcvvqf6
+REACT_APP_COGNITO_IDENTITY_POOL_ID=us-west-2:4b69b0bd-8420-461e-adfa-ad6b9779d7a4
+REACT_APP_COGNITO_DOMAIN=https://situ8-platform-auth-dev.auth.us-west-2.amazoncognito.com
+
+# DynamoDB Table Names
+REACT_APP_TABLE_USER_PROFILES=situ8-user-profiles-dev
+REACT_APP_TABLE_ACTIVITIES=situ8-activities-dev
+REACT_APP_TABLE_INCIDENTS=situ8-incidents-dev
+REACT_APP_TABLE_CASES=situ8-cases-dev
+REACT_APP_TABLE_BOL=situ8-bol-dev
+REACT_APP_TABLE_AUDIT=situ8-audit-dev
+
+=====================================
+HOW THE SYSTEM WORKS
+=====================================
+
+MOCK MODE (Immediate Solution):
+- Shows fake security data (activities, incidents, cases)
+- Each user sees the same demo data
+- No real database needed
+- Works immediately after adding variables above
+- Good for demos and testing
+
+PRODUCTION MODE (Real System):
+- Connects to AWS Cognito for user accounts
+- All users in your organization see the same real data
+- Data is stored in AWS DynamoDB databases
+- Real-time updates via WebSocket
+- Requires AWS services to be set up and running
+
+=====================================
+ADDING COLLEAGUES
+=====================================
+
+IN MOCK MODE:
+- App shows demo users
+- Can't actually add real people
+- Good for showing how it works
+
+IN PRODUCTION MODE:
+1. You create user accounts in AWS Cognito
+2. Assign roles: Admin, Security Officer, Developer, Viewer
+3. Set clearance levels (1-5)
+4. Send invite emails
+5. They log in and see the same organizational data
+6. All actions are tracked in audit logs
+
+=====================================
+SHARED DATA EXPLANATION
+=====================================
+
+When AWS is enabled, everyone in your organization:
+- Sees the same security activities in real-time
+- Can collaborate on incidents and cases
+- Receives real-time updates via WebSocket
+- Has role-based access (some can view, others can edit)
+- All changes are tracked with who did what
+
+It's like Google Docs but for security operations:
+- Multiple people can work together
+- Everyone sees updates instantly
+- Access is controlled by roles
+- Full audit trail of all actions
+
+=====================================
+STEPS TO SUCCESS
+=====================================
+
+1. IMMEDIATE FIX (5 minutes):
+   - Add the MOCK MODE variables above to Vercel
+   - Redeploy
+   - App will work with demo data
+
+2. LATER - FULL SYSTEM (requires AWS setup):
+   - Set up AWS services (Cognito, DynamoDB, Lambda)
+   - Switch environment variables to PRODUCTION MODE
+   - Create user accounts for colleagues
+   - Start using with real data
+
+=====================================
+IMPORTANT NOTES
+=====================================
+
+- Mock mode is just for demos - no data is saved
+- Production mode requires AWS account and setup
+- Switching from mock to production is just changing environment variables
+- All colleagues need accounts in AWS Cognito to access production
+- The app is designed for 24/7 security operations centers

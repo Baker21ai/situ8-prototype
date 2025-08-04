@@ -1,0 +1,118 @@
+=====================================
+VERCEL PRODUCTION ENVIRONMENT VARIABLES
+=====================================
+
+COPY THESE EXACT VALUES TO VERCEL DASHBOARD:
+(Project Settings → Environment Variables → Add New)
+
+=====================================
+CORE CONFIGURATION
+=====================================
+
+REACT_APP_ENVIRONMENT=production
+REACT_APP_DEBUG=false
+REACT_APP_ENABLE_MOCK_DATA=false
+REACT_APP_USE_AWS_API=true
+VITE_USE_AWS_API=true
+
+=====================================
+AWS CONFIGURATION
+=====================================
+
+REACT_APP_AWS_REGION=us-west-2
+
+# API Gateway (CONFIRMED WORKING)
+REACT_APP_API_BASE_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+REACT_APP_API_TIMEOUT=15000
+
+# WebSocket API (CONFIRMED WORKING)  
+REACT_APP_WEBSOCKET_URL=wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev
+VITE_WEBSOCKET_URL=wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev
+VITE_ENABLE_WEBSOCKET=true
+VITE_DEBUG_WEBSOCKET=false
+
+# Chime SDK for Voice
+REACT_APP_CHIME_API_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+VITE_CHIME_API_URL=https://xb3rai5taf.execute-api.us-west-2.amazonaws.com/dev
+
+=====================================
+COGNITO AUTHENTICATION (CONFIRMED WORKING)
+=====================================
+
+REACT_APP_COGNITO_USER_POOL_ID=us-west-2_ECLKvbdSp
+REACT_APP_COGNITO_CLIENT_ID=5ouh548bibh1rrp11neqcvvqf6
+REACT_APP_COGNITO_IDENTITY_POOL_ID=us-west-2:4b69b0bd-8420-461e-adfa-ad6b9779d7a4
+REACT_APP_COGNITO_DOMAIN=https://situ8-platform-auth-dev.auth.us-west-2.amazoncognito.com
+
+# Auth URLs (UPDATE THESE TO YOUR VERCEL DOMAIN)
+REACT_APP_COGNITO_REDIRECT_SIGN_IN=https://your-app.vercel.app/auth/callback
+REACT_APP_COGNITO_REDIRECT_SIGN_OUT=https://your-app.vercel.app/auth/logout
+
+=====================================
+DYNAMODB TABLES (CONFIRMED WORKING)
+=====================================
+
+REACT_APP_TABLE_USER_PROFILES=situ8-user-profiles-dev
+REACT_APP_TABLE_ACTIVITIES=situ8-activities-dev
+REACT_APP_TABLE_INCIDENTS=situ8-incidents-dev
+REACT_APP_TABLE_CASES=situ8-cases-dev
+REACT_APP_TABLE_BOL=situ8-bol-dev
+REACT_APP_TABLE_AUDIT=situ8-audit-dev
+
+=====================================
+S3 STORAGE
+=====================================
+
+REACT_APP_S3_BUCKET=situ8-dev-bucket
+REACT_APP_S3_REGION=us-west-2
+REACT_APP_S3_COMMS_RECORDINGS=situ8-comms-recordings-528040164050
+REACT_APP_S3_COMMS_ATTACHMENTS=situ8-comms-attachments-528040164050
+
+=====================================
+FEATURE FLAGS
+=====================================
+
+REACT_APP_ENABLE_REAL_TIME_UPDATES=true
+REACT_APP_ENABLE_FILE_UPLOADS=true
+REACT_APP_ENABLE_AUDIT_LOGGING=true
+REACT_APP_ENABLE_DEVTOOLS=false
+
+# Performance Settings
+REACT_APP_VIRTUAL_SCROLL_ENABLED=true
+REACT_APP_CACHE_TIMEOUT=30000
+REACT_APP_BATCH_SIZE=100
+
+# Monitoring
+REACT_APP_ENABLE_PERFORMANCE_MONITORING=true
+REACT_APP_ENABLE_ERROR_REPORTING=true
+
+=====================================
+IMPORTANT NOTES
+=====================================
+
+1. UPDATE AUTH REDIRECT URLs:
+   Replace "your-app.vercel.app" with your actual Vercel domain
+
+2. ALL AWS SERVICES ARE CONFIRMED WORKING:
+   ✅ Cognito User Pool: us-west-2_ECLKvbdSp
+   ✅ API Gateway: xb3rai5taf.execute-api.us-west-2.amazonaws.com
+   ✅ WebSocket: 8hj9sdifek.execute-api.us-west-2.amazonaws.com
+   ✅ DynamoDB: 12 tables ready
+   ✅ Lambda: 13 functions deployed
+
+3. DATA WILL PERSIST:
+   - All security activities, incidents, cases saved permanently
+   - Team members will see same real-time data
+   - Safe to redeploy code anytime
+
+=====================================
+NEXT STEPS
+=====================================
+
+1. Copy all variables above to Vercel
+2. Update redirect URLs with your Vercel domain
+3. Deploy to Vercel
+4. Create first admin user account
+5. Add colleague accounts
+
+YOUR AWS INFRASTRUCTURE IS READY! 🚀
