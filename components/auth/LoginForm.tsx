@@ -49,12 +49,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   // Demo mode state
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   
-  // Enable demo mode by default until AWS Amplify integration
-  useEffect(() => {
-    if (showDemoMode && !isDemoMode) {
-      enableDemoMode();
-    }
-  }, [showDemoMode, isDemoMode, enableDemoMode]);
+  // Don't enable demo mode by default - use real AWS authentication
+  // Users can manually toggle demo mode if needed
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -73,7 +69,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       errors.email = 'Invalid email format';
     }
 
-    if (!isDemoMode && !formData.password.trim()) {
+    if (!formData.password.trim()) {
       errors.password = 'Password is required';
     }
 
@@ -296,43 +292,41 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               )}
             </div>
 
-            {/* Password Field (hidden in demo mode) */}
-            {!isDemoMode && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    disabled={isLoading}
-                    className={validationErrors.password ? 'border-destructive pr-10' : 'pr-10'}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {validationErrors.password && (
-                  <p className="text-sm text-destructive flex items-center space-x-1">
-                    <AlertCircle className="h-3 w-3" />
-                    <span>{validationErrors.password}</span>
-                  </p>
-                )}
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  disabled={isLoading}
+                  className={validationErrors.password ? 'border-destructive pr-10' : 'pr-10'}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-            )}
+              {validationErrors.password && (
+                <p className="text-sm text-destructive flex items-center space-x-1">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{validationErrors.password}</span>
+                </p>
+              )}
+            </div>
 
             {/* Remember Me */}
             <div className="flex items-center space-x-2">
@@ -375,14 +369,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             </Button>
           </form>
 
-          {/* Forgot Password (hidden in demo mode) */}
-          {!isDemoMode && (
-            <div className="text-center">
-              <Button variant="link" className="text-sm text-muted-foreground">
-                Forgot your password?
-              </Button>
-            </div>
-          )}
+          {/* Forgot Password */}
+          <div className="text-center">
+            <Button variant="link" className="text-sm text-muted-foreground">
+              Forgot your password?
+            </Button>
+          </div>
 
           {/* Demo Mode Info */}
           {isDemoMode && (

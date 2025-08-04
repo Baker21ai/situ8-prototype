@@ -26,6 +26,7 @@ import {
   rolePermissions,
   clearanceLevelRequirements
 } from '../config/cognito';
+import cognitoOperations from './cognito-client';
 
 // Auth-specific types
 export interface LoginRequest {
@@ -121,7 +122,7 @@ export class AuthService extends BaseService<AuthenticatedUser> {
   private currentUser: AuthenticatedUser | null = null;
   private tokens: AuthTokens | null = null;
   private sessionInfo: SessionInfo | null = null;
-  private isDemoMode = true; // Enable demo mode until Cognito integration is complete
+  private isDemoMode = false; // Use real AWS Cognito authentication
   private currentDemoUser: DemoUser | null = null;
 
   constructor() {
@@ -227,37 +228,68 @@ export class AuthService extends BaseService<AuthenticatedUser> {
         return this.createErrorResponse('Invalid login request', 'VALIDATION_ERROR');
       }
 
-      // TODO: Implement actual Cognito authentication
-      // For now, simulate successful login for development
-      const mockUser = this.createMockUser(request.email);
-      const tokens = this.createMockTokens();
-      const sessionInfo = this.createSessionInfo();
-
-      this.currentUser = mockUser;
-      this.tokens = tokens;
-      this.sessionInfo = sessionInfo;
-
-      // Store in localStorage for persistence
-      this.persistSession();
-
-      // Create audit context
-      const auditContext = this.createAuditContext(mockUser, 'LOGIN');
+      // Authenticate with AWS Cognito
+      const signInResult = await cognitoOperations.signIn(request.email, request.password);
       
-      // Log successful login
-      await this.logAuditEvent('USER_LOGIN', auditContext, {
-        email: request.email,
-        rememberMe: request.rememberMe
-      });
-
-      return {
-        success: true,
-        data: {
-          user: mockUser,
-          tokens,
-          sessionInfo
-        },
-        message: 'Login successful'
-      };
+      // Handle different authentication states
+      if (signInResult.isSignedIn) {
+        // Get user attributes from Cognito
+        const userAttributes = await cognitoOperations.getUserAttributes();
+        const session = await cognitoOperations.getSession();
+        
+        // Parse Cognito attributes to our user format
+        const authenticatedUser = await this.parseAndCreateUser(userAttributes);
+        const tokens = await this.extractTokensFromSession(session);
+        const sessionInfo = this.createSessionInfo();
+        
+        this.currentUser = authenticatedUser;
+        this.tokens = tokens;
+        this.sessionInfo = sessionInfo;
+        
+        // Store in localStorage for persistence
+        if (request.rememberMe) {
+          this.persistSession();
+        }
+        
+        // Create audit context
+        const auditContext = this.createAuditContext(authenticatedUser, 'LOGIN');
+        
+        // Log successful login
+        await this.logAuditEvent('USER_LOGIN', auditContext, {
+          email: request.email,
+          rememberMe: request.rememberMe
+        });
+        
+        return {
+          success: true,
+          data: {
+            user: authenticatedUser,
+            tokens,
+            sessionInfo
+          },
+          message: 'Login successful'
+        };
+      } else if (signInResult.nextStep?.signInStep === 'NEW_PASSWORD_REQUIRED') {
+        // User needs to change password
+        return {
+          success: false,
+          error: {
+            code: 'NEW_PASSWORD_REQUIRED',
+            message: 'Password change required',
+            details: { challengeName: 'NEW_PASSWORD_REQUIRED' }
+          }
+        };
+      } else {
+        // Other authentication challenges
+        return {
+          success: false,
+          error: {
+            code: 'AUTH_CHALLENGE',
+            message: 'Additional authentication required',
+            details: signInResult.nextStep
+          }
+        };
+      }
 
     } catch (error) {
       return this.createErrorResponse(error, 'LOGIN_ERROR');
@@ -313,7 +345,12 @@ export class AuthService extends BaseService<AuthenticatedUser> {
         sessionDuration: this.sessionInfo ? Date.now() - this.sessionInfo.loginTime.getTime() : 0
       });
 
-      // Clear session
+      // Sign out from Cognito if not in demo mode
+      if (!this.isDemoMode) {
+        await cognitoOperations.signOut();
+      }
+      
+      // Clear local session
       this.clearSession();
 
       return {
@@ -336,19 +373,134 @@ export class AuthService extends BaseService<AuthenticatedUser> {
         return this.createErrorResponse('Invalid refresh token', 'INVALID_REFRESH_TOKEN');
       }
 
-      // TODO: Implement actual token refresh with Cognito
-      const newTokens = this.createMockTokens();
-      this.tokens = newTokens;
-      this.persistSession();
+      // Get fresh session from Cognito if not in demo mode
+      if (!this.isDemoMode) {
+        const session = await cognitoOperations.getSession();
+        
+        if (!session || !session.tokens) {
+          return this.createErrorResponse('No valid session found', 'SESSION_EXPIRED');
+        }
+        
+        const newTokens = await this.extractTokensFromSession(session);
+        this.tokens = newTokens;
+        this.persistSession();
 
-      return {
-        success: true,
-        data: newTokens,
-        message: 'Tokens refreshed successfully'
-      };
+        return {
+          success: true,
+          data: newTokens,
+          message: 'Tokens refreshed successfully'
+        };
+      } else {
+        // Demo mode - use mock tokens
+        const newTokens = this.createMockTokens();
+        this.tokens = newTokens;
+        this.persistSession();
+
+        return {
+          success: true,
+          data: newTokens,
+          message: 'Tokens refreshed successfully'
+        };
+      }
 
     } catch (error) {
       return this.createErrorResponse(error, 'TOKEN_REFRESH_ERROR');
+    }
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(request: ChangePasswordRequest): ServiceMethod<void> {
+    try {
+      if (!this.isAuthenticated()) {
+        throw new AuthorizationException('User not authenticated');
+      }
+
+      // Validate passwords
+      if (request.newPassword.length < 8) {
+        return this.createErrorResponse('Password must be at least 8 characters', 'WEAK_PASSWORD');
+      }
+
+      if (!this.isDemoMode) {
+        // Change password in Cognito
+        await cognitoOperations.updatePassword(request.currentPassword, request.newPassword);
+      }
+      
+      const auditContext = this.createAuditContext(this.currentUser!, 'PASSWORD_CHANGE');
+      await this.logAuditEvent('PASSWORD_CHANGED', auditContext, {});
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+    } catch (error) {
+      return this.createErrorResponse(error, 'PASSWORD_CHANGE_ERROR');
+    }
+  }
+
+  /**
+   * Reset password request
+   */
+  async resetPassword(request: ResetPasswordRequest): ServiceMethod<void> {
+    try {
+      // Validate email
+      const validation = this.validateEntity({ email: request.email });
+      if (!validation.isValid) {
+        return this.createErrorResponse('Invalid email', 'VALIDATION_ERROR');
+      }
+
+      if (!this.isDemoMode) {
+        // Initiate password reset with Cognito
+        await cognitoOperations.resetPassword(request.email);
+      }
+      
+      await this.logAuditEvent('PASSWORD_RESET_REQUESTED', undefined, {
+        email: request.email
+      });
+
+      return {
+        success: true,
+        message: this.isDemoMode ? 'Demo mode: Password reset simulated' : 'Password reset code sent to your email'
+      };
+    } catch (error) {
+      return this.createErrorResponse(error, 'PASSWORD_RESET_ERROR');
+    }
+  }
+
+  /**
+   * Confirm password reset with code
+   */
+  async confirmResetPassword(request: ConfirmResetPasswordRequest): ServiceMethod<void> {
+    try {
+      // Validate inputs
+      if (!request.confirmationCode || request.confirmationCode.length < 6) {
+        return this.createErrorResponse('Invalid confirmation code', 'INVALID_CODE');
+      }
+
+      if (request.newPassword.length < 8) {
+        return this.createErrorResponse('Password must be at least 8 characters', 'WEAK_PASSWORD');
+      }
+
+      if (!this.isDemoMode) {
+        // Confirm password reset with Cognito
+        await cognitoOperations.confirmResetPassword(
+          request.email,
+          request.confirmationCode,
+          request.newPassword
+        );
+      }
+
+      await this.logAuditEvent('PASSWORD_RESET_CONFIRMED', undefined, {
+        email: request.email
+      });
+
+      return {
+        success: true,
+        message: 'Password reset successfully'
+      };
+    } catch (error) {
+      return this.createErrorResponse(error, 'PASSWORD_RESET_CONFIRM_ERROR');
     }
   }
 
@@ -711,8 +863,79 @@ export class AuthService extends BaseService<AuthenticatedUser> {
     };
   }
 
-  private async logAuditEvent(eventType: string, context: AuditContext, data: any): Promise<void> {
+  private async logAuditEvent(eventType: string, context: AuditContext | undefined, data: any): Promise<void> {
     // This would integrate with the audit service
     console.log('Auth Audit Event:', { eventType, context, data });
+  }
+
+  /**
+   * Parse Cognito user attributes and create authenticated user
+   */
+  private async parseAndCreateUser(attributes: any): Promise<AuthenticatedUser> {
+    // Map Cognito attributes to our user format
+    const cognitoAttrs: CognitoUserAttributes = {
+      sub: attributes.sub || '',
+      email: attributes.email || '',
+      email_verified: attributes.email_verified || 'false',
+      'custom:role': attributes['custom:role'] || UserRole.VIEWER,
+      'custom:department': attributes['custom:department'] || Department.OPERATIONS,
+      'custom:clearanceLevel': attributes['custom:clearanceLevel'] || '1',
+      'custom:badgeNumber': attributes['custom:badgeNumber'],
+      'custom:facilityCodes': attributes['custom:facilityCodes']
+    };
+    
+    const parsed = parseUserAttributes(cognitoAttrs);
+    
+    return {
+      id: cognitoAttrs.sub,
+      email: parsed.email,
+      emailVerified: parsed.emailVerified,
+      role: parsed.role,
+      department: parsed.department,
+      clearanceLevel: parsed.clearanceLevel,
+      badgeNumber: parsed.badgeNumber,
+      facilityCodes: parsed.facilityCodes,
+      name: attributes.name || parsed.email.split('@')[0],
+      avatar: this.generateAvatar(parsed.email),
+      lastLogin: new Date(),
+      status: 'active',
+      permissions: rolePermissions[parsed.role],
+      profile: {
+        fullName: attributes.name || parsed.email.split('@')[0],
+        avatar: this.generateAvatar(parsed.email)
+      }
+    };
+  }
+  
+  /**
+   * Extract tokens from Cognito session
+   */
+  private async extractTokensFromSession(session: any): Promise<AuthTokens> {
+    const tokens = session.tokens;
+    const expiresIn = 3600; // 1 hour default
+    
+    return {
+      accessToken: tokens?.accessToken?.toString() || '',
+      idToken: tokens?.idToken?.toString() || '',
+      refreshToken: session.credentials?.refreshToken || '',
+      expiresIn,
+      tokenType: 'Bearer',
+      expiresAt: new Date(Date.now() + expiresIn * 1000)
+    };
+  }
+  
+  /**
+   * Generate avatar URL based on email
+   */
+  private generateAvatar(email: string): string {
+    const hash = email.split('@')[0].charCodeAt(0) % 5;
+    const avatars = [
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=5'
+    ];
+    return avatars[hash];
   }
 }

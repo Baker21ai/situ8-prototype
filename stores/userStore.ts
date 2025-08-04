@@ -88,7 +88,7 @@ export const useUserStore = create<UserState>()(
             isAuthenticated: service.isAuthenticated(),
             currentUser: service.getCurrentUser(),
             sessionInfo: service.getSessionInfo(),
-            isDemoMode: true // Demo mode until AWS Amplify is integrated
+            isDemoMode: false // Use real AWS authentication by default
           });
 
           // Check if we have a valid session on initialization
@@ -129,10 +129,18 @@ export const useUserStore = create<UserState>()(
             console.log('🔐 Login successful:', user.email, user.role);
             return true;
           } else {
-            set({
-              isLoading: false,
-              error: result.message || 'Login failed'
-            });
+            // Handle specific error codes
+            if (result.error?.code === 'NEW_PASSWORD_REQUIRED') {
+              set({
+                isLoading: false,
+                error: 'You must change your password before signing in. Please use the temporary password sent to your email.'
+              });
+            } else {
+              set({
+                isLoading: false,
+                error: result.error?.message || result.message || 'Login failed'
+              });
+            }
             return false;
           }
         } catch (error) {
