@@ -88,7 +88,7 @@ export const useUserStore = create<UserState>()(
             isAuthenticated: service.isAuthenticated(),
             currentUser: service.getCurrentUser(),
             sessionInfo: service.getSessionInfo(),
-            isDemoMode: true // Force demo mode
+            isDemoMode: true // Demo mode until AWS Amplify is integrated
           });
 
           // Check if we have a valid session on initialization

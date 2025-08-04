@@ -121,7 +121,7 @@ export class AuthService extends BaseService<AuthenticatedUser> {
   private currentUser: AuthenticatedUser | null = null;
   private tokens: AuthTokens | null = null;
   private sessionInfo: SessionInfo | null = null;
-  private isDemoMode = true; // Enable demo mode by default
+  private isDemoMode = true; // Enable demo mode until Cognito integration is complete
   private currentDemoUser: DemoUser | null = null;
 
   constructor() {

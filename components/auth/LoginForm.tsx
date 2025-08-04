@@ -49,7 +49,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   // Demo mode state
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   
-  // Enable demo mode by default for easy access
+  // Enable demo mode by default until AWS Amplify integration
   useEffect(() => {
     if (showDemoMode && !isDemoMode) {
       enableDemoMode();
