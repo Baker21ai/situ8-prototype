@@ -135,6 +135,12 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       cacheEnabled: false // Auth tokens should not be cached
     });
 
+    console.log('🔐 AuthService: Initializing with config:', {
+      isDemoMode: this.isDemoMode,
+      userPoolId: this.cognitoConfig.userPoolId,
+      clientId: this.cognitoConfig.userPoolWebClientId
+    });
+
     // Initialize from stored session if available
     this.initializeFromStorage();
   }
@@ -229,7 +235,9 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       }
 
       // Authenticate with AWS Cognito
+      console.log('🔑 Attempting Cognito sign in for:', request.email);
       const signInResult = await cognitoOperations.signIn(request.email, request.password);
+      console.log('🔑 Sign in result:', signInResult);
       
       // Handle different authentication states
       if (signInResult.isSignedIn) {

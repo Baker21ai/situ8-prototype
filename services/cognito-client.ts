@@ -23,23 +23,41 @@ import { getCognitoConfig } from '../config/cognito';
 export const initializeCognito = () => {
   const config = getCognitoConfig();
   
-  Amplify.configure({
-    Auth: {
-      Cognito: {
-        userPoolId: config.userPoolId,
-        userPoolClientId: config.userPoolWebClientId,
-        identityPoolId: config.identityPoolId,
-        loginWith: {
-          oauth: {
-            domain: config.domain?.replace('https://', '').replace('http://', '') || '',
-            scopes: config.oauth.scope,
-            redirectSignIn: [config.oauth.redirectSignIn],
-            redirectSignOut: [config.oauth.redirectSignOut],
-            responseType: config.oauth.responseType as 'code' | 'token'
-          }
-        }
+  // Amplify v6 configuration format
+  const authConfig = {
+    Cognito: {
+      userPoolId: config.userPoolId,
+      userPoolClientId: config.userPoolWebClientId,
+      identityPoolId: config.identityPoolId,
+      signUpVerificationMethod: 'code',
+      userAttributes: {
+        email: { required: true }
+      },
+      passwordFormat: {
+        minLength: 8,
+        requireNumbers: true,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireSpecialCharacters: true
       }
     }
+  };
+
+  // Only add OAuth config if domain exists
+  if (config.domain) {
+    authConfig.Cognito.loginWith = {
+      oauth: {
+        domain: config.domain.replace('https://', '').replace('http://', ''),
+        scopes: config.oauth.scope,
+        redirectSignIn: [config.oauth.redirectSignIn],
+        redirectSignOut: [config.oauth.redirectSignOut],
+        responseType: config.oauth.responseType
+      }
+    };
+  }
+
+  Amplify.configure({
+    Auth: authConfig
   });
 };
 
@@ -191,7 +209,12 @@ export const cognitoOperations = {
 
 // Initialize Cognito when module loads
 if (typeof window !== 'undefined') {
-  initializeCognito();
+  try {
+    initializeCognito();
+    console.log('✅ Cognito initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Cognito:', error);
+  }
 }
 
 export default cognitoOperations;

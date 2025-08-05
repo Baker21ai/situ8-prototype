@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>AWS Cognito Auth Test</h1>
+    <button onclick="testAuth()">Test Auth</button>
+    <pre id="output"></pre>
+    
+    <script type="module">
+        window.testAuth = async function() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+            
+            try {
+                // Clear any existing session data
+                localStorage.removeItem('situ8_auth_session');
+                output.textContent += 'Cleared local storage\n';
+                
+                // Force reload to test fresh
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:5173';
+                }, 1000);
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message;
+            }
+        };
+    </script>
+</body>
+</html>
