@@ -15,6 +15,7 @@ import { Badge } from '../ui/badge';
 import { Loader2, Shield, Eye, EyeOff, AlertCircle, UserCheck } from 'lucide-react';
 import { useAuth, useDemoMode } from '../../stores/userStore';
 import { LoginRequest } from '../../services/auth.service';
+import { AuthStatusToggle } from './AuthStatusToggle';
 
 interface LoginFormProps {
   onSuccess?: () => void;

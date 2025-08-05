@@ -26,7 +26,7 @@ import {
   rolePermissions,
   clearanceLevelRequirements
 } from '../config/cognito';
-import cognitoOperations from './cognito-client';
+import cognitoOperations, { getCognitoInitStatus } from './cognito-client';
 
 // Auth-specific types
 export interface LoginRequest {
@@ -135,8 +135,17 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       cacheEnabled: false // Auth tokens should not be cached
     });
 
+    // Check Cognito initialization status
+    const cognitoStatus = getCognitoInitStatus();
+    if (!cognitoStatus.isInitialized) {
+      console.warn('⚠️  AuthService: Cognito not initialized, enabling demo mode as fallback');
+      console.warn('⚠️  Error:', cognitoStatus.error?.message);
+      this.isDemoMode = true; // Enable demo mode as fallback
+    }
+
     console.log('🔐 AuthService: Initializing with config:', {
       isDemoMode: this.isDemoMode,
+      cognitoInitialized: cognitoStatus.isInitialized,
       userPoolId: this.cognitoConfig.userPoolId,
       clientId: this.cognitoConfig.userPoolWebClientId
     });
@@ -236,8 +245,23 @@ export class AuthService extends BaseService<AuthenticatedUser> {
 
       // Authenticate with AWS Cognito
       console.log('🔑 Attempting Cognito sign in for:', request.email);
-      const signInResult = await cognitoOperations.signIn(request.email, request.password);
-      console.log('🔑 Sign in result:', signInResult);
+      let signInResult;
+      
+      try {
+        signInResult = await cognitoOperations.signIn(request.email, request.password);
+        console.log('🔑 Sign in result:', signInResult);
+      } catch (cognitoError: any) {
+        console.error('❌ Cognito sign in error:', cognitoError);
+        
+        // If Cognito fails, check if we should fallback to demo mode
+        if (cognitoError.name === 'AuthUserPoolException') {
+          console.warn('⚠️  Falling back to demo mode due to Cognito error');
+          this.isDemoMode = true;
+          return this.loginDemoUser(request.email);
+        }
+        
+        throw cognitoError;
+      }
       
       // Handle different authentication states
       if (signInResult.isSignedIn) {
@@ -623,6 +647,35 @@ export class AuthService extends BaseService<AuthenticatedUser> {
    */
   isInDemoMode(): boolean {
     return this.isDemoMode;
+  }
+
+  /**
+   * Toggle between demo mode and AWS mode
+   */
+  setDemoMode(enabled: boolean): void {
+    this.isDemoMode = enabled;
+    console.log(`🔄 Auth mode changed to: ${enabled ? 'Demo' : 'AWS'}`);
+    
+    // If disabling demo mode, check if Cognito is initialized
+    if (!enabled) {
+      const cognitoStatus = getCognitoInitStatus();
+      if (!cognitoStatus.isInitialized) {
+        console.warn('⚠️  Cannot disable demo mode - Cognito not initialized');
+        this.isDemoMode = true;
+      }
+    }
+  }
+
+  /**
+   * Get current auth mode status
+   */
+  getAuthStatus(): { isDemoMode: boolean; cognitoInitialized: boolean; error?: string } {
+    const cognitoStatus = getCognitoInitStatus();
+    return {
+      isDemoMode: this.isDemoMode,
+      cognitoInitialized: cognitoStatus.isInitialized,
+      error: cognitoStatus.error?.message
+    };
   }
 
   /**

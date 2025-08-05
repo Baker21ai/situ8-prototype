@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Separator } from './components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip';
 import { Toaster } from './components/ui/sonner';
-import { LoginForm } from './components/auth/LoginForm';
+import { LoginPage } from './components/auth/LoginPage';
 import { useAuth } from './stores/userStore';
 
 // Lazy load heavy components for code splitting
@@ -421,12 +421,11 @@ const AppContent = memo(() => {
     if (import.meta.env.DEV) console.log('🔐 App.tsx: Not authenticated, showing login form');
     return (
       <div className="h-screen dark">
-        <LoginForm 
+        <LoginPage 
           onSuccess={() => {
-            console.log('✅ LoginForm onSuccess callback triggered');
+            console.log('✅ LoginPage onSuccess callback triggered');
             // The auth state will automatically update via Zustand
           }} 
-          showDemoMode={true} 
         />
       </div>
     );

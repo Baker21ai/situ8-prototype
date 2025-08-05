@@ -22,43 +22,41 @@ import { getCognitoConfig } from '../config/cognito';
 // Initialize Amplify with Cognito configuration
 export const initializeCognito = () => {
   const config = getCognitoConfig();
+  console.log('🔧 Initializing Amplify v6 with Cognito config');
   
-  // Amplify v6 configuration format
-  const authConfig = {
-    Cognito: {
-      userPoolId: config.userPoolId,
-      userPoolClientId: config.userPoolWebClientId,
-      identityPoolId: config.identityPoolId,
-      signUpVerificationMethod: 'code',
-      userAttributes: {
-        email: { required: true }
-      },
-      passwordFormat: {
-        minLength: 8,
-        requireNumbers: true,
-        requireLowercase: true,
-        requireUppercase: true,
-        requireSpecialCharacters: true
-      }
-    }
-  };
-
-  // Only add OAuth config if domain exists
-  if (config.domain) {
-    authConfig.Cognito.loginWith = {
-      oauth: {
-        domain: config.domain.replace('https://', '').replace('http://', ''),
-        scopes: config.oauth.scope,
-        redirectSignIn: [config.oauth.redirectSignIn],
-        redirectSignOut: [config.oauth.redirectSignOut],
-        responseType: config.oauth.responseType
+  try {
+    // Amplify v6 correct format
+    const amplifyConfig = {
+      Auth: {
+        Cognito: {
+          userPoolId: config.userPoolId,
+          userPoolClientId: config.userPoolWebClientId,
+          region: config.region,
+          identityPoolId: config.identityPoolId
+        }
       }
     };
+    
+    // Add OAuth config if domain exists
+    if (config.domain) {
+      amplifyConfig.Auth.Cognito.loginWith = {
+        oauth: {
+          domain: config.domain.replace('https://', '').replace('http://', ''),
+          scopes: config.oauth.scope,
+          redirectSignIn: [config.oauth.redirectSignIn],
+          redirectSignOut: [config.oauth.redirectSignOut],
+          responseType: config.oauth.responseType
+        }
+      };
+    }
+    
+    console.log('🔧 Applying config:', JSON.stringify(amplifyConfig, null, 2));
+    Amplify.configure(amplifyConfig);
+    console.log('✅ Amplify configured successfully');
+  } catch (error) {
+    console.error('❌ Amplify configuration error:', error);
+    throw error;
   }
-
-  Amplify.configure({
-    Auth: authConfig
-  });
 };
 
 // Authentication operations
@@ -207,14 +205,27 @@ export const cognitoOperations = {
   }
 };
 
+// Store initialization state
+let isInitialized = false;
+let initializationError: Error | null = null;
+
 // Initialize Cognito when module loads
 if (typeof window !== 'undefined') {
   try {
     initializeCognito();
+    isInitialized = true;
     console.log('✅ Cognito initialized successfully');
   } catch (error) {
+    initializationError = error as Error;
     console.error('❌ Failed to initialize Cognito:', error);
+    console.error('⚠️  App will continue in fallback mode');
   }
 }
+
+// Export initialization state
+export const getCognitoInitStatus = () => ({
+  isInitialized,
+  error: initializationError
+});
 
 export default cognitoOperations;

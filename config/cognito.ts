@@ -109,14 +109,28 @@ const getCurrentEnvironment = (): string => {
 // Get Cognito configuration for current environment
 export const getCognitoConfig = (): CognitoConfig => {
   const environment = getCurrentEnvironment();
+  console.log('🔧 getCognitoConfig: Current environment:', environment);
+  
   const config = cognitoConfigs[environment];
   
   if (!config) {
+    console.error('❌ No config found for environment:', environment);
     throw new Error(`No Cognito configuration found for environment: ${environment}`);
   }
   
+  console.log('🔧 getCognitoConfig: Config found:', {
+    userPoolId: config.userPoolId,
+    clientId: config.userPoolWebClientId,
+    hasIdentityPool: !!config.identityPoolId,
+    hasDomain: !!config.domain
+  });
+  
   // Validate required fields
   if (!config.userPoolId || !config.userPoolWebClientId) {
+    console.error('❌ Missing required fields:', { 
+      userPoolId: config.userPoolId, 
+      clientId: config.userPoolWebClientId 
+    });
     throw new Error(
       `Missing required Cognito configuration for environment: ${environment}. ` +
       'Please check your environment variables.'
