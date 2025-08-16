@@ -9,10 +9,12 @@ import {
   Bell, 
   Settings,
   User,
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 import { useCommunications } from '../hooks/useCommunications';
 import { useUserStore } from '../stores/userStore';
+import { ChatWindow } from './communications/ChatWindow';
 
 interface CommunicationsPageProps {
   onBackToCommandCenter?: () => void;
@@ -20,6 +22,7 @@ interface CommunicationsPageProps {
 
 export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPageProps = {}) {
   const [activeTab, setActiveTab] = useState('channels');
+  const [showChat, setShowChat] = useState(false);
   const { currentUser: user } = useUserStore();
   const { channels, messages, guards } = useCommunications();
 
@@ -168,9 +171,9 @@ export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPage
                   <Radio className="h-4 w-4 mr-2" />
                   Open Radio
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setShowChat(true)}>
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Send Message
+                  Open Real-time Chat
                 </Button>
                 <Button variant="outline">
                   <Bell className="h-4 w-4 mr-2" />
@@ -180,6 +183,38 @@ export function CommunicationsPage({ onBackToCommandCenter }: CommunicationsPage
             </CardContent>
           </Card>
         </div>
+
+        {/* Chat Window */}
+        {showChat && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader className="border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Real-time Chat
+                  </CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowChat(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[600px]">
+                  <ChatWindow 
+                    conversationId="main"
+                    className="h-full border-0 rounded-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

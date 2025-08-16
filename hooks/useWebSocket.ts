@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useActivityStore } from '../stores/activityStore';
 import { useCommunicationStore } from '../stores/communicationStore';
+import { generateSignedWebSocketUrl, getWebSocketAuthToken, refreshAuthTokensIfNeeded } from '../utils/websocket-auth';
+import { getCognitoInitStatus } from '../services/cognito-client';
 
 export interface WebSocketMessage {
   action: string;
@@ -50,6 +52,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectAttemptsRef = useRef(0);
   const messageQueueRef = useRef<WebSocketMessage[]>([]);
   const messageHandlersRef = useRef<Map<string, Set<(data: any) => void>>>(new Map());
+  const tokenRefreshIntervalRef = useRef<NodeJS.Timeout>();
   
   // Communication store integration
   const communicationStore = useCommunicationStore();
@@ -75,7 +78,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }
 
   // Connect to WebSocket
-  const connect = useCallback((authToken?: string) => {
+  const connect = useCallback(async (authToken?: string) => {
     if (useMockWebSocket) {
       console.log('Development mode: Using mock WebSocket behavior');
       setState({
@@ -92,11 +95,36 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     setState(prev => ({ ...prev, connectionState: 'connecting', error: null }));
 
-    const connectUrl = authToken || token 
-      ? `${url}?token=${encodeURIComponent(authToken || token || '')}`
-      : url;
-
     try {
+      let connectUrl: string;
+      
+      // Check if Cognito is initialized and we should use signed URLs
+      const cognitoStatus = getCognitoInitStatus();
+      if (cognitoStatus.isInitialized) {
+        // Refresh tokens if needed
+        await refreshAuthTokensIfNeeded();
+        
+        // Try to generate a signed URL
+        try {
+          connectUrl = await generateSignedWebSocketUrl(url);
+          console.log('Using signed WebSocket URL');
+        } catch (signError) {
+          console.warn('Failed to generate signed URL, falling back to token parameter:', signError);
+          
+          // Fallback: try to get token and use as query parameter
+          const fallbackToken = authToken || token || await getWebSocketAuthToken();
+          connectUrl = fallbackToken 
+            ? `${url}?token=${encodeURIComponent(fallbackToken)}`
+            : url;
+        }
+      } else {
+        // Cognito not initialized, use simple token approach
+        const simpleToken = authToken || token;
+        connectUrl = simpleToken 
+          ? `${url}?token=${encodeURIComponent(simpleToken)}`
+          : url;
+      }
+
       const ws = new WebSocket(connectUrl);
       wsRef.current = ws;
 
@@ -118,6 +146,19 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           if (msg) {
             ws.send(JSON.stringify(msg));
           }
+        }
+        
+        // Set up token refresh interval (refresh every 45 minutes for 1-hour tokens)
+        if (cognitoStatus.isInitialized) {
+          tokenRefreshIntervalRef.current = setInterval(async () => {
+            console.log('Refreshing WebSocket connection for token renewal');
+            const refreshed = await refreshAuthTokensIfNeeded();
+            if (refreshed) {
+              // Gracefully reconnect with new token
+              disconnect();
+              setTimeout(() => connect(), 100);
+            }
+          }, 45 * 60 * 1000); // 45 minutes
         }
       };
 
@@ -211,6 +252,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+    }
+    
+    if (tokenRefreshIntervalRef.current) {
+      clearInterval(tokenRefreshIntervalRef.current);
     }
     
     if (wsRef.current) {
