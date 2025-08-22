@@ -108,10 +108,6 @@ dev-debug.log
 *.sw?
 # OS specific
 
-# Task files
-# tasks.json
-# tasks/
-
 # Binary installers and packages
 *.pkg
 *.dmg
@@ -124,18 +120,24 @@ dev-debug.log
 # ai-research/**/*
 # aws-setup/**/* 
 
-# UI/UX iteration folders
-ui-iterations/**/*
-ui-ux-iterations/**/*
-design-iterations/**/*
-command-center-design-styles/**/*
+# New organized structure - Development and testing files
+__tests__/
+__debug__/
+__designs__/
+.archive/
 
-# Documentation and research folders
-ai-research/**/*
-ai-development-research-2025/**/*
-claude-chats/**/*
-claude-tasks/**/*
-future-features/**/*
+# UI/UX iteration folders (moved to __designs__)
+# ui-iterations/**/* - moved to __designs__/
+# ui-ux-iterations/**/* - moved to __designs__/
+# design-iterations/**/* - moved to __designs__/
+# command-center-design-styles/**/* - moved to __designs__/
+
+# Documentation and research folders (moved to modules/)
+# ai-research/**/* - moved to modules/ai-assistant/
+# ai-development-research-2025/**/* - moved to modules/ai-assistant/
+# claude-chats/**/* - moved to modules/system-history/
+# claude-tasks/**/* - moved to modules/system-history/
+# future-features/**/* - moved to modules/workflow-automation/
 docs/ui-ux-analysis/**/*
 
 # Agent and configuration folders
@@ -153,10 +155,16 @@ docs/ui-ux-analysis/**/*
 !CHANGELOG.md
 
 # AWS and infrastructure
-aws-setup/**/*
+# aws-setup/**/* - moved to scripts/aws/
 infrastructure/**/*
 lambda/**/*
 
 # Guidelines and demo files
-guidelines/**/*
-demo-users-setup.md
+# guidelines/**/* - moved to docs/
+# demo-users-setup.md - moved to modules/authentication/
+
+.vercel
+
+# Task files
+# tasks.json
+# tasks/ 

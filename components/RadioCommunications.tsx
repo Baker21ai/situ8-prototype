@@ -1,31 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator as _Separator } from './ui/separator';
-import { Avatar as _Avatar, AvatarFallback as _AvatarFallback } from './ui/avatar';
-import { ActivityCard } from './organisms/ActivityCard';
-import { ActivityData, EnterpriseActivity, ActivityCluster } from '@/lib/types/activity';
-import { mockActivities, getActivitiesByTime } from './mockActivityData';
-import { CommunicationControls } from './shared/CommunicationControls';
-import { useCommunications } from '@/hooks/useCommunications';
+import { useRealtimeChatStore } from '../stores/realtimeChatStore';
+import { RadioTestScenarios } from './communications/RadioTestScenarios';
 import { 
   Radio, 
   Mic, 
-  Phone as _Phone, 
-  MessageCircle, 
-  Activity, 
-  AlertTriangle, 
-  Shield as _Shield, 
-  Clock, 
-  MapPin, 
   ChevronDown,
-  Play,
-  ExternalLink,
-  Headphones,
-  Filter
+  TestTube2
 } from 'lucide-react';
 
 interface RadioMessage {
@@ -59,11 +44,6 @@ interface Guard {
 
 interface RadioCommunicationsProps {
   className?: string;
-  showHeader?: boolean;
-  isModal?: boolean;
-  onOpenModal?: () => void;
-  onOpenFullPage?: () => void;
-  activities?: ActivityData[];
 }
 
 // Mock data
@@ -175,91 +155,27 @@ const mockMessages: RadioMessage[] = [
   }
 ];
 
-const mockGuards: Guard[] = [
-  { id: 'garcia-m', name: 'Garcia, M.', status: 'investigating', location: 'Building A', lastSeen: '14:36', channel: 'main' },
-  { id: 'chen-l', name: 'Chen, L.', status: 'available', location: 'Building B', lastSeen: '14:32', channel: 'main' },
-  { id: 'wilson-r', name: 'Wilson, R.', status: 'responding', location: 'Parking Lot', lastSeen: '14:33', channel: 'main' },
-  { id: 'davis-k', name: 'Davis, K.', status: 'break', location: 'Building C', lastSeen: '14:20', channel: 'main' },
-  { id: 'smith-j', name: 'Smith, J.', status: 'offline', location: 'Building A', lastSeen: '13:45', channel: 'main' }
-];
+// Presence UI removed here to keep focus on radio/PTT
 
-interface TimelineEvent {
-  id: string;
-  time: Date;
-  event: string;
-  type: 'response' | 'alert' | 'completion' | 'incident' | 'assignment' | 'status_change';
-  guardName?: string;
-  location?: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
-}
+// Timeline removed from radio panel
 
-// Mock timeline events
-const mockTimelineEvents: TimelineEvent[] = [
-  {
-    id: 'tl-001',
-    time: new Date(Date.now() - 2 * 60 * 1000),
-    event: 'Garcia, M. responded to Building A alert',
-    type: 'response',
-    guardName: 'Garcia, M.',
-    location: 'Building A',
-    priority: 'high'
-  },
-  {
-    id: 'tl-002',
-    time: new Date(Date.now() - 4 * 60 * 1000),
-    event: 'Critical alert: Unauthorized entry detected',
-    type: 'alert',
-    location: 'Building A - Floor 3',
-    priority: 'critical'
-  },
-  {
-    id: 'tl-003',
-    time: new Date(Date.now() - 8 * 60 * 1000),
-    event: 'Wilson, R. assigned to suspicious vehicle investigation',
-    type: 'assignment',
-    guardName: 'Wilson, R.',
-    location: 'Parking Lot',
-    priority: 'medium'
-  },
-  {
-    id: 'tl-004',
-    time: new Date(Date.now() - 12 * 60 * 1000),
-    event: 'Chen, L. completed patrol round',
-    type: 'completion',
-    guardName: 'Chen, L.',
-    location: 'Building B',
-    priority: 'low'
-  },
-  {
-    id: 'tl-005',
-    time: new Date(Date.now() - 19 * 60 * 1000),
-    event: 'Medical emergency reported in Building C',
-    type: 'incident',
-    location: 'Building C - Lobby',
-    priority: 'critical'
-  }
-];
+export function RadioCommunications({ className = "" }: RadioCommunicationsProps) {
+  const {
+    conversations,
+    activeConversationId,
+    setActiveConversation,
+    messages: storeMessages,
+    initializeWebSocket,
+    sendMessage
+  } = useRealtimeChatStore();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [showTestScenarios, setShowTestScenarios] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout>();
 
-export function RadioCommunications({ 
-  className = "", 
-  isModal = false,
-  onOpenModal,
-  onOpenFullPage,
-  activities = mockActivities 
-}: RadioCommunicationsProps) {
-  const { 
-    messages, 
-    guards, 
-    activeChannel, 
-    setActiveChannel, 
-    playAudio, 
-    playingMessage 
-  } = useCommunications();
-  
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(mockTimelineEvents);
-  const [activeTab, setActiveTab] = useState<string>('communications');
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
-  const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
+  useEffect(() => { initializeWebSocket(); }, [initializeWebSocket]);
 
 
   const _getStatusColor = (status: string) => {
@@ -484,210 +400,90 @@ export function RadioCommunications({
     );
   };
 
-  const activeGuards = guards.filter(g => g.status !== 'offline');
-  const _channelStats = {
-    main: { active: activeGuards.length, total: guards.length },
-    emergency: { active: 0, total: guards.length },
-    telegram: { active: 3, total: guards.length }
-  };
+  const messages = (storeMessages[activeConversationId || 'main'] || []).filter(m => m.type === 'voice' || m.type === 'radio');
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
-      {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-3">
+      <div className="p-3 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Radio className="h-5 w-5 text-blue-600" />
+          <h3 className="font-semibold">Radio</h3>
+          <span className="text-xs text-gray-500 flex items-center gap-1">
+            <span className="inline-block w-2 h-2 bg-green-500 rounded-full" /> Live
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTestScenarios(!showTestScenarios)}
+            className="h-7 px-2 text-xs"
+          >
+            <TestTube2 className="h-3 w-3 mr-1" />
+            {showTestScenarios ? 'Live Radio' : 'Test Scenarios'}
+          </Button>
+          <button className="inline-flex items-center gap-1 px-2 py-1 border rounded">
+            #{conversations.find(c => c.id === (activeConversationId || 'main'))?.name || 'main'}
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        {showTestScenarios ? (
+          <RadioTestScenarios />
+        ) : (
+          <ScrollArea className="h-full p-3">
+            <div className="space-y-3">
+              {messages.map((m: any) => (
+                <div key={m.id} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between mb-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                      <span className="font-semibold">{m.senderName}</span>
+                    </div>
+                    {m.attachments?.[0]?.duration && (
+                      <Badge variant="outline" className="text-xs">{Math.round(m.attachments[0].duration)}s</Badge>
+                    )}
+                  </div>
+                  {m.type === 'voice' && m.attachments?.[0]?.url ? (
+                    <audio controls className="w-full">
+                      <source src={m.attachments[0].url} type="audio/webm" />
+                    </audio>
+                  ) : (
+                    <p className="text-sm italic">"{m.content}"</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
+      <div className="border-t p-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500">Tip: Hold V/Space or press and hold mic to talk</div>
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-blue-600" />
-            <h3 className="font-semibold">Timeline & Communications Hub</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            {onOpenModal && !isModal && (
-              <Button variant="ghost" size="sm" onClick={onOpenModal} title="Open Radio Modal">
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            )}
-            {onOpenFullPage && (
-              <Button variant="ghost" size="sm" onClick={onOpenFullPage} title="Communications Page">
-                <Radio className="h-4 w-4" />
-              </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`h-10 w-10 p-0 ${isRecording ? 'text-red-600' : ''}`}
+              onMouseDown={async () => {
+                // @ts-ignore
+                await (startRecording as any)();
+              }}
+              onMouseUp={async () => { await (stopRecording as any)(); }}
+              onMouseLeave={async () => { if (isRecording) await (stopRecording as any)(); }}
+              onTouchStart={async () => { await (startRecording as any)(); }}
+              onTouchEnd={async () => { await (stopRecording as any)(); }}
+              title="Hold to talk (V or Space)"
+            >
+              <Mic className="h-5 w-5" />
+            </Button>
+            {isRecording && (
+              <Badge variant="outline" className="text-xs">REC {recordingDuration}s</Badge>
             )}
           </div>
         </div>
       </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mx-4 mt-2">
-          <TabsTrigger value="incidents" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Incidents
-          </TabsTrigger>
-          <TabsTrigger value="communications" className="flex items-center gap-2">
-            <Radio className="h-4 w-4" />
-            Communications
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Timeline
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Communications Tab */}
-        <TabsContent value="communications" className="flex-1 mt-4">
-          <div className="px-4 mb-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-              <Radio className="h-4 w-4" />
-              <span className="font-medium">RADIO COMMUNICATIONS</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-4">
-                <span>Channel: <strong>Main</strong></span>
-                <span>Guards: <strong>{activeGuards.length} Active</strong></span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs">Live</span>
-              </div>
-            </div>
-          </div>
-          
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-3">
-              {messages.filter(msg => !msg.threadId || expandedThreads.has(msg.threadId)).map(msg => renderMessage(msg))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Incidents Tab */}
-        <TabsContent value="incidents" className="flex-1 mt-4">
-          <div className="px-4 mb-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="font-medium">INCIDENT FEED</span>
-            </div>
-            <div className="text-sm text-gray-500">
-              Showing high-priority activities and communications
-            </div>
-          </div>
-          
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-3">
-              {/* High Priority Activities */}
-              {getIncidentActivities().map(activity => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  variant="compact"
-                  layout="timeline"
-                  features={{
-                    showPriority: true,
-                    showSiteBadge: true,
-                    showTime: true
-                  }}
-                  onClick={handleActivitySelect}
-                />
-              ))}
-              
-              {/* High Priority Communications */}
-              {getIncidentMessages().map(msg => renderMessage(msg))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Timeline Tab */}
-        <TabsContent value="timeline" className="flex-1 mt-4">
-          <div className="px-4 mb-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-              <Clock className="h-4 w-4" />
-              <span className="font-medium">UNIFIED TIMELINE</span>
-            </div>
-            <div className="text-sm text-gray-500">
-              All system events, activities, and communications
-            </div>
-          </div>
-          
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-2">
-              {/* Recent Activities */}
-              {getTimelineActivities().map(activity => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  variant="compact"
-                  layout="timeline"
-                  features={{
-                    showPriority: true,
-                    showSiteBadge: true,
-                    showTime: true
-                  }}
-                  onClick={handleActivitySelect}
-                />
-              ))}
-              
-              {/* System Timeline Events */}
-              {timelineEvents.map(event => (
-                <div key={event.id} className="border-l-2 border-blue-200 pl-3 pb-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">SYSTEM EVENT</span>
-                        <span className="text-xs text-gray-500">{formatTimeAgo(event.time)}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="font-medium text-sm">{event.event}</div>
-                    
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                      <span>{event.type.toUpperCase()}</span>
-                      {event.location && (
-                        <>
-                          <span>•</span>
-                          <MapPin className="h-3 w-3" />
-                          <span>{event.location}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {/* Radio Messages in Timeline */}
-              {messages.slice(0, 5).map(message => (
-                <div key={`timeline-${message.id}`} className="border-l-2 border-green-200 pl-3 pb-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">RADIO MSG</span>
-                        <span className="text-xs text-gray-500">{message.timestamp}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="font-medium text-sm">{message.guardName}: "{message.content}"</div>
-                    
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                      <Radio className="h-3 w-3" />
-                      <span>{message.location}</span>
-                      {message.activityType && (
-                        <>
-                          <span>•</span>
-                          <span>{message.activityType.toUpperCase()}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
-
-      {/* Communication Controls Footer */}
-      <CommunicationControls
-        variant="compact"
-        onOpenFullPage={onOpenFullPage}
-        showFilters={true}
-      />
     </div>
   );
 }

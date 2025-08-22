@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
-import { MapPin, Camera as _Camera, Play, Eye as _Eye, MoreVertical } from 'lucide-react';
+import { MapPin, Camera as _Camera, Play, Eye as _Eye, MoreVertical, Zap } from 'lucide-react';
 
 // Import atomic components
 import { StatusBadge, PriorityIndicator, TimeDisplay, LocationBadge } from '@/components/atoms';
@@ -31,6 +31,7 @@ export interface ActivityCardFeatures {
   showSiteBadge?: boolean;
   showPriority?: boolean;
   showTime?: boolean;
+  showCommandCenter?: boolean;
 }
 
 // Main ActivityCard Props
@@ -323,6 +324,21 @@ const ActivityFooter: React.FC<{
           <div className="text-xs text-gray-600 truncate max-w-24">
             {activity.assignedTo}
           </div>
+        )}
+        
+        {features.showCommandCenter && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction?.('command-center', activity);
+            }}
+            title="Open Modular Command Center"
+          >
+            <Zap className="h-3 w-3" />
+          </Button>
         )}
         
         {features.showActions && (

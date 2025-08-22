@@ -37,6 +37,7 @@ import {
   Scale,
   Camera,
   Upload,
+  FolderOpen,
   Download,
   ExternalLink,
   Activity,
@@ -88,8 +89,8 @@ interface SimpleCase {
   relatedActivities?: string[];
   initialFindings?: string;
   investigationPlan?: string;
-  sensitivityLevel?: string;
   involvedSites?: string[];
+  sensitivityLevel?: string;
   requiresApproval?: boolean;
 }
 
@@ -151,12 +152,28 @@ const caseTypeConfig: Record<CaseType, { label: string; icon: React.ReactNode; c
     label: 'Quality Investigation', 
     icon: <CheckCircle className="w-4 h-4" />, 
     color: 'text-cyan-600' 
+  },
+  audit_investigation: { 
+    label: 'Audit Investigation', 
+    icon: <FileText className="w-4 h-4" />, 
+    color: 'text-purple-600' 
+  },
+  legal_investigation: { 
+    label: 'Legal Investigation', 
+    icon: <Scale className="w-4 h-4" />, 
+    color: 'text-red-600' 
+  },
+  other: { 
+    label: 'Other Investigation', 
+    icon: <Briefcase className="w-4 h-4" />, 
+    color: 'text-gray-600' 
   }
 };
 
 // Status config
 const statusConfig: Record<CaseStatus, { color: string; label: string; icon: React.ReactNode }> = {
   draft: { color: 'bg-gray-100 text-gray-800', label: 'Draft', icon: <Edit className="w-4 h-4" /> },
+  open: { color: 'bg-green-100 text-green-800', label: 'Open', icon: <FolderOpen className="w-4 h-4" /> },
   active: { color: 'bg-blue-100 text-blue-800', label: 'Active', icon: <PlayCircle className="w-4 h-4" /> },
   pending_review: { color: 'bg-yellow-100 text-yellow-800', label: 'Pending Review', icon: <Eye className="w-4 h-4" /> },
   on_hold: { color: 'bg-orange-100 text-orange-800', label: 'On Hold', icon: <PauseCircle className="w-4 h-4" /> },

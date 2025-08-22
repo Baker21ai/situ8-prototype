@@ -5,6 +5,7 @@
 
 import { Priority, Status, BusinessImpact } from '../../../../lib/utils/status';
 import { ActivityType, SecurityLevel } from '../../../../lib/utils/security';
+import { DomainEvent, ActivityEvent, EventFactory } from '../events/DomainEvent';
 
 // Value Objects
 export interface Coordinates {
@@ -99,6 +100,17 @@ export class Activity {
   private _externalData?: ExternalSystemData;
   private _escalationLevel?: number;
   private _falsePositiveLikelihood?: number;
+  
+  // Ambient integration properties
+  private _ambient_alert_id?: string;
+  private _source: 'AMBIENT' | 'SITU8' | 'MANUAL' = 'MANUAL';
+  private _preview_url?: string;
+  private _deep_link_url?: string;
+  private _confidence_score?: number;
+  
+  // Domain events (max 10 per activity)
+  private _domainEvents: DomainEvent[] = [];
+  private readonly MAX_EVENTS = 10;
 
   constructor(props: {
     id: string;
@@ -118,6 +130,12 @@ export class Activity {
     businessImpact?: BusinessImpact;
     metadata?: SiteMetadata;
     externalData?: ExternalSystemData;
+    // Ambient integration properties
+    ambient_alert_id?: string;
+    source?: 'AMBIENT' | 'SITU8' | 'MANUAL';
+    preview_url?: string;
+    deep_link_url?: string;
+    confidence_score?: number;
   }) {
     // Immutable properties
     this.id = props.id;
@@ -142,6 +160,13 @@ export class Activity {
     this._businessImpact = props.businessImpact;
     this._metadata = props.metadata;
     this._externalData = props.externalData;
+    
+    // Ambient integration properties
+    this._ambient_alert_id = props.ambient_alert_id;
+    this._source = props.source || 'MANUAL';
+    this._preview_url = props.preview_url;
+    this._deep_link_url = props.deep_link_url;
+    this._confidence_score = props.confidence_score;
 
     // Business rule defaults
     this._system_tags = this.generateSystemTags();
@@ -156,6 +181,18 @@ export class Activity {
     this._falsePositiveLikelihood = 0;
     this._respondingUnits = [];
     this._detectedObjects = [];
+    
+    // Emit created event
+    this.addDomainEvent(
+      EventFactory.createActivityCreatedEvent(
+        this.id,
+        this.title,
+        this.type,
+        this._priority,
+        this.location,
+        this.created_by
+      )
+    );
   }
 
   // Getters
@@ -186,6 +223,13 @@ export class Activity {
   get externalData(): ExternalSystemData | undefined { return this._externalData; }
   get escalationLevel(): number | undefined { return this._escalationLevel; }
   get falsePositiveLikelihood(): number | undefined { return this._falsePositiveLikelihood; }
+  
+  // Ambient integration getters
+  get ambient_alert_id(): string | undefined { return this._ambient_alert_id; }
+  get source(): 'AMBIENT' | 'SITU8' | 'MANUAL' { return this._source; }
+  get preview_url(): string | undefined { return this._preview_url; }
+  get deep_link_url(): string | undefined { return this._deep_link_url; }
+  get confidence_score(): number | undefined { return this._confidence_score; }
 
   // Business Logic Methods
   updateStatus(newStatus: Status, updatedBy: string): void {
@@ -193,17 +237,39 @@ export class Activity {
       throw new Error(`Cannot transition from ${this._status} to ${newStatus}`);
     }
     
+    const oldStatus = this._status;
     this._status = newStatus;
     this._updated_at = new Date();
     this._updated_by = updatedBy;
     this.refreshSystemTags();
+    
+    // Emit domain event
+    this.addDomainEvent(
+      EventFactory.createActivityStatusChangedEvent(
+        this.id,
+        oldStatus,
+        newStatus,
+        updatedBy
+      )
+    );
   }
 
   assignTo(userId: string, assignedBy: string): void {
+    const previousAssignee = this._assignedTo;
     this._assignedTo = userId;
     this._updated_at = new Date();
     this._updated_by = assignedBy;
     this.refreshSystemTags();
+    
+    // Emit domain event
+    this.addDomainEvent(
+      EventFactory.createActivityAssignedEvent(
+        this.id,
+        userId,
+        assignedBy,
+        previousAssignee
+      )
+    );
   }
 
   escalate(level: number, escalatedBy: string): void {
@@ -211,10 +277,21 @@ export class Activity {
       throw new Error('Escalation level must be higher than current level');
     }
     
+    const previousLevel = this._escalationLevel || 0;
     this._escalationLevel = level;
     this._updated_at = new Date();
     this._updated_by = escalatedBy;
     this.refreshSystemTags();
+    
+    // Emit domain event
+    this.addDomainEvent(
+      EventFactory.createActivityEscalatedEvent(
+        this.id,
+        previousLevel,
+        level,
+        escalatedBy
+      )
+    );
   }
 
   addUserTag(tag: string): void {
@@ -300,11 +377,23 @@ export class Activity {
       tags.push('after-hours');
     }
     
-    // External system tags
+    // Source system tags
+    tags.push(`source:${this._source.toLowerCase()}`);
+    
+    // Legacy external system tags for backward compatibility
     if (this._externalData) {
-      tags.push(`source:${this._externalData.sourceSystem}`);
-    } else {
-      tags.push('source:manual');
+      tags.push(`external:${this._externalData.sourceSystem}`);
+    }
+    
+    // Ambient specific tags
+    if (this._source === 'AMBIENT' && this._confidence_score !== undefined) {
+      if (this._confidence_score >= 0.8) {
+        tags.push('high-confidence');
+      } else if (this._confidence_score >= 0.6) {
+        tags.push('medium-confidence');
+      } else {
+        tags.push('low-confidence');
+      }
     }
     
     return tags;
@@ -314,14 +403,23 @@ export class Activity {
     this._system_tags = this.generateSystemTags();
   }
 
-  // Domain Events (for future event sourcing)
-  getUncommittedEvents(): any[] {
-    // TODO: Implement domain events
-    return [];
+  // Domain Events
+  getUncommittedEvents(): DomainEvent[] {
+    return [...this._domainEvents];
   }
 
   markEventsAsCommitted(): void {
-    // TODO: Implement domain events
+    this._domainEvents = [];
+  }
+  
+  private addDomainEvent(event: DomainEvent): void {
+    // Add event to the list
+    this._domainEvents.push(event);
+    
+    // Keep only the last MAX_EVENTS events (circular buffer)
+    if (this._domainEvents.length > this.MAX_EVENTS) {
+      this._domainEvents = this._domainEvents.slice(-this.MAX_EVENTS);
+    }
   }
 
   // Validation
@@ -371,7 +469,13 @@ export class Activity {
       metadata: this._metadata,
       externalData: this._externalData,
       escalationLevel: this._escalationLevel,
-      falsePositiveLikelihood: this._falsePositiveLikelihood
+      falsePositiveLikelihood: this._falsePositiveLikelihood,
+      // Ambient integration fields
+      ambient_alert_id: this._ambient_alert_id,
+      source: this._source,
+      preview_url: this._preview_url,
+      deep_link_url: this._deep_link_url,
+      confidence_score: this._confidence_score
     };
   }
 
@@ -393,7 +497,13 @@ export class Activity {
       badgeHolder: snapshot.badgeHolder,
       businessImpact: snapshot.businessImpact,
       metadata: snapshot.metadata,
-      externalData: snapshot.externalData
+      externalData: snapshot.externalData,
+      // Ambient integration fields
+      ambient_alert_id: snapshot.ambient_alert_id,
+      source: snapshot.source,
+      preview_url: snapshot.preview_url,
+      deep_link_url: snapshot.deep_link_url,
+      confidence_score: snapshot.confidence_score
     });
 
     // Restore mutable state
@@ -441,7 +551,8 @@ export class ActivityFactory {
       confidence: data.confidence,
       building: data.building,
       zone: data.zone,
-      externalData: data.externalData
+      externalData: data.externalData,
+      source: 'SITU8'
     });
   }
 
@@ -466,7 +577,45 @@ export class ActivityFactory {
       created_by: data.created_by,
       description: data.description,
       building: data.building,
-      zone: data.zone
+      zone: data.zone,
+      source: 'MANUAL'
+    });
+  }
+
+  static createFromAmbient(data: {
+    ambient_alert_id: string;
+    type: ActivityType;
+    title: string;
+    location: string;
+    priority: Priority;
+    created_by: string;
+    preview_url?: string;
+    deep_link_url?: string;
+    confidence_score?: number;
+    description?: string;
+    building?: string;
+    zone?: string;
+    confidence?: number;
+  }): Activity {
+    return new Activity({
+      id: `ambient-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+      type: data.type,
+      title: data.title,
+      location: data.location,
+      priority: data.priority,
+      status: 'detecting',
+      created_by: data.created_by,
+      description: data.description,
+      building: data.building,
+      zone: data.zone,
+      confidence: data.confidence,
+      // Ambient-specific fields
+      source: 'AMBIENT',
+      ambient_alert_id: data.ambient_alert_id,
+      preview_url: data.preview_url,
+      deep_link_url: data.deep_link_url,
+      confidence_score: data.confidence_score
     });
   }
 }

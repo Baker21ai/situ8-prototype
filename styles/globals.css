@@ -488,3 +488,51 @@ html {
   -webkit-backdrop-filter: blur(8px) saturate(180%);
   background-color: rgba(0, 0, 0, 0.8);
 }
+
+/* Kanban Layout Fixes */
+.kanban-board {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem;
+  min-height: 100%;
+}
+
+.kanban-column {
+  flex-shrink: 0;
+  width: 20rem;
+  min-height: 100%;
+}
+
+.kanban-card {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.kanban-card:last-child {
+  margin-bottom: 0;
+}
+
+/* Prevent card overlapping */
+.enterprise-activity-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure proper spacing in Kanban columns */
+.kanban-column .scroll-area {
+  padding: 0.75rem;
+}
+
+.kanban-column .scroll-area > div {
+  width: 100%;
+}
+
+/* Fix for EnterpriseActivityCard in Kanban */
+.kanban-column .enterprise-activity-card .card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}

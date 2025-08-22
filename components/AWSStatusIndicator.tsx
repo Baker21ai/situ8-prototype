@@ -25,7 +25,7 @@ interface AWSStatusIndicatorProps {
 
 export function AWSStatusIndicator({ className = '', showDetails = false }: AWSStatusIndicatorProps) {
   const apiClient = useApiClient();
-  const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true';
+  const useAwsApi = import.meta.env.VITE_USE_AWS_API === 'true';
   const hasApiClient = !!apiClient;
   
   // Determine status
@@ -112,7 +112,7 @@ export function AWSStatusIndicator({ className = '', showDetails = false }: AWSS
  */
 export function useAWSStatus() {
   const apiClient = useApiClient();
-  const useAwsApi = process.env.REACT_APP_USE_AWS_API === 'true';
+  const useAwsApi = import.meta.env.VITE_USE_AWS_API === 'true';
   const hasApiClient = !!apiClient;
   
   return {

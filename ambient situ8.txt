@@ -1,0 +1,256 @@
+================================================================================
+        SITU8 OPERATIONS LAYER FOR AMBIENT AI - MVP ARCHITECTURE
+================================================================================
+
+Awesome—here's a tight, end‑to‑end ASCII map of Situ8-as-the-operations-layer 
+on top of Ambient, exactly per your MVP scope (Ambient-only integration, SOP 
+semi‑automation w/ human approval, Chime comms, maps + manual guard assign, 
+evidence preview + attach).
+
+================================================================================
+1) HIGH-LEVEL SYSTEM ARCHITECTURE
+================================================================================
+
+               AMBIENT.AI (source of truth for detections)
+            ┌──────────────────────────────────────────────┐
+            │  Webhook: alert_id, type, location, ts, ...  │
+            └───────────────┬──────────────────────────────┘
+                            │ 1. inbound event
+                      ┌─────▼─────┐
+                      │ API GW    │  (AWS API Gateway - REST/WebSocket)
+                      └─────┬─────┘
+                            │ 2. validate + enqueue
+                     ┌──────▼──────┐
+                     │ Ingest Lmd  │  (Lambda: schema/tenant check, auth)
+                     └──────┬──────┘
+                            │ 3. fan-out
+             ┌──────────────▼──────────────┐
+             │ Event Bus / Queue            │  (Amazon EventBridge or SQS)
+             └───────┬──────────┬──────────┘
+                     │4a         │4b
+        ┌────────────▼───┐   ┌───▼─────────────────┐
+        │ Activity Svc   │   │ Rules/SOP Engine     │
+        │ (RDS Postgres) │   │ (Lmd or Step Fn)     │
+        └───────┬────────┘   └───┬─────────────────┘
+                │5 persist        │5' match SOPs + build recommended actions
+                │                 │
+                │                 ▼
+                │          ┌───────────────┐
+                │          │ Pending Case  │  (status=PENDING_APPROVAL)
+                │          │  Orchestrator │
+                │          └──────┬────────┘
+                │                 │6 notify UI
+                │                 │
+         ┌──────▼──────┐    ┌─────▼─────┐     ┌──────────────────────────┐
+         │ Web App     │    │ Comms Svc │     │ Evidence Proxy/Preview   │
+         │ (React)     │    │ (Chime)   │     │  (stills/GIF; link-outs) │
+         └─────┬───────┘    └─────┬─────┘     └──────────┬───────────────┘
+               │7 operator approves  │8 PTT + Messaging           │9 fetch preview
+               ▼                     ▼                            ▼
+        ┌───────────────┐     ┌──────────────┐             ┌──────────────┐
+        │ Action Exec   │     │ Transcription│             │ Case/Evidence│
+        │ (Lmd/StepFn)  │     │ (optional)   │             │ (RDS + S3)   │
+        └──────┬────────┘     └─────┬────────┘             └──────┬───────┘
+               │10 audit log        │                            │
+               ▼                    ▼                            ▼
+           ┌───────────┐     ┌───────────┐                 ┌───────────┐
+           │ Audit Svc │     │ Analytics  │                 │ Reporting  │  (later)
+           └───────────┘     └───────────┘                 └───────────┘
+
+================================================================================
+2) OPERATOR UX FLOW (Activities → Pending Case → Approve → Execute)
+================================================================================
+
+[Activities Stream]
+  ├─ Card: Tailgate @ Bldg A (Ambient)
+  │    • Severity: High (from Ambient)
+  │    • Preview: still/GIF
+  │    • Buttons: [View] [Escalate] [Assign Guard] [Add to Case]
+  │
+  └─ Operator clicks [View]
+        ↓
+[Incident/Activity Modal ("Incident Manager")]
+  • SOP suggestions loaded (matched by type+location+time)
+  • "Pending Case" banner (system pre-created)
+  • Actions (pre-staged, editable):
+        [ Notify Supervisor ] [ Assign Guard ] [ Radio Broadcast ]
+        [ Create Incident ] [ Start Case Timeline ] ...
+  • Buttons: [Approve & Execute] [Edit Actions] [Reject]
+        ↓
+[Approve & Execute]
+  • System executes actions (with Chime PTT/msg, assignments, etc.)
+  • Timeline updates in real time
+  • Case status: PENDING → ACTIVE
+        ↓
+[Case View]
+  • Linked activities, evidence previews, comms log, assignments
+  • Button: [Add Activity to Case], [Attach Evidence], [Close Case]
+
+================================================================================
+3) SOP SEMI-AUTOMATION (Human-in-Loop) — STATE MACHINE
+================================================================================
+
+                ┌─────────────────────────────────┐
+                │ Activity Ingested (Ambient)     │
+                └───────────────┬─────────────────┘
+                                │ match SOP
+                                ▼
+                    ┌────────────────────────┐
+                    │ Case: PENDING_APPROVAL │  (actions pre-staged)
+                    └───────────────┬────────┘
+                        ┌───────────┴───────────┐
+                        ▼                       ▼
+              ┌──────────────────┐     ┌─────────────────┐
+              │ APPROVED         │     │ REJECTED        │
+              │ (execute actions)│     │ (close/no-op)   │
+              └───┬──────────────┘     └─────────────────┘
+                  │ actions firing
+                  ▼
+           ┌───────────────────┐
+           │ ACTIVE            │ (timeline, comms, assignments)
+           └───┬───────────────┘
+               │ resolution entered
+               ▼
+           ┌───────────────────┐
+           │ RESOLVED → CLOSED │
+           └───────────────────┘
+
+================================================================================
+4) DATA MODEL (MVP slice)
+================================================================================
+
+TENANT(id, name, plan, ...)
+USER(id, tenant_id, name, role, group_id, ...)
+USER_GROUP(id, tenant_id, name, permissions)
+
+ACTIVITY(id, tenant_id, ambient_alert_id, type, severity, location_id, ts, 
+         status, preview_url, ...)
+INCIDENT(id, tenant_id, title, priority, status, created_from_activity_id, ...)
+CASE(id, tenant_id, title, status, lead_user_id, created_ts, closed_ts, ...)
+
+CASE_ACTIVITY(case_id, activity_id)
+CASE_INCIDENT(case_id, incident_id)
+
+SOP_RULE(id, tenant_id, match: {type, location, hours, severity}, 
+         actions_json, requires_approval:boolean)
+PENDING_CASE_QUEUE(id, tenant_id, activity_id, proposed_actions_json, 
+                   created_ts, status:PENDING/APPROVED/REJECTED)
+
+ASSIGNMENT(id, case_id or incident_id, user_id or user_group_id, status)
+EVIDENCE(id, tenant_id, case_id, source:AMBIENT/SITU8, url, type, ts, 
+         metadata_json)
+
+AUDIT_LOG(id, tenant_id, actor(User/System), action, subject_type, 
+          subject_id, ts)
+
+================================================================================
+5) ACTIVITY LOGIC & SOP MATCHING (what we automated vs Ambient)
+================================================================================
+
+Ambient → Situ8:
+  • Ambient provides: type, severity, location, ts, alert_id, 
+    (optionally) preview asset
+  • Situ8 DOES NOT re-score severity for MVP
+  • Situ8 DOES:
+      - Map to tenant SOP_RULEs
+      - Apply org overrides (e.g., tailgate @ HQ => Critical routing)
+      - Pre-stage Actions into PENDING_CASE_QUEUE
+      - Notify operator UI + Comms as configured
+
+================================================================================
+6) EVIDENCE PREVIEW (Option 2) — Minimal but Useful
+================================================================================
+
+[Activity Card] —— shows Ambient still/GIF via proxy/signed URL
+     │
+     ├─ [Add to Case] → links activity + preview into CASE
+     └─ [Open in Ambient] → deep-link (new tab) for full video review
+
+[Case View]
+  • Evidence list: {activity_id, preview, source=Ambient, ts}
+  • Later: allow uploads from guards; chain-of-custody (post-MVP)
+
+================================================================================
+7) MAPS + GUARD MANAGEMENT (no real-time tracking in MVP)
+================================================================================
+
+[Maps Panel]
+  • Site → Building → Floor hierarchy
+  • Cameras (static), Zones, Points of Interest
+  • Guards shown as ASSIGNABLE units (no live GPS)
+  • From Activity/Incident/Case:
+       [Assign Guard] → select user or user_group → status updates only
+
+================================================================================
+8) COMMUNICATIONS (Amazon Chime) — Voice + Text
+================================================================================
+
+PTT Radio (Chime Voice SDK)
+   • Channels per site/building
+   • Push-to-talk + mute
+   • (Optional) ASR/Transcribe → drop transcripts into activity/case timeline
+
+In-App Messaging (Chime Conversations)
+   • Threads per case/incident
+   • @mentions, file attach (later)
+
+================================================================================
+9) TWO CONCRETE SEQUENCES
+================================================================================
+
+A) Slip & Fall (Medical SOP)
+────────────────────────────
+
+Ambient detects "Slip & Fall" (High) ──▶ Ingest
+   └▶ SOP_RULE matches: {type=slip_fall} -> actions:
+         [Notify Shift Supervisor], [Create Incident], 
+         [Assign Medical Responder Group],
+         [Open Radio Broadcast Template], [Display EMS call card]
+   └▶ PENDING_CASE created (+ recommended actions)
+Operator opens Pending Case → [Approve & Execute]
+   └▶ Incident created, assignment made, PTT broadcast template opens,
+      optional transcript captured, evidence preview linked
+Case ACTIVE → operator updates timeline → RESOLVED → CLOSED
+
+B) Tailgate (Access Control SOP)
+─────────────────────────────────
+
+Ambient detects "Tailgate" (Medium at Warehouse; High at HQ) ──▶ Ingest
+   └▶ Org override: If location=HQ → treat as HIGH → escalate path
+   └▶ PENDING_CASE with actions:
+         [Create Incident], [Assign Nearby Guard Group], 
+         [Notify Security Desk],
+         [Flag Badge IDs?]* (note: badge ops are future/post‑MVP if Lenel/PAX)
+Operator approves → Actions fire → Case ACTIVE → resolve/close
+
+================================================================================
+10) MILESTONE ANCHORS (to turn into your 2‑month plan next)
+================================================================================
+
+M1 FOUNDATION
+  • Ambient webhook ingest, auth, multi-tenant schema
+  • Activity Stream (priority, filters), preview proxy
+  • Chime baseline (PTT + basic messaging)
+
+M2 SOP CORE
+  • SOP_RULE model + matcher
+  • Pending Case orchestration (approve/reject)
+  • Action Executor (assignments, comms triggers, incident creation)
+
+M3 CASE & EVIDENCE
+  • Case view + timeline
+  • "Add Activity to Case" + evidence previews
+  • Manual guard assignment from activity/incident/case
+
+M4 POLISH & PILOT
+  • Maps hierarchy, assign-from-map
+  • UI hardening, audit log, basic analytics, seed data
+  • Pilot-readiness checklist (perf, error handling, runbooks)
+
+────────────────────────────────────────────────────────────────────────────────
+
+⸻
+
+If this looks right, I'll convert these anchors into a crisp 2‑month MVP 
+roadmap with weekly deliverables, owners, and exit criteria (no fluff, all 
+checkboxes).

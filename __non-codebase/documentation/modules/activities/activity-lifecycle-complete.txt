@@ -1,0 +1,244 @@
+                    🏢 SITU8 ACTIVITY LIFECYCLE - COMPLETE BUSINESS LOGIC FLOW 🏢
+    ═══════════════════════════════════════════════════════════════════════════════════
+
+    📥 ACTIVITY INPUT SOURCES
+    ┌──────────────────────────────────────────────────────────────────────────────┐
+    │                                                                                │
+    │  1️⃣ MANUAL ENTRY (Guards/Officers)     2️⃣ EXTERNAL SYSTEMS              3️⃣ WEBSOCKET │
+    │  ┌─────────────────────────────┐    ┌──────────────────────────┐    ┌─────────┐│
+    │  │ UI Form Submission           │    │ • Access Control Systems │    │ Future  ││
+    │  │ • Type: security/medical/etc │    │ • Security Cameras (AI)  │    │ Real-   ││
+    │  │ • Title & Description        │    │ • Motion Sensors         │    │ time    ││
+    │  │ • Location/Building/Zone     │    │ • Fire/Smoke Detectors   │    │ Events  ││
+    │  │ • Priority Setting           │    │ • Badge Readers          │    │         ││
+    │  │ ID: manual-{timestamp}-{rnd} │    │ ID: ext-{timestamp}-{rnd}│    │         ││
+    │  └────────────┬─────────────────┘    └──────────┬───────────────┘    └────┬────┘│
+    │               │                                  │                         │     │
+    │               ▼                                  ▼                         ▼     │
+    │         ActivityFactory.createManual()    ActivityFactory.createFromExternalSystem()│
+    └───────────────────────────────────┬──────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ╔═══════════════════════════════════════════════════════════════════════════════════╗
+    ║                          ACTIVITY CREATION & INITIALIZATION                        ║
+    ║                                                                                    ║
+    ║  new Activity({                                                                    ║
+    ║    id: 'ACT-2024-001234',                                                        ║
+    ║    type: 'security-breach',        // medical|bol-event|alert|property-damage    ║
+    ║    status: 'detecting',            // ALL activities start as 'detecting'        ║
+    ║    priority: 'high',               // low|medium|high|critical                   ║
+    ║    created_by: 'garcia.m',         // or 'system' for automated                  ║
+    ║    confidence: 0.85,               // For AI/sensor inputs                       ║
+    ║    externalData: {...}             // Source system payload if applicable        ║
+    ║  })                                                                               ║
+    ╚═══════════════════════════════════════════════════════════════════════════════════╝
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                            🏷️ AUTO-TAGGING RULES ENGINE                              │
+    │                                                                                      │
+    │  System Tags Generated:                                                             │
+    │  • trigger:{integration|human}     - Based on created_by field                      │
+    │  • location:{site-name}            - From metadata.site                             │
+    │  • time:{business-hours|after-hours} - If 9am-5pm then business-hours              │
+    │  • confidence:{value}              - If confidence > 0                              │
+    │                                                                                      │
+    │  Example: ['trigger:human', 'location:main-campus', 'time:after-hours']            │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                         📋 BUSINESS RULES ENFORCEMENT                                │
+    │                                                                                      │
+    │  1. RETENTION POLICY                                                                │
+    │     • retention_date = now + 30 days                                                │
+    │     • is_archived = false                                                           │
+    │                                                                                      │
+    │  2. STATUS TRANSITION RULES                                                         │
+    │     Officers can:    detecting → assigned → responding → resolved (forward only)    │
+    │     Supervisors can: Any transition (including backward, with approval)             │
+    │                                                                                      │
+    │  3. APPROVAL REQUIREMENTS                                                           │
+    │     • Backward transitions from 'resolved' require approval                         │
+    │     • High-priority activities may require supervisor assignment                    │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ╔═══════════════════════════════════════════════════════════════════════════════════╗
+    ║                     🚨 AUTO-INCIDENT CREATION DECISION ENGINE                       ║
+    ║                                                                                    ║
+    ║  checkAutoIncidentCreation(activity) {                                            ║
+    ║    if (activity.type === 'patrol' || activity.type === 'evidence') {              ║
+    ║      return NO_INCIDENT; // These types never create incidents                    ║
+    ║    }                                                                               ║
+    ║                                                                                    ║
+    ║    // ALL other activity types create PENDING incidents                           ║
+    ║    return CREATE_PENDING_INCIDENT;                                                ║
+    ║  }                                                                                 ║
+    ║                                                                                    ║
+    ║  Priority Mapping:                                                                ║
+    ║  • medical → critical                                                             ║
+    ║  • security-breach, bol-event → high                                              ║
+    ║  • alert, property-damage → medium                                                ║
+    ╚═══════════════════════════════════════════════════════════════════════════════════╝
+                                        │
+                           ┌────────────┴────────────┐
+                           │                         │
+                    [No Incident]            [Create Incident]
+                    (patrol/evidence)               │
+                                                    ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                    👤 HUMAN-IN-THE-LOOP INCIDENT CREATION                           │
+    │                                                                                      │
+    │  createIncidentFromActivity() {                                                     │
+    │    incident = {                                                                     │
+    │      id: 'INC-2024-000456',                                                        │
+    │      title: 'Incident: ' + activity.title,                                         │
+    │      status: 'pending',              // ALWAYS starts as pending                   │
+    │      requires_validation: true,      // MUST be validated by human                 │
+    │      dismissible: true,              // Can be dismissed as false positive         │
+    │      trigger_activity_id: activity.id,                                             │
+    │      priority: activity.priority,    // Inherits from activity                     │
+    │      pending_until: now + 5 minutes, // Validation deadline                        │
+    │      escalation_time: now + 10 min,  // Auto-escalate if not validated            │
+    │      escalation_target: 'supervisor' // Who gets escalation                        │
+    │    }                                                                                │
+    │  }                                                                                  │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ╔═══════════════════════════════════════════════════════════════════════════════════╗
+    ║                         🔄 SUPERVISOR VALIDATION WORKFLOW                           ║
+    ║                                                                                    ║
+    ║  ┌──────────────┐                                                                 ║
+    ║  │   PENDING    │ ← All incidents start here                                      ║
+    ║  │   INCIDENT   │                                                                  ║
+    ║  └──────┬───────┘                                                                 ║
+    ║         │                                                                          ║
+    ║    [Supervisor Reviews]                                                           ║
+    ║         │                                                                          ║
+    ║    ┌────┴────┐                                                                    ║
+    ║    │Decision?│                                                                    ║
+    ║    └────┬────┘                                                                    ║
+    ║         │                                                                          ║
+    ║    ┌────┴──────┬──────────┬──────────┐                                          ║
+    ║    ▼           ▼          ▼          ▼                                           ║
+    ║  APPROVE    DISMISS    ESCALATE   TIMEOUT                                         ║
+    ║    │           │          │          │                                            ║
+    ║    ▼           ▼          ▼          ▼                                           ║
+    ║  Status:     Marked as   Assign to  Auto-escalate                                ║
+    ║  'active'    false       higher     to supervisor                                ║
+    ║              positive    authority  after 10 min                                  ║
+    ╚═══════════════════════════════════════════════════════════════════════════════════╝
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                           📡 REAL-TIME BROADCASTING                                  │
+    │                                                                                      │
+    │  WebSocket Message:                                                                 │
+    │  {                                                                                   │
+    │    action: 'activity_created',                                                      │
+    │    activity: { ...activityData },                                                   │
+    │    incident: { ...incidentData },  // If created                                   │
+    │    timestamp: '2024-03-15T14:23:00Z'                                               │
+    │  }                                                                                   │
+    │                                                                                      │
+    │  Broadcast to:                                                                       │
+    │  • All connected guards                                                             │
+    │  • Dispatch centers                                                                 │
+    │  • Command center displays                                                          │
+    │  • Mobile apps                                                                      │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                            📊 AUDIT TRAIL LOGGING                                    │
+    │                                                                                      │
+    │  Every state change creates audit entry:                                            │
+    │  {                                                                                   │
+    │    id: 'AUDIT-1234567890',                                                         │
+    │    timestamp: '2024-03-15T14:23:00Z',                                              │
+    │    user_id: 'garcia.m',                                                            │
+    │    action: 'activity_created',                                                      │
+    │    entity_type: 'activity',                                                         │
+    │    entity_id: 'ACT-2024-001234',                                                   │
+    │    description: 'Activity created via manual entry',                                │
+    │    changes: { before: null, after: {...} }                                        │
+    │  }                                                                                   │
+    │                                                                                      │
+    │  Audit events tracked:                                                              │
+    │  • Activity: create, update, assign, status_change, archive                         │
+    │  • Incident: auto_create, validate, dismiss, escalate                               │
+    │  • System: tag_generation, rule_evaluation, retention_policy                        │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ╔═══════════════════════════════════════════════════════════════════════════════════╗
+    ║                          INCIDENT RESPONSE WORKFLOW                                 ║
+    ║                         (After Supervisor Approval)                                 ║
+    ║                                                                                    ║
+    ║  ACTIVE INCIDENT                                                                   ║
+    ║  ├─ Dispatch guards                                                               ║
+    ║  ├─ Track response times                                                          ║
+    ║  ├─ Collect evidence                                                              ║
+    ║  └─ Update in real-time                                                           ║
+    ║                                                                                    ║
+    ║  Status Progression:                                                              ║
+    ║  pending → active → investigating → resolved                                       ║
+    ╚═══════════════════════════════════════════════════════════════════════════════════╝
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                        🔍 CASE CREATION (MANUAL ONLY)                               │
+    │                                                                                      │
+    │  NOTE: Cases are NOT automatically created                                          │
+    │  • Investigators manually create cases from incidents                               │
+    │  • Multiple incidents can be linked to one case                                     │
+    │  • Cases follow investigation workflow:                                             │
+    │    initiation → evidence_collection → analysis → conclusion                         │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+    ┌─────────────────────────────────────────────────────────────────────────────────────┐
+    │                          📈 PATTERN ANALYSIS & LEARNING                             │
+    │                                                                                      │
+    │  • Activities clustered by location, time, type                                     │
+    │  • Pattern detection for recurring issues                                           │
+    │  • False positive tracking to improve AI/sensor accuracy                           │
+    │  • Shift passdown includes unresolved activities/incidents                         │
+    │  • Monthly analytics on response times, resolution rates                           │
+    └─────────────────────────────────────────────────────────────────────────────────────┘
+
+    ═══════════════════════════════════════════════════════════════════════════════════
+                              KEY BUSINESS LOGIC INSIGHTS
+    ═══════════════════════════════════════════════════════════════════════════════════
+
+    🔐 SECURITY CONTROLS:
+    • NO incident goes live without human validation (prevents alert fatigue)
+    • ALL incidents start as 'pending' requiring supervisor review
+    • Dismissible flag allows marking false positives
+    • Escalation ensures nothing gets missed (10-minute timer)
+
+    ⚡ ACTIVITY TYPES & BEHAVIOR:
+    • patrol, evidence → Never create incidents (informational only)
+    • medical → Creates critical priority incident
+    • security-breach, bol-event → Creates high priority incident
+    • alert, property-damage → Creates medium priority incident
+
+    👥 ROLE-BASED PERMISSIONS:
+    • Officers: Can only move status forward (detecting → resolved)
+    • Supervisors: Can move any direction, validate incidents, dismiss false positives
+    • Admins: Full control including configuration changes
+
+    🔄 STATUS WORKFLOWS:
+    Activities: detecting → assigned → responding → resolved
+    Incidents: pending → active → investigating → resolved
+    Cases: draft → active → evidence_collection → analysis → completed
+
+    📊 DATA RETENTION:
+    • 30-day automatic retention for all activities
+    • Soft delete only (is_archived flag, never hard delete)
+    • Full audit trail preserved indefinitely
+    • Evidence files stored separately with longer retention
+
+    ═══════════════════════════════════════════════════════════════════════════════════

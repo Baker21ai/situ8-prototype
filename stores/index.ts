@@ -10,6 +10,7 @@ export { useCaseStore } from './caseStore';
 export { useBOLStore } from './bolStore';
 export { useAuditStore } from './auditStore';
 export { useUserStore, useAuth, useCurrentUser, usePermissions, useDemoMode } from './userStore';
+export { useAlertStore } from './alertStore';
 
 // Store utilities
 export const clearAllStorage = () => {
@@ -49,6 +50,7 @@ import { useCaseStore } from './caseStore';
 import { useBOLStore } from './bolStore';
 import { useAuditStore } from './auditStore';
 import { useUserStore } from './userStore';
+import { useAlertStore } from './alertStore';
 
 export const useAllStores = () => ({
   activity: useActivityStore(),
@@ -57,21 +59,32 @@ export const useAllStores = () => ({
   bol: useBOLStore(),
   audit: useAuditStore(),
   user: useUserStore(),
+  alert: useAlertStore(),
 });
 
 // Store initialization helper
 export const initializeStores = () => {
-  // Load initial data for activity store
+  // Load initial data for activity store (unless in ambient mode)
   const activityStore = useActivityStore.getState();
   if (activityStore.activities.length === 0) {
-    activityStore.loadActivities();
+    if (activityStore.ambientMode) {
+      console.log('🔄 Store init: In ambient mode, syncing with alerts instead of loading activities');
+      activityStore.syncWithAmbientAlerts();
+    } else {
+      console.log('📦 Store init: Loading regular activities');
+      activityStore.loadActivities();
+    }
   }
   
   // Enable real-time activity generation
   activityStore.startRealtimeGeneration();
   
+  // Initialize alert store with real-time subscriptions
+  const alertStore = useAlertStore.getState();
+  alertStore.subscribeToAlerts();
+  
   // Other stores will be initialized as needed
-  console.log('Situ8 stores initialized with real-time generation');
+  console.log('Situ8 stores initialized with real-time generation and alert monitoring');
 };
 
 // Development utilities

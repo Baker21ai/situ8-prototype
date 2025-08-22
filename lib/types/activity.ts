@@ -24,6 +24,9 @@ export interface BaseActivity {
   created_by: string; // User ID who created the activity
   updated_by: string; // User ID who last updated the activity
   
+  // Source system tracking
+  source?: 'AMBIENT' | 'SITU8' | 'MANUAL';
+  
   // Auto-tagging system
   system_tags: string[]; // Auto-generated tags based on type/location/etc
   user_tags: string[];   // Manual tags added by users
@@ -98,6 +101,13 @@ export interface EnterpriseActivity extends ActivityData {
   };
   // 🎯 RAW EXTERNAL SYSTEM DATA
   externalData?: ExternalSystemData;
+  
+  // 🎯 AMBIENT.AI INTEGRATION FIELDS
+  ambient_alert_id?: string;
+  source?: 'AMBIENT' | 'SITU8' | 'MANUAL';
+  preview_url?: string;
+  deep_link_url?: string;
+  confidence_score?: number;
 }
 
 // Badge holder information

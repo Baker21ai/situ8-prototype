@@ -1,6 +1,6 @@
 /**
- * Activities Page - Enterprise-scale activity management with comprehensive error handling
- * Integrates the new compound ActivityList component with production-ready error boundaries
+ * Activities Page - Unified Ambient.AI Alert and Activity Management
+ * Kanban-style interface for real-time security operations with Ambient.AI integration
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -11,10 +11,14 @@ import { CommunicationsPanel } from './CommunicationsPanel';
 import { RadioModal } from './RadioModal';
 import { CommunicationsPage } from './CommunicationsPage';
 import { CreateActivityModal } from './CreateActivityModal';
+import { AssignActivityModal } from './modals/AssignActivityModal';
+import { ModularCommandCenter } from './command/ModularCommandCenter';
 import { useActivityStore } from '../stores';
 import { useCaseStore } from '../stores/caseStore';
+import { useIncidentStore } from '../stores/incidentStore';
 import { useServices, useApiClient } from '../services/ServiceProvider';
 import { useModuleNavigation } from '../hooks/useModuleNavigation';
+import { useErrorTracking } from '../hooks/useErrorTracking';
 import { BreadcrumbNavigation } from './shared/BreadcrumbNavigation';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -41,6 +45,9 @@ import { Priority, Status } from '../lib/utils/status';
 import { EnterpriseActivity } from '../lib/types/activity';
 
 export function Activities() {
+  // Error tracking
+  const { trackAction, trackState, trackError, trackApi } = useErrorTracking('Activities');
+  
   // Navigation system integration
   const navigation = useModuleNavigation();
   
@@ -54,14 +61,19 @@ export function Activities() {
     filteredActivities, 
     loading: activitiesLoading,
     error: activitiesError,
-    createActivity
+    createActivity,
+    assignActivity,
+    enableAmbientMode
   } = useActivityStore();
   
   // Case management hooks
   const { createCase } = useCaseStore();
   
+  // Incident management hooks
+  const { createIncident } = useIncidentStore();
+  
   // Use services for business logic operations
-  const { isInitialized } = useServices();
+  const { isInitialized, incidentService } = useServices();
   
   // Add state for AWS API loading and error handling
   const [awsLoading, setAwsLoading] = useState(false);
@@ -96,11 +108,15 @@ export function Activities() {
   const [showRadioModal, setShowRadioModal] = useState(false);
   const [showCommunicationsPage, setShowCommunicationsPage] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCommandCenter, setShowCommandCenter] = useState(false);
+  const [commandCenterActivity, setCommandCenterActivity] = useState<EnterpriseActivity | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [activityToAssign, setActivityToAssign] = useState<EnterpriseActivity | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch activities from AWS API when configured
   const fetchAwsActivities = useCallback(async () => {
-    if (!useAwsApi) return;
+    if (!useAwsApi || !apiClient) return;
     
     setAwsLoading(true);
     setAwsError(null);
@@ -133,18 +149,32 @@ export function Activities() {
     }
   }, [useAwsApi, apiClient]);
 
-  // Fetch data on component mount and when refresh key changes
+  // Initialize Ambient mode once on mount
   useEffect(() => {
-    if (useAwsApi) {
-      fetchAwsActivities();
-    }
-  }, [fetchAwsActivities, refreshKey]);
-
+    console.log('🔄 Enabling Ambient mode...');
+    enableAmbientMode();
+  }, []); // Only run once on mount
+  
   // Choose data source based on configuration
   const currentActivities = useAwsApi ? awsActivities : filteredActivities;
   const currentLoading = useAwsApi ? awsLoading : activitiesLoading;
   const currentError = useAwsApi ? awsError : activitiesError;
+  
+  // Debug logging for current activities
+  useEffect(() => {
+    console.log('📊 Store filteredActivities count:', filteredActivities.length);
+    console.log('📊 Store filteredActivities sample:', filteredActivities.slice(0, 3));
+    console.log('📊 CurrentActivities (final) count:', currentActivities.length);
+    console.log('📊 CurrentActivities (final) sample:', currentActivities.slice(0, 3));
+  }, [filteredActivities, currentActivities]);
 
+  // Fetch AWS data when configuration changes
+  useEffect(() => {
+    if (useAwsApi) {
+      fetchAwsActivities();
+    }
+  }, [refreshKey, useAwsApi]);
+  
   // Handle case creation from activity
   const handleCreateCaseFromActivity = useCallback(async (activity: EnterpriseActivity) => {
     try {
@@ -172,22 +202,97 @@ export function Activities() {
     }
   }, [createCase]);
 
-  // Handle incident creation from activity (placeholder for future implementation)
+  // Handle incident creation from activity with full service integration
   const handleCreateIncidentFromActivity = useCallback(async (activity: EnterpriseActivity) => {
     try {
       console.log('Creating incident from activity:', activity.id);
-      // TODO: Implement incident creation when incident store is available
-      // const incidentData = {
-      //   title: `Incident: ${activity.title}`,
-      //   description: activity.description,
-      //   priority: activity.priority,
-      //   relatedActivities: [activity.id]
-      // };
-      // createIncident(incidentData);
+      
+      // Create audit context from current user
+      const auditContext = {
+        userId: 'current-user',
+        userName: 'Current User',
+        userRole: 'officer',
+        action: 'CREATE_INCIDENT_FROM_ACTIVITY',
+        reason: `Auto-escalation from activity ${activity.id}`
+      };
+      
+      // Check if we have the incident service for full business logic
+      if (incidentService) {
+        console.log('Using IncidentService for business logic compliance');
+        const result = await incidentService.createIncidentFromActivity(activity, auditContext);
+        
+        if (result.success && result.data) {
+          console.log('✅ Incident created via service:', result.data.id);
+          // The service will handle audit trails and business rules
+        } else {
+          console.error('❌ Service incident creation failed:', result.error);
+          throw new Error(result.error?.message || 'Service creation failed');
+        }
+      } else {
+        // Fallback to store-based creation
+        console.log('Using store fallback for incident creation');
+        const incidentData = {
+          title: `Incident: ${activity.title}`,
+          description: `Auto-created from activity: ${activity.description}`,
+          type: activity.type === 'medical' ? 'medical' : 
+                activity.type === 'security-breach' ? 'security' : 'operational',
+          priority: activity.priority,
+          status: 'active' as const,
+          source_activity_id: activity.id,
+          auto_created: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        };
+        
+        createIncident(incidentData);
+        console.log('✅ Incident created via store fallback');
+      }
     } catch (error) {
       console.error('Failed to create incident from activity:', error);
+      // You could add a toast notification here
+      // toast.error('Failed to create incident');
     }
-  }, []);
+  }, [incidentService, createIncident]);
+
+  // Handle case creation from incident (manual escalation)
+  const handleCreateCaseFromIncident = useCallback(async (incident: any) => {
+    try {
+      console.log('🔍 Escalating incident to investigation case:', incident.id);
+      
+      // Create audit context for case creation
+      const auditContext = {
+        userId: 'current-user',
+        userName: 'Current User',
+        userRole: 'officer',
+        action: 'ESCALATE_INCIDENT_TO_CASE',
+        reason: `Manual escalation from incident ${incident.id} to investigation case`
+      };
+      
+      const caseData = {
+        title: `Investigation: ${incident.title}`,
+        description: `Investigation case escalated from incident: ${incident.description}`,
+        type: 'incident_investigation' as const,
+        priority: incident.priority,
+        status: 'open' as const,
+        currentPhase: 'initiation' as const,
+        relatedIncidents: [incident.id],
+        sourceIncidentId: incident.id,
+        tags: ['incident-escalation', incident.type || 'general'],
+        initialFindings: `Related to incident: ${incident.title} (${incident.id})`,
+        investigationPlan: 'Comprehensive investigation plan to be developed based on incident details',
+        escalationReason: 'Manual escalation requested for detailed investigation'
+      };
+
+      createCase(caseData);
+      console.log('✅ Investigation case created from incident:', incident.id);
+      
+      // You could add a success notification here
+      // toast.success('Investigation case created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create case from incident:', error);
+      // toast.error('Failed to create investigation case');
+    }
+  }, [createCase]);
 
   // Handle activity selection with error boundary protection
   const handleActivitySelect = useCallback((activity: EnterpriseActivity) => {
@@ -203,6 +308,42 @@ export function Activities() {
     setSelectedActivity(null);
   }, []);
 
+  // Handle activity assignment
+  const handleAssignActivity = useCallback(async (activityId: string, assigneeId: string, notes?: string, notifyAssignee?: boolean) => {
+    try {
+      trackApi('assign_activity_start', { activityId, assigneeId });
+      
+      // Get personnel name from ID for assignment
+      const { getPersonnelById } = await import('../lib/data/personnel');
+      const personnel = getPersonnelById(assigneeId);
+      const assigneeName = personnel ? personnel.name : assigneeId;
+      
+      await assignActivity(activityId, assigneeName, {
+        userId: 'current-user',
+        userName: 'Current User',
+        userRole: 'admin',
+        action: 'assign_activity'
+      });
+      
+      // TODO: Implement notification logic if notifyAssignee is true
+      if (notifyAssignee && personnel) {
+        console.log(`Would notify ${personnel.name} (${personnel.contactInfo?.radio || personnel.contactInfo?.phone}) about assignment of ${activityId}`);
+      }
+      
+      // TODO: Add assignment notes to activity record
+      if (notes) {
+        console.log(`Assignment notes: ${notes}`);
+      }
+      
+      trackApi('assign_activity_success', { activityId, assigneeId });
+      setRefreshKey(prev => prev + 1); // Refresh the activity list
+    } catch (error) {
+      console.error('Error assigning activity:', error);
+      trackError('assign_activity_error', error);
+      throw error;
+    }
+  }, [assignActivity, trackApi, trackError]);
+
   // Handle activity actions with error boundary protection
   const handleActivityAction = useCallback((action: string, activity: EnterpriseActivity) => {
     try {
@@ -212,12 +353,18 @@ export function Activities() {
         handleCreateCaseFromActivity(activity);
       } else if (action === 'create_incident') {
         handleCreateIncidentFromActivity(activity);
+      } else if (action === 'command-center') {
+        setCommandCenterActivity(activity);
+        setShowCommandCenter(true);
+      } else if (action === 'assign') {
+        setActivityToAssign(activity);
+        setShowAssignModal(true);
       }
       // Additional action handling can be added here
     } catch (error) {
       console.error('Error handling activity action:', error);
     }
-  }, []);
+  }, [handleCreateCaseFromActivity, handleCreateIncidentFromActivity]);
 
   // Handle bulk actions with error boundary protection
   const handleBulkAction = useCallback((action: string, activities: EnterpriseActivity[]) => {
@@ -274,140 +421,7 @@ export function Activities() {
   return (
     <ActivityErrorBoundaryWrapper context="Activities Page Root">
       <div className="h-full flex flex-col bg-gray-50">
-        {/* Breadcrumb Navigation */}
-        <div className="flex-shrink-0 bg-white border-b px-3 py-2">
-          <BreadcrumbNavigation />
-        </div>
-        
-        {/* Enhanced Header with Facility Overview - Compact */}
-        <ActivityErrorBoundaryWrapper context="Activities Header">
-          <div className="flex-shrink-0 bg-white border-b shadow-sm">
-            <div className="p-3">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h1 className="text-xl font-semibold">Enterprise Activities Center</h1>
-                  <p className="text-sm text-muted-foreground">Amazon-scale security operations</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Service Status Indicators */}
-                  {currentLoading && (
-                    <Alert className="border-blue-600/20 bg-blue-600/10 px-2 py-1">
-                      <AlertDescription className="text-blue-400 font-medium text-xs">
-                        {useAwsApi ? 'Loading from AWS...' : 'Loading...'}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {currentError && (
-                    <Alert className="border-red-600/20 bg-red-600/10 px-2 py-1">
-                      <AlertDescription className="text-red-400 font-medium text-xs">
-                        {currentError}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {currentError && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSystemRefresh}
-                      className="flex items-center gap-1 h-8 px-3 text-sm border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      Retry
-                    </Button>
-                  )}
-                  
-                  <Badge className={`border-blue-200 ${isInitialized ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    <Activity className="h-3 w-3 mr-1" />
-                    {isInitialized ? 'Services Active' : 'Initializing'}
-                  </Badge>
-                  
-                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                    <Camera className="h-3 w-3 mr-1" />
-                    {facilityStats.totalCameras} cameras
-                  </Badge>
-                  
-                  <div className="flex items-center gap-2">
-                    {/* Create Activity Button */}
-                    <ActivityErrorBoundaryWrapper context="Create Activity Modal">
-                      <CreateActivityModal
-                        onActivityCreated={handleActivityCreated}
-                        trigger={
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="flex items-center gap-1 h-8 px-3 text-sm bg-green-600 hover:bg-green-700"
-                          >
-                            <Plus className="h-3 w-3" />
-                            Create Activity
-                          </Button>
-                        }
-                      />
-                    </ActivityErrorBoundaryWrapper>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowRadioModal(true)}
-                      className="flex items-center gap-1 h-8 px-3 text-sm"
-                    >
-                      <Radio className="h-3 w-3" />
-                      Radio
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCommunicationsPage(true)}
-                      className="flex items-center gap-1 h-8 px-3 text-sm"
-                    >
-                      <Headphones className="h-3 w-3" />
-                      Comms
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Facility Stats Dashboard - Responsive & Compact */}
-              <ActivityErrorBoundaryWrapper context="Facility Stats Dashboard">
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-3 mb-3">
-                  {[
-                    { icon: Camera, value: facilityStats.totalCameras, label: 'Cameras', color: 'text-blue-600' },
-                    { icon: Activity, value: facilityStats.totalActivities, label: 'Activities', color: 'text-green-600' },
-                    { icon: AlertTriangle, value: facilityStats.criticalToday, label: 'Critical', color: 'text-red-600', critical: true },
-                    { icon: Building, value: facilityStats.buildingsMonitored, label: 'Buildings', color: 'text-purple-600' },
-                    { icon: Users, value: facilityStats.employeesOnSite.toLocaleString(), label: 'Employees', color: 'text-orange-600' },
-                    { icon: TrendingUp, value: facilityStats.systemUptime, label: 'Uptime', color: 'text-teal-600' },
-                    { icon: Shield, value: facilityStats.securityPersonnel, label: 'Security', color: 'text-indigo-600' },
-                    { icon: Zap, value: facilityStats.averageResponseTime, label: 'Response', color: 'text-yellow-600' }
-                  ].map(({ icon: Icon, value, label, color, critical }) => (
-                    <Card 
-                      key={label} 
-                      className={`p-2 transition-all duration-200 hover:shadow-md ${
-                        critical ? 'border-red-200 bg-red-50 hover:bg-red-100' : 'hover:scale-105'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className={`h-4 w-4 ${color} flex-shrink-0`} />
-                        <div className="min-w-0 flex-1">
-                          <div className={`text-sm md:text-lg font-semibold ${critical ? 'text-red-700' : ''} truncate`}>
-                            {value}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {label}
-                          </div>
-                        </div>
-                      </div>
-                      {critical && parseInt(value.toString()) > 0 && (
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              </ActivityErrorBoundaryWrapper>
-            </div>
-          </div>
-        </ActivityErrorBoundaryWrapper>
+        {/* (Header block hidden) */}
 
         {/* Main Content Area - Optimized for Content Density */}
         <div className="flex-1 min-h-0 flex gap-3 p-3 overflow-hidden">
@@ -425,33 +439,11 @@ export function Activities() {
                     realTimeMode={true}
                     height={600}
                     className="h-full max-w-full"
-                  >
-                    {/* Header with Search and Controls */}
-                    <ActivityErrorBoundaryWrapper context="Activity List Header">
-                      <ActivityList.Header>
-                        <div className="flex items-center justify-between p-4 border-b">
-                          <div className="flex items-center gap-4">
-                            <h2 className="text-lg font-semibold flex items-center gap-2">
-                              <BarChart3 className="h-5 w-5" />
-                              Activity Stream
-                            </h2>
-                            <ActivityList.Stats />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <ActivityList.Search />
-                            <ActivityList.ViewToggle />
-                            <Button variant="outline" size="sm">
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </ActivityList.Header>
-                    </ActivityErrorBoundaryWrapper>
 
-                    {/* Filters Section */}
-                    <ActivityErrorBoundaryWrapper context="Activity List Filters">
-                      <ActivityList.Filters />
-                    </ActivityErrorBoundaryWrapper>
+                  >
+                    {/* Header removed to avoid extra white space above first activity */}
+
+                    {/* Filters temporarily hidden to eliminate any top spacing */}
 
                     {/* Main Content - Virtual Scrolling List */}
                     <ActivityErrorBoundaryWrapper context="Activity List Content">
@@ -544,6 +536,33 @@ export function Activities() {
             </div>
           </ActivityErrorBoundaryWrapper>
         )}
+
+        {/* Modular Command Center */}
+        {showCommandCenter && commandCenterActivity && (
+          <ActivityErrorBoundaryWrapper context="Modular Command Center">
+            <ModularCommandCenter
+              activity={commandCenterActivity}
+              onClose={() => {
+                setShowCommandCenter(false);
+                setCommandCenterActivity(null);
+              }}
+            />
+          </ActivityErrorBoundaryWrapper>
+        )}
+
+        {/* Assignment Modal */}
+        <ActivityErrorBoundaryWrapper context="Assignment Modal">
+          <AssignActivityModal
+            isOpen={showAssignModal}
+            activity={activityToAssign}
+            onClose={() => {
+              setShowAssignModal(false);
+              setActivityToAssign(null);
+            }}
+            onAssign={handleAssignActivity}
+            isLoading={activitiesLoading}
+          />
+        </ActivityErrorBoundaryWrapper>
       </div>
     </ActivityErrorBoundaryWrapper>
   );

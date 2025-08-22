@@ -1,0 +1,325 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Situ8 API Gateway for Ambient.AI Integration'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues: ['dev', 'staging', 'prod']
+    Description: 'Deployment environment'
+  
+  AppName:
+    Type: String
+    Default: 'situ8-ambient'
+    Description: 'Application name for resource naming'
+
+Resources:
+  # ===== API GATEWAY REST API =====
+  
+  AmbientApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${AppName}-api-${Environment}'
+      Description: 'API Gateway for Situ8 Ambient.AI integration'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Policy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 'execute-api:Invoke'
+            Resource: '*'
+            Condition:
+              IpAddress:
+                aws:SourceIp:
+                  - '0.0.0.0/0'  # Configure with Ambient.AI IP ranges in production
+
+  # ===== RESOURCES =====
+  
+  # /ambient resource
+  AmbientResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ParentId: !GetAtt AmbientApiGateway.RootResourceId
+      PathPart: 'ambient'
+
+  # /ambient/webhook resource
+  WebhookResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ParentId: !Ref AmbientResource
+      PathPart: 'webhook'
+
+  # /api resource for general API endpoints
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ParentId: !GetAtt AmbientApiGateway.RootResourceId
+      PathPart: 'api'
+
+  # /api/activities resource
+  ActivitiesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ParentId: !Ref ApiResource
+      PathPart: 'activities'
+
+  # /api/pending-cases resource
+  PendingCasesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ParentId: !Ref ApiResource
+      PathPart: 'pending-cases'
+
+  # ===== LAMBDA INTEGRATION =====
+  
+  # POST /ambient/webhook - Webhook receiver
+  WebhookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ResourceId: !Ref WebhookResource
+      HttpMethod: POST
+      AuthorizationType: NONE  # Using API key authentication in Lambda
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
+          - LambdaArn: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:situ8-ambient-webhook-${Environment}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseHeaders:
+            Access-Control-Allow-Origin: true
+            Access-Control-Allow-Headers: true
+            Access-Control-Allow-Methods: true
+        - StatusCode: 400
+        - StatusCode: 401
+        - StatusCode: 500
+
+  # OPTIONS /ambient/webhook - CORS preflight
+  WebhookOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ResourceId: !Ref WebhookResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Ambient-Signature'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  # GET /api/activities - List activities
+  ActivitiesGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      ResourceId: !Ref ActivitiesResource
+      HttpMethod: GET
+      AuthorizationType: AWS_IAM  # Cognito authentication
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
+          - LambdaArn: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:situ8-activities-api-${Environment}'
+
+  # ===== LAMBDA PERMISSIONS =====
+  
+  WebhookLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub 'situ8-ambient-webhook-${Environment}'
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AmbientApiGateway}/*/*'
+
+  ActivitiesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub 'situ8-activities-api-${Environment}'
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AmbientApiGateway}/*/*'
+
+  # ===== WAF FOR SECURITY =====
+  
+  WebhookWAF:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${AppName}-webhook-waf-${Environment}'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      Rules:
+        # Rate limiting rule
+        - Name: RateLimitRule
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: 1000  # requests per 5 minutes
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${AppName}RateLimit${Environment}'
+        
+        # Block requests without proper headers
+        - Name: RequireSignatureHeader
+          Priority: 2
+          Statement:
+            NotStatement:
+              Statement:
+                ByteMatchStatement:
+                  SearchString: 'x-ambient-signature'
+                  FieldToMatch:
+                    Headers:
+                      Name: x-ambient-signature
+                      MatchPattern:
+                        All: {}
+                      MatchScope: KEY
+                      OversizeHandling: CONTINUE
+                  TextTransformations:
+                    - Priority: 0
+                      Type: LOWERCASE
+                  PositionalConstraint: EXACTLY
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${AppName}RequireSignature${Environment}'
+
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${AppName}WAF${Environment}'
+
+  # Associate WAF with API Gateway
+  WebhookWAFAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${AmbientApiGateway}/stages/${Environment}'
+      WebACLArn: !GetAtt WebhookWAF.Arn
+
+  # ===== DEPLOYMENT =====
+  
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - WebhookMethod
+      - WebhookOptionsMethod
+      - ActivitiesGetMethod
+    Properties:
+      RestApiId: !Ref AmbientApiGateway
+      StageName: !Ref Environment
+      StageDescription: !Sub 'Deployment for ${Environment} environment'
+
+  # ===== CLOUDWATCH LOGS =====
+  
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${AppName}-${Environment}'
+      RetentionInDays: 30
+
+  # ===== CLOUDWATCH ALARMS =====
+  
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AppName}-high-error-rate-${Environment}'
+      AlarmDescription: 'High error rate on webhook endpoint'
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub '${AppName}-api-${Environment}'
+        - Name: Stage
+          Value: !Ref Environment
+      AlarmActions:
+        - !Ref ErrorNotificationTopic
+
+  WebhookLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${AppName}-webhook-latency-${Environment}'
+      AlarmDescription: 'High latency on webhook endpoint'
+      MetricName: Latency
+      Namespace: AWS/ApiGateway
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 5000  # 5 seconds
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub '${AppName}-api-${Environment}'
+        - Name: Stage
+          Value: !Ref Environment
+
+  # ===== SNS FOR NOTIFICATIONS =====
+  
+  ErrorNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${AppName}-errors-${Environment}'
+      DisplayName: 'Situ8 Ambient Integration Errors'
+
+Outputs:
+  ApiGatewayId:
+    Description: 'API Gateway ID'
+    Value: !Ref AmbientApiGateway
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiGatewayId'
+
+  ApiGatewayRootResourceId:
+    Description: 'API Gateway Root Resource ID'
+    Value: !GetAtt AmbientApiGateway.RootResourceId
+    Export:
+      Name: !Sub '${AWS::StackName}-RootResourceId'
+
+  WebhookEndpoint:
+    Description: 'Webhook endpoint URL for Ambient.AI'
+    Value: !Sub 'https://${AmbientApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/ambient/webhook'
+    Export:
+      Name: !Sub '${AWS::StackName}-WebhookEndpoint'
+
+  ApiBaseUrl:
+    Description: 'Base URL for API endpoints'
+    Value: !Sub 'https://${AmbientApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/api'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiBaseUrl'
+
+  WAFArn:
+    Description: 'WAF ARN for additional protection'
+    Value: !GetAtt WebhookWAF.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-WAFArn'

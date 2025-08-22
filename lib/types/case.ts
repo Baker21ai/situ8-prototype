@@ -113,6 +113,7 @@ export type CaseType =
 // Case status progression
 export type CaseStatus = 
   | 'draft'          // Being prepared
+  | 'open'           // Newly opened case
   | 'active'         // Under active investigation
   | 'pending_review' // Awaiting review/approval
   | 'on_hold'        // Temporarily suspended

@@ -29,7 +29,10 @@ import {
   FileText,
   Users,
   Building,
-  Scale
+  Scale,
+  Edit,
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
@@ -38,6 +41,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import { CaseEditDialog } from './dialogs/CaseEditDialog';
+import { CaseDeleteConfirm } from './dialogs/CaseDeleteConfirm';
 import { 
   CaseStatus, 
   CaseType,
@@ -146,6 +158,7 @@ const priorityConfig: Record<'low' | 'medium' | 'high' | 'critical', { color: st
 // Status colors
 const statusConfig: Record<CaseStatus, { color: string; label: string }> = {
   draft: { color: 'bg-gray-100 text-gray-800', label: 'Draft' },
+  open: { color: 'bg-green-100 text-green-800', label: 'Open' },
   active: { color: 'bg-blue-100 text-blue-800', label: 'Active' },
   pending_review: { color: 'bg-yellow-100 text-yellow-800', label: 'Pending Review' },
   on_hold: { color: 'bg-orange-100 text-orange-800', label: 'On Hold' },
@@ -230,6 +243,10 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [showCaseDetail, setShowCaseDetail] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingCaseId, setDeletingCaseId] = useState<string | null>(null);
 
   // Fetch cases from AWS API when configured
   const fetchAwsCases = React.useCallback(async () => {
@@ -355,6 +372,20 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
     setShowCaseDetail(true);
     onSelectCase?.(caseItem);
   };
+  
+  // Handle edit case
+  const handleEditCase = (caseId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingCaseId(caseId);
+    setShowEditDialog(true);
+  };
+  
+  // Handle delete case
+  const handleDeleteCase = (caseId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDeletingCaseId(caseId);
+    setShowDeleteDialog(true);
+  };
 
   // Render loading state
   if (currentLoading && currentCases.length === 0) {
@@ -394,12 +425,14 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
   const renderListItem = (caseItem: SimpleCase) => (
     <Card
       key={caseItem.id}
-      className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => handleSelectCase(caseItem)}
+      className="hover:shadow-md transition-shadow"
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-2">
+          <div 
+            className="flex-1 space-y-2 cursor-pointer"
+            onClick={() => handleSelectCase(caseItem)}
+          >
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-lg">{caseItem.title}</h3>
               <Badge variant="outline" className="text-xs font-mono">
@@ -468,6 +501,36 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
               </div>
             )}
           </div>
+          
+          {/* Action buttons */}
+          <div className="flex items-start ml-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => handleEditCase(caseItem.id, e)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Case
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={(e) => handleDeleteCase(caseItem.id, e)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Case
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -477,17 +540,49 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
   const renderGridItem = (caseItem: SimpleCase) => (
     <Card
       key={caseItem.id}
-      className="hover:shadow-md transition-shadow cursor-pointer h-full"
-      onClick={() => handleSelectCase(caseItem)}
+      className="hover:shadow-md transition-shadow h-full"
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-base line-clamp-2">{caseItem.title}</CardTitle>
-          {isOverdue(caseItem) && (
-            <Badge className="bg-red-100 text-red-800 flex-shrink-0">
-              <Clock className="w-3 h-3" />
-            </Badge>
-          )}
+          <CardTitle 
+            className="text-base line-clamp-2 cursor-pointer"
+            onClick={() => handleSelectCase(caseItem)}
+          >
+            {caseItem.title}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {isOverdue(caseItem) && (
+              <Badge className="bg-red-100 text-red-800 flex-shrink-0">
+                <Clock className="w-3 h-3" />
+              </Badge>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => handleEditCase(caseItem.id, e)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Case
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={(e) => handleDeleteCase(caseItem.id, e)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Case
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="flex gap-2 mt-2">
           <Badge className={priorityConfig[caseItem.priority].color}>
@@ -500,7 +595,10 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-3">
+      <CardContent 
+        className="space-y-3 cursor-pointer"
+        onClick={() => handleSelectCase(caseItem)}
+      >
         <Badge variant="outline" className="text-xs font-mono">
           {caseItem.caseNumber}
         </Badge>
@@ -849,18 +947,46 @@ export function Cases({ onCreateNew, onSelectCase }: CasesProps) {
               }}
               onEdit={(caseItem) => {
                 setShowCaseDetail(false);
-                // TODO: Open edit form
-                console.log('Edit case:', caseItem);
+                handleEditCase(caseItem.id);
               }}
               onDelete={(caseId) => {
                 setShowCaseDetail(false);
-                // TODO: Handle delete
-                console.log('Delete case:', caseId);
+                handleDeleteCase(caseId);
               }}
             />
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Edit Case Dialog */}
+      <CaseEditDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        caseId={editingCaseId || undefined}
+        onSuccess={() => {
+          setEditingCaseId(null);
+          // Refresh cases if using AWS API
+          if (useAwsApi) {
+            fetchAwsCases();
+          }
+        }}
+      />
+      
+      {/* Delete Case Dialog */}
+      {deletingCaseId && (
+        <CaseDeleteConfirm
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          caseId={deletingCaseId}
+          onSuccess={() => {
+            setDeletingCaseId(null);
+            // Refresh cases if using AWS API
+            if (useAwsApi) {
+              fetchAwsCases();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

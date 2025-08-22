@@ -84,13 +84,15 @@ export const VirtualizedActivityList = memo<VirtualizedActivityListProps>(({
   layoutMode = 'grid',
   className = '',
   height = 400,
-  showPrioritySegments = true,
+  // Default off to avoid top whitespace unless explicitly enabled
+  showPrioritySegments = false,
   enableScrollRestoration = true,
   enableKeyboardNavigation = true
 }) => {
   const listRef = useRef<FixedSizeList | VariableSizeList>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(0);
   const [scrollOffset, setScrollOffset] = useState<number>(0);
+  const measuredHeightsRef = useRef<Map<number, number>>(new Map());
   
   // Determine if we need variable heights (for clusters or different variants)
   const needsVariableHeight = useMemo(() => {
@@ -159,13 +161,24 @@ export const VirtualizedActivityList = memo<VirtualizedActivityListProps>(({
     onAction,
     selectedItems,
     compactMode,
-    layoutMode
+    layoutMode,
+    onMeasureHeight: (index: number, height: number) => {
+      const prev = measuredHeightsRef.current.get(index);
+      if (!prev || Math.abs(prev - height) > 2) {
+        measuredHeightsRef.current.set(index, height);
+        // Invalidate sizes from this index downwards to fix overlaps
+        if (listRef.current && 'resetAfterIndex' in listRef.current) {
+          (listRef.current as VariableSizeList).resetAfterIndex(index, true);
+        }
+      }
+    }
   }), [flattenedItems, variant, onSelect, onAction, selectedItems, compactMode, layoutMode]);
 
   // Calculate item height or use size getter for variable heights
   const itemHeight = useMemo(() => {
     if (needsVariableHeight) {
-      return createItemSizeGetter(flattenedItems, variant, compactMode);
+      const fallbackGetter = createItemSizeGetter(flattenedItems, variant, compactMode);
+      return (index: number) => measuredHeightsRef.current.get(index) || fallbackGetter(index);
     }
     return getItemHeight(variant, undefined, compactMode);
   }, [needsVariableHeight, flattenedItems, variant, compactMode]);
@@ -176,6 +189,14 @@ export const VirtualizedActivityList = memo<VirtualizedActivityListProps>(({
       listRef.current.scrollTo(scrollOffset);
     }
   }, [enableScrollRestoration, scrollOffset]);
+
+  // When layout-affecting props change, invalidate all cached sizes
+  useEffect(() => {
+    measuredHeightsRef.current.clear();
+    if (listRef.current && 'resetAfterIndex' in listRef.current) {
+      (listRef.current as VariableSizeList).resetAfterIndex(0, true);
+    }
+  }, [variant, compactMode, layoutMode, flattenedItems.length]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -302,25 +323,25 @@ export const VirtualizedActivityList = memo<VirtualizedActivityListProps>(({
       }}
     >
       <div className={`flex flex-col h-full ${className}`}>
-        {/* Priority Overview */}
-        {showPrioritySegments && (
-          <div className="flex-shrink-0 p-4">
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-red-600">{priorityStats.critical}</div>
-                <div className="text-sm text-red-800">Critical</div>
+        {/* Priority Overview - Only show if there are activities and totals > 0 */}
+        {showPrioritySegments && flattenedItems.length > 0 && (priorityStats.critical + priorityStats.high + priorityStats.medium + priorityStats.low) > 0 && (
+          <div className="flex-shrink-0 p-2">
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-red-600">{priorityStats.critical}</div>
+                <div className="text-xs text-red-800">Critical</div>
               </div>
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-orange-600">{priorityStats.high}</div>
-                <div className="text-sm text-orange-800">High</div>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-orange-600">{priorityStats.high}</div>
+                <div className="text-xs text-orange-800">High</div>
               </div>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-600">{priorityStats.medium}</div>
-                <div className="text-sm text-yellow-800">Medium</div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-yellow-600">{priorityStats.medium}</div>
+                <div className="text-xs text-yellow-800">Medium</div>
               </div>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-green-600">{priorityStats.low}</div>
-                <div className="text-sm text-green-800">Low</div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                <div className="text-lg font-bold text-green-600">{priorityStats.low}</div>
+                <div className="text-xs text-green-800">Low</div>
               </div>
             </div>
           </div>

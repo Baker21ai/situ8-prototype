@@ -1,11 +1,22 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { Amplify } from 'aws-amplify'
+import awsConfig from './aws-exports.js'
 import App from '../App.tsx'
 import '../styles/globals.css'
+import { initializeDevTools } from '../utils/devtools'
+import '../utils/debug-commands' // Constant auth error logging
+// import './test-env.ts' // Temporary env test - commented out for production build
+
+// Configure Amplify with AWS Cognito settings
+Amplify.configure(awsConfig)
 
 // Add error boundary and logging
 const isDev = import.meta.env.DEV;
 if (isDev) console.log('🚀 main.tsx: Starting app initialization');
+
+// Initialize DevTools in development
+initializeDevTools();
 
 // Check if root element exists
 const rootElement = document.getElementById('root');

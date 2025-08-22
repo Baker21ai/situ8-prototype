@@ -29,6 +29,9 @@ import { useActivityStore } from '../stores/activityStore';
 import { useIncidentStore } from '../stores/incidentStore';
 import { useAuditStore } from '../stores/auditStore';
 import { ActivityTypeMapper, ACTIVITY_TYPE_REGISTRY } from '../lib/config/activity-types.config';
+import { Activity, ActivityFactory } from '../src/domains/activities/entities/Activity';
+import { eventBus } from '../src/domains/activities/events/EventBus';
+import { activityEventHandler } from '../src/domains/activities/events/ActivityEventHandler';
 
 export class ActivityService extends BaseService<EnterpriseActivity, string> {
   private activityStore: ReturnType<typeof useActivityStore.getState>;
@@ -248,7 +251,13 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
       
       switch (rule.source) {
         case 'created_by':
-          value = activity.created_by === 'system' ? 'integration' : 'human';
+          if (activity.source === 'AMBIENT') {
+            value = 'ambient';
+          } else if (activity.created_by === 'system') {
+            value = 'integration';
+          } else {
+            value = 'human';
+          }
           break;
         case 'metadata.site':
           value = activity.metadata?.site || 'unknown';
@@ -396,6 +405,79 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
   }
 
   // Public service methods
+  async createActivityFromAmbient(
+    ambientData: {
+      ambient_alert_id: string;
+      type: ActivityType;
+      title: string;
+      location: string;
+      priority: Priority;
+      preview_url?: string;
+      deep_link_url?: string;
+      confidence_score?: number;
+      description?: string;
+      building?: string;
+      zone?: string;
+      confidence?: number;
+    },
+    context: AuditContext
+  ): ServiceMethod<EnterpriseActivity> {
+    try {
+      // Validation for Ambient-specific fields
+      if (!ambientData.ambient_alert_id) {
+        return this.createErrorResponse('Ambient alert ID is required for Ambient activities', 'VALIDATION_ERROR');
+      }
+      
+      // Create domain entity using Ambient factory
+      const domainActivity = ActivityFactory.createFromAmbient({
+        ...ambientData,
+        created_by: context.userId || 'ambient-system'
+      });
+
+      // Convert to persistence model
+      const activity: EnterpriseActivity = {
+        ...domainActivity.toSnapshot(),
+        id: `AMB-${Date.now().toString().padStart(6, '0')}`,
+        allowed_status_transitions: domainActivity.allowed_status_transitions,
+        requires_approval: domainActivity.requires_approval
+      } as EnterpriseActivity;
+
+      // Store the activity
+      this.activityStore.createActivity(activity, context);
+
+      // Publish domain events
+      const events = domainActivity.getUncommittedEvents();
+      for (const event of events) {
+        await eventBus.publish(event);
+      }
+      domainActivity.markEventsAsCommitted();
+
+      // Check for auto-incident creation
+      await this.checkAutoIncidentCreation(activity, context);
+
+      // Audit logging with Ambient-specific information
+      await this.auditLog(context, 'create_from_ambient', activity.id, undefined, {
+        ...activity,
+        ambient_integration: true,
+        ambient_alert_id: ambientData.ambient_alert_id
+      });
+
+      // Publish Ambient-specific event
+      await this.publishEvent({
+        eventType: 'activity.created_from_ambient',
+        entityType: 'activity',
+        entityId: activity.id,
+        userId: context.userId,
+        data: { activity, ambient_alert_id: ambientData.ambient_alert_id }
+      });
+
+      return this.createSuccessResponse(activity, 'Activity created from Ambient.AI successfully');
+
+    } catch (error) {
+      return this.createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
   async createActivity(
     activityData: Partial<EnterpriseActivity>,
     context: AuditContext
@@ -407,32 +489,70 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
       // Business rules
       await this.enforceRules(activityData, 'create');
 
-      // Set default values
-      const now = new Date();
+      // Create domain entity based on source
+      let domainActivity: Activity;
+      
+      if (activityData.source === 'AMBIENT' && activityData.ambient_alert_id) {
+        // Create from Ambient if source is specified and alert ID exists
+        domainActivity = ActivityFactory.createFromAmbient({
+          ambient_alert_id: activityData.ambient_alert_id,
+          type: activityData.type || 'alert',
+          title: activityData.title || 'New Activity',
+          location: activityData.location || 'Unknown Location',
+          priority: activityData.priority || 'medium',
+          created_by: context.userId,
+          description: activityData.description,
+          building: activityData.building,
+          zone: activityData.zone,
+          preview_url: activityData.preview_url,
+          deep_link_url: activityData.deep_link_url,
+          confidence_score: activityData.confidence_score,
+          confidence: activityData.confidence
+        });
+      } else if (activityData.externalData) {
+        // Create from external system
+        domainActivity = ActivityFactory.createFromExternalSystem({
+          externalData: activityData.externalData,
+          type: activityData.type || 'alert',
+          title: activityData.title || 'New Activity',
+          location: activityData.location || 'Unknown Location',
+          priority: activityData.priority || 'medium',
+          created_by: context.userId,
+          building: activityData.building,
+          zone: activityData.zone,
+          confidence: activityData.confidence
+        });
+      } else {
+        // Create manual activity
+        domainActivity = ActivityFactory.createManual({
+          type: activityData.type || 'alert',
+          title: activityData.title || 'New Activity',
+          location: activityData.location || 'Unknown Location',
+          priority: activityData.priority || 'medium',
+          created_by: context.userId,
+          description: activityData.description,
+          building: activityData.building,
+          zone: activityData.zone
+        });
+      }
+
+      // Convert to persistence model
       const activity: EnterpriseActivity = {
+        ...domainActivity.toSnapshot(),
         id: `ACT-${Date.now().toString().padStart(6, '0')}`,
-        timestamp: now,
-        created_at: now,
-        updated_at: now,
-        created_by: context.userId,
-        updated_by: context.userId,
-        system_tags: [],
-        user_tags: [],
-        incident_contexts: [],
-        retention_date: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
-        is_archived: false,
-        allowed_status_transitions: ['detecting', 'assigned', 'responding', 'resolved'],
-        requires_approval: false,
-        status: 'detecting',
-        priority: 'medium',
-        type: 'alert',
-        title: 'New Activity',
-        location: 'Unknown Location',
-        ...activityData
+        allowed_status_transitions: domainActivity.allowed_status_transitions,
+        requires_approval: domainActivity.requires_approval
       } as EnterpriseActivity;
 
       // Store the activity
-      this.activityStore.createActivity(activity);
+      this.activityStore.createActivity(activity, context);
+
+      // Publish domain events
+      const events = domainActivity.getUncommittedEvents();
+      for (const event of events) {
+        await eventBus.publish(event);
+      }
+      domainActivity.markEventsAsCommitted();
 
       // Check for auto-incident creation
       await this.checkAutoIncidentCreation(activity, context);
@@ -440,7 +560,7 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
       // Audit logging
       await this.auditLog(context, 'create', activity.id, undefined, activity);
 
-      // Publish event
+      // Publish legacy event for backward compatibility
       await this.publishEvent({
         eventType: 'activity.created',
         entityType: 'activity',
@@ -474,21 +594,47 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
       // Business rules
       await this.enforceRules(updates, 'update');
 
-      // Apply updates
+      // Reconstruct domain entity from snapshot
+      const domainActivity = Activity.fromSnapshot(existingActivity);
+
+      // Apply updates to domain entity
+      let eventsGenerated = false;
+      
+      if (updates.status && updates.status !== domainActivity.status) {
+        domainActivity.updateStatus(updates.status, context.userId);
+        eventsGenerated = true;
+      }
+      
+      if (updates.assignedTo && updates.assignedTo !== domainActivity.assignedTo) {
+        domainActivity.assignTo(updates.assignedTo, context.userId);
+        eventsGenerated = true;
+      }
+
+      // Apply other updates
       const updatedActivity = {
         ...existingActivity,
         ...updates,
+        ...domainActivity.toSnapshot(),
         updated_at: new Date(),
         updated_by: context.userId
       };
 
       // Store the update
-      this.activityStore.updateActivity(id, updatedActivity);
+      this.activityStore.updateActivity(id, updatedActivity, context);
+
+      // Publish domain events if any were generated
+      if (eventsGenerated) {
+        const events = domainActivity.getUncommittedEvents();
+        for (const event of events) {
+          await eventBus.publish(event);
+        }
+        domainActivity.markEventsAsCommitted();
+      }
 
       // Audit logging
       await this.auditLog(context, 'update', id, existingActivity, updatedActivity);
 
-      // Publish event
+      // Publish legacy event for backward compatibility
       await this.publishEvent({
         eventType: 'activity.updated',
         entityType: 'activity',
@@ -541,10 +687,48 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
     assignedTo: string,
     context: AuditContext
   ): ServiceMethod<EnterpriseActivity> {
-    return await this.updateActivity(id, { 
-      assignedTo, 
-      status: 'assigned' as Status 
-    }, context);
+    try {
+      // Get existing activity
+      const existingActivity = this.activityStore.activities.find(a => a.id === id);
+      if (!existingActivity) {
+        return this.createErrorResponse('Activity not found', 'NOT_FOUND');
+      }
+
+      // Reconstruct domain entity
+      const domainActivity = Activity.fromSnapshot(existingActivity);
+      
+      // Use domain methods for assignment
+      domainActivity.assignTo(assignedTo, context.userId);
+      if (domainActivity.status === 'detecting') {
+        domainActivity.updateStatus('assigned', context.userId);
+      }
+
+      // Convert back to persistence model
+      const updatedActivity = {
+        ...existingActivity,
+        ...domainActivity.toSnapshot(),
+        updated_at: new Date(),
+        updated_by: context.userId
+      };
+
+      // Store the update
+      this.activityStore.updateActivity(id, updatedActivity, context);
+
+      // Publish domain events
+      const events = domainActivity.getUncommittedEvents();
+      for (const event of events) {
+        await eventBus.publish(event);
+      }
+      domainActivity.markEventsAsCommitted();
+
+      // Audit logging
+      await this.auditLog(context, 'assign', id, existingActivity, updatedActivity);
+
+      return this.createSuccessResponse(updatedActivity, 'Activity assigned successfully');
+      
+    } catch (error) {
+      return this.createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   async findById(id: string): ServiceMethod<EnterpriseActivity> {
@@ -592,6 +776,44 @@ export class ActivityService extends BaseService<EnterpriseActivity, string> {
     context: AuditContext
   ): ServiceMethod<EnterpriseActivity> {
     return await this.updateActivity(id, { user_tags: userTags }, context);
+  }
+
+  // Ambient-specific methods
+  async findByAmbientAlertId(ambientAlertId: string): ServiceMethod<EnterpriseActivity> {
+    try {
+      const activity = this.activityStore.activities.find(a => a.ambient_alert_id === ambientAlertId);
+      if (!activity) {
+        return this.createErrorResponse('Activity not found for Ambient alert ID', 'NOT_FOUND');
+      }
+
+      return this.createSuccessResponse(activity);
+    } catch (error) {
+      return this.createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  async updateAmbientActivity(
+    ambientAlertId: string,
+    updates: Partial<{
+      preview_url: string;
+      deep_link_url: string;
+      confidence_score: number;
+      status: Status;
+    }>,
+    context: AuditContext
+  ): ServiceMethod<EnterpriseActivity> {
+    try {
+      // Find activity by Ambient alert ID
+      const existingActivity = this.activityStore.activities.find(a => a.ambient_alert_id === ambientAlertId);
+      if (!existingActivity) {
+        return this.createErrorResponse('Activity not found for Ambient alert ID', 'NOT_FOUND');
+      }
+
+      // Update the activity with Ambient-specific data
+      return await this.updateActivity(existingActivity.id, updates, context);
+    } catch (error) {
+      return this.createErrorResponse(error instanceof Error ? error : new Error(String(error)));
+    }
   }
 
   // Multi-incident support

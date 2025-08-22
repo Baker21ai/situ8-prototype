@@ -103,17 +103,80 @@ const DIAwareServiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         integration_type: 'lenel_onguard' as const,
         providers: [
           {
+            id: 'lenel-primary',
             name: 'Lenel OnGuard',
             type: 'lenel_onguard' as const,
             enabled: true,
-            config: {
-              server_url: 'https://onguard.example.com',
+            api_config: {
+              base_url: 'https://onguard.example.com',
               username: 'api_user',
               password: 'api_password',
-              sync_interval: 300000
-            }
+              timeout_ms: 30000,
+              retry_count: 3
+            },
+            features: ['access_control', 'visitor_management'],
+            priority: 1
           }
-        ]
+        ],
+        workflows: [],
+        access_control: {
+          lenel_config: {
+            server_url: 'https://onguard.example.com',
+            database_connection: 'default',
+            card_format: 'standard',
+            clearance_levels: ['visitor', 'employee'],
+            visitor_card_type: 'temporary',
+            default_expiry_hours: 8
+          },
+          card_templates: [],
+          access_levels: [],
+          visitor_zones: []
+        },
+        notifications: {
+          channels: [],
+          templates: [],
+          rules: []
+        },
+        compliance: {
+          data_retention_days: 90,
+          privacy_settings: {
+            mask_visitor_data: false,
+            retention_period_days: 90,
+            anonymize_after_days: 365,
+            allowed_data_sharing: []
+          },
+          audit_requirements: [],
+          document_requirements: []
+        },
+        ui_settings: {
+          check_in_flow: {
+            steps: [],
+            require_photo: false,
+            require_signature: false,
+            require_documents: [],
+            allow_pre_check_in: false
+          },
+          kiosk_config: {
+             enabled: false,
+             locations: [],
+             idle_timeout_seconds: 300,
+             require_assistance: false,
+             print_badges: false
+           },
+           mobile_config: {
+             enabled: false,
+             app_required: false,
+             qr_code_check_in: false,
+             geofencing: false
+           },
+           branding: {
+             logo_url: '',
+             primary_color: '#000000',
+             welcome_message: 'Welcome to Security Platform',
+             company_name: 'Security Platform',
+             privacy_policy_url: ''
+           }
+        }
       };
       
       const visitorService = new VisitorService(visitorConfig);
@@ -160,8 +223,67 @@ const DIAwareServiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const auditService = new AuditService();
       const visitorService = new VisitorService({
         enabled: true,
-        integration_type: 'lenel_onguard',
-        providers: []
+        integration_type: 'lenel_onguard' as const,
+        providers: [],
+        workflows: [],
+        access_control: {
+          lenel_config: {
+            server_url: 'https://onguard.example.com',
+            database_connection: 'default',
+            card_format: 'standard',
+            clearance_levels: ['visitor', 'employee'],
+            visitor_card_type: 'temporary',
+            default_expiry_hours: 8
+          },
+          card_templates: [],
+          access_levels: [],
+          visitor_zones: []
+        },
+        notifications: {
+          channels: [],
+          templates: [],
+          rules: []
+        },
+        compliance: {
+          data_retention_days: 90,
+          privacy_settings: {
+            mask_visitor_data: false,
+            retention_period_days: 90,
+            anonymize_after_days: 365,
+            allowed_data_sharing: []
+          },
+          audit_requirements: [],
+          document_requirements: []
+        },
+        ui_settings: {
+           check_in_flow: {
+             steps: [],
+             require_photo: false,
+             require_signature: false,
+             require_documents: [],
+             allow_pre_check_in: false
+           },
+           kiosk_config: {
+             enabled: false,
+             locations: [],
+             idle_timeout_seconds: 300,
+             require_assistance: false,
+             print_badges: false
+           },
+           mobile_config: {
+             enabled: false,
+             app_required: false,
+             qr_code_check_in: false,
+             geofencing: false
+           },
+           branding: {
+             logo_url: '',
+             primary_color: '#000000',
+             welcome_message: 'Welcome to Security Platform',
+             company_name: 'Security Platform',
+             privacy_policy_url: ''
+           }
+         }
       });
 
       setLegacyServices({
@@ -207,17 +329,80 @@ const LegacyServiceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       integration_type: 'lenel_onguard' as const,
       providers: [
         {
+          id: 'lenel-primary',
           name: 'Lenel OnGuard',
           type: 'lenel_onguard' as const,
           enabled: true,
-          config: {
-            server_url: 'https://onguard.example.com',
+          api_config: {
+            base_url: 'https://onguard.example.com',
             username: 'api_user',
             password: 'api_password',
-            sync_interval: 300000
-          }
+            timeout_ms: 30000,
+            retry_count: 3
+          },
+          features: ['access_control', 'visitor_management'],
+          priority: 1
         }
-      ]
+      ],
+      workflows: [],
+      access_control: {
+        lenel_config: {
+          server_url: 'https://onguard.example.com',
+          database_connection: 'default',
+          card_format: 'standard',
+          clearance_levels: ['visitor', 'employee'],
+          visitor_card_type: 'temporary',
+          default_expiry_hours: 8
+        },
+        card_templates: [],
+        access_levels: [],
+        visitor_zones: []
+      },
+      notifications: {
+        channels: [],
+        templates: [],
+        rules: []
+      },
+      compliance: {
+        data_retention_days: 90,
+        privacy_settings: {
+          mask_visitor_data: false,
+          retention_period_days: 90,
+          anonymize_after_days: 365,
+          allowed_data_sharing: []
+        },
+        audit_requirements: [],
+        document_requirements: []
+      },
+      ui_settings: {
+         check_in_flow: {
+           steps: [],
+           require_photo: false,
+           require_signature: false,
+           require_documents: [],
+           allow_pre_check_in: false
+         },
+         kiosk_config: {
+           enabled: false,
+           locations: [],
+           idle_timeout_seconds: 300,
+           require_assistance: false,
+           print_badges: false
+         },
+         mobile_config: {
+           enabled: false,
+           app_required: false,
+           qr_code_check_in: false,
+           geofencing: false
+         },
+         branding: {
+           logo_url: '',
+           primary_color: '#000000',
+           welcome_message: 'Welcome to Security Platform',
+           company_name: 'Security Platform',
+           privacy_policy_url: ''
+         }
+       }
     };
     
     const visitorService = new VisitorService(visitorConfig);

@@ -33,11 +33,11 @@ const DEFAULT_FILTERS: ActivityFilterState = {
   statuses: [],
   types: [],
   locations: [],
-  timeRange: 'live',
+  timeRange: 'custom', // Changed from '24h' to 'custom' to disable time filtering temporarily
   businessImpact: [],
   confidenceThreshold: 0,
   showClusters: true,
-  aiFiltering: true
+  aiFiltering: false
 };
 
 // AI-powered intelligent filtering function
@@ -133,6 +133,16 @@ const clusterActivities = (activities: (EnterpriseActivity | ActivityCluster)[])
 // Performance optimized filtering hook
 const useFilteredActivities = (activities: (EnterpriseActivity | ActivityCluster)[], filters: ActivityFilterState) => {
   return useMemo(() => {
+    console.log('🔍 useFilteredActivities - input:', activities.length, 'filters:', filters);
+    if (activities.length > 0) {
+      console.log('🔍 First activity sample:', {
+        id: activities[0].id,
+        timestamp: activities[0].timestamp,
+        timestampType: typeof activities[0].timestamp,
+        isDate: activities[0].timestamp instanceof Date,
+        title: activities[0].title
+      });
+    }
     let filtered = [...activities];
 
     // Time range filtering
@@ -147,7 +157,16 @@ const useFilteredActivities = (activities: (EnterpriseActivity | ActivityCluster
 
     if (filters.timeRange !== 'custom' && timeRanges[filters.timeRange]) {
       const cutoff = new Date(now - timeRanges[filters.timeRange]);
-      filtered = filtered.filter(activity => activity.timestamp >= cutoff);
+      console.log('🔍 Time filtering - now:', new Date(now), 'cutoff:', cutoff);
+      console.log('🔍 Sample activity timestamp:', activities[0]?.timestamp);
+      
+      filtered = filtered.filter(activity => {
+        const isValid = activity.timestamp >= cutoff;
+        if (!isValid) {
+          console.log('🔍 Filtered out activity:', activity.id, 'timestamp:', activity.timestamp, 'cutoff:', cutoff);
+        }
+        return isValid;
+      });
     }
 
     // Text search
@@ -248,6 +267,12 @@ const useFilteredActivities = (activities: (EnterpriseActivity | ActivityCluster
       return clusterActivities(filtered);
     }
 
+    console.log('🔍 useFilteredActivities - final output:', filtered.length, 'sample:', filtered.slice(0, 2));
+    if (filtered.length === 0 && activities.length > 0) {
+      console.log('⚠️ FILTER DEBUG - All activities filtered out!');
+      console.log('⚠️ First input activity sample:', activities[0]);
+      console.log('⚠️ Active filters:', filters);
+    }
     return filtered;
   }, [activities, filters]);
 };
@@ -281,7 +306,7 @@ export function ActivityListProvider({
   const [viewMode, setViewMode] = useState<ActivityViewMode>('stream');
   const [layoutMode, setLayoutMode] = useState<ActivityLayoutMode>('grid');
   const [compactMode, setCompactMode] = useState(false);
-  const [useVirtualScrolling, setUseVirtualScrolling] = useState(true);
+  const [useVirtualScrolling, setUseVirtualScrolling] = useState(false);
   const [showPerformanceMetrics, setShowPerformanceMetrics] = useState(false);
   
   const performanceStartTime = useRef<number>();

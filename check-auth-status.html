@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Auth Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Authentication Status Check</h1>
+        <p>This page will check your current authentication status and show any console errors.</p>
+        
+        <div id="status"></div>
+        
+        <button class="btn-primary" onclick="checkAuthStatus()">Check Auth Status</button>
+        <button class="btn-secondary" onclick="checkUserStore()">Check User Store</button>
+        <button class="btn-secondary" onclick="clearConsole()">Clear Console</button>
+        
+        <h3>Debug Output:</h3>
+        <pre id="output"></pre>
+        
+        <h3>Console Errors:</h3>
+        <pre id="errors"></pre>
+    </div>
+
+    <script>
+        // Capture console errors
+        const originalError = console.error;
+        const errors = [];
+        
+        console.error = function(...args) {
+            errors.push({
+                timestamp: new Date().toISOString(),
+                message: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ')
+            });
+            originalError.apply(console, args);
+            updateErrorDisplay();
+        };
+        
+        function updateErrorDisplay() {
+            const errorDiv = document.getElementById('errors');
+            if (errors.length === 0) {
+                errorDiv.textContent = 'No console errors detected.';
+            } else {
+                errorDiv.textContent = errors.map(err => 
+                    `[${err.timestamp}] ${err.message}`
+                ).join('\n\n');
+            }
+        }
+        
+        function checkAuthStatus() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            
+            try {
+                // Check if debugAuth function exists
+                if (typeof window.debugAuth === 'function') {
+                    const authDebug = window.debugAuth();
+                    output.textContent = JSON.stringify(authDebug, null, 2);
+                    
+                    // Determine status
+                    if (authDebug.cognitoStatus.isInitialized) {
+                        status.innerHTML = '<div class="status success">✅ AWS Cognito is initialized and ready</div>';
+                    } else {
+                        status.innerHTML = '<div class="status error">❌ AWS Cognito is not initialized</div>';
+                    }
+                } else {
+                    status.innerHTML = '<div class="status warning">⚠️ debugAuth function not available. Please refresh the page.</div>';
+                    output.textContent = 'debugAuth function not found. The main application may not be loaded yet.';
+                }
+            } catch (error) {
+                status.innerHTML = '<div class="status error">❌ Error checking auth status</div>';
+                output.textContent = `Error: ${error.message}\n\nStack: ${error.stack}`;
+            }
+        }
+        
+        function checkUserStore() {
+            const output = document.getElementById('output');
+            
+            try {
+                if (typeof window.useUserStore !== 'undefined') {
+                    const userState = window.useUserStore.getState();
+                    output.textContent = JSON.stringify({
+                        isAuthenticated: userState.isAuthenticated,
+                        currentUser: userState.currentUser,
+                        isDemoMode: userState.isDemoMode,
+                        isLoading: userState.isLoading,
+                        error: userState.error,
+                        availableDemoUsers: userState.availableDemoUsers?.map(u => ({ id: u.id, email: u.email, role: u.role }))
+                    }, null, 2);
+                } else {
+                    output.textContent = 'useUserStore not available. Please refresh the page.';
+                }
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        function clearConsole() {
+            errors.length = 0;
+            updateErrorDisplay();
+            console.clear();
+        }
+        
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkAuthStatus();
+                updateErrorDisplay();
+            }, 1000);
+        });
+        
+        // Check every 5 seconds for new errors
+        setInterval(updateErrorDisplay, 5000);
+    </script>
+</body>
+</html>

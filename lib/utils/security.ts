@@ -11,7 +11,8 @@ export type ActivityType =
   | 'patrol'
   | 'evidence'
   | 'property-damage'
-  | 'bol-event';
+  | 'bol-event'
+  | 'note';
 
 export type ThreatLevel = 'none' | 'low' | 'medium' | 'high' | 'critical';
 export type SecurityLevel = 'public' | 'restricted' | 'confidential' | 'secret' | 'top-secret';
@@ -38,7 +39,8 @@ export function getTypeIcon(type: ActivityType): string {
     'patrol': '👮',
     'evidence': '📋',
     'property-damage': '⚙️',
-    'bol-event': '👁️'
+    'bol-event': '👁️',
+    'note': '📝'
   };
 
   return icons[type] || '📋';
@@ -106,6 +108,14 @@ export function getActivityTypeInfo(type: ActivityType): ActivityTypeInfo {
       color: 'text-red-600',
       threatLevel: 'high',
       category: 'security'
+    },
+    'note': {
+      icon: '📝',
+      lucideIcon: Settings,
+      label: 'Note',
+      color: 'text-gray-600',
+      threatLevel: 'none',
+      category: 'operational'
     }
   };
 

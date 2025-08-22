@@ -1,0 +1,162 @@
+:root {
+  /* Enterprise Security Platform Theme */
+  --background: oklch(0.9900 0 0);
+  --foreground: oklch(0.1300 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.1300 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.1300 0 0);
+  --primary: oklch(0.4200 0.1800 230);
+  --primary-foreground: oklch(0.9900 0 0);
+  --secondary: oklch(0.9600 0 0);
+  --secondary-foreground: oklch(0.1800 0 0);
+  --muted: oklch(0.9500 0 0);
+  --muted-foreground: oklch(0.5000 0 0);
+  --accent: oklch(0.9600 0 0);
+  --accent-foreground: oklch(0.1800 0 0);
+  --destructive: oklch(0.5800 0.2400 28);
+  --destructive-foreground: oklch(0.9900 0 0);
+  --warning: oklch(0.7000 0.1500 60);
+  --warning-foreground: oklch(0.1300 0 0);
+  --success: oklch(0.5500 0.1500 130);
+  --success-foreground: oklch(0.9900 0 0);
+  --border: oklch(0.9200 0 0);
+  --input: oklch(0.9200 0 0);
+  --ring: oklch(0.4200 0.1800 230);
+  
+  /* Status Colors for Security Operations */
+  --critical: oklch(0.5800 0.2400 28);
+  --high: oklch(0.6200 0.2000 45);
+  --medium: oklch(0.7000 0.1500 60);
+  --low: oklch(0.5500 0.1500 130);
+  --active: oklch(0.4500 0.1800 180);
+  --pending: oklch(0.7000 0.1500 60);
+  --resolved: oklch(0.5500 0.1500 130);
+  
+  /* Component Colors */
+  --sidebar: oklch(0.9800 0 0);
+  --sidebar-foreground: oklch(0.1300 0 0);
+  --sidebar-primary: oklch(0.1800 0 0);
+  --sidebar-primary-foreground: oklch(0.9800 0 0);
+  --sidebar-accent: oklch(0.9600 0 0);
+  --sidebar-accent-foreground: oklch(0.1800 0 0);
+  --sidebar-border: oklch(0.9200 0 0);
+  --sidebar-ring: oklch(0.4200 0.1800 230);
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Layout */
+  --radius: 0.375rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Shadows for Enterprise Feel */
+  --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 4px 6px -1px hsl(0 0% 0% / 0.10), 0 2px 4px -2px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 10px 15px -3px hsl(0 0% 0% / 0.10), 0 4px 6px -4px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 20px 25px -5px hsl(0 0% 0% / 0.10), 0 8px 10px -6px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  
+  /* Spacing */
+  --spacing: 0.25rem;
+  --spacing-xs: 0.125rem;
+  --spacing-sm: 0.25rem;
+  --spacing-md: 0.5rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  
+  /* Animation Timing */
+  --animation-fast: 150ms;
+  --animation-normal: 200ms;
+  --animation-slow: 300ms;
+  --animation-slower: 500ms;
+}
+
+/* Dark mode variant for night security operations */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.0800 0 0);
+    --foreground: oklch(0.9500 0 0);
+    --card: oklch(0.1000 0 0);
+    --card-foreground: oklch(0.9500 0 0);
+    --border: oklch(0.2000 0 0);
+    --input: oklch(0.2000 0 0);
+    --muted: oklch(0.1500 0 0);
+    --muted-foreground: oklch(0.6000 0 0);
+  }
+}
+
+/* Enterprise Design System Base Styles */
+body {
+  font-family: var(--font-sans) !important;
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  line-height: 1.5 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Security Status Indicator Styles */
+.status-critical {
+  color: hsl(var(--critical)) !important;
+  background-color: hsl(var(--critical) / 0.1) !important;
+  border-color: hsl(var(--critical) / 0.2) !important;
+}
+
+.status-high {
+  color: hsl(var(--high)) !important;
+  background-color: hsl(var(--high) / 0.1) !important;
+  border-color: hsl(var(--high) / 0.2) !important;
+}
+
+.status-medium {
+  color: hsl(var(--medium)) !important;
+  background-color: hsl(var(--medium) / 0.1) !important;
+  border-color: hsl(var(--medium) / 0.2) !important;
+}
+
+.status-low {
+  color: hsl(var(--low)) !important;
+  background-color: hsl(var(--low) / 0.1) !important;
+  border-color: hsl(var(--low) / 0.2) !important;
+}
+
+/* Enterprise Card Styles */
+.enterprise-card {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all var(--animation-normal) ease !important;
+}
+
+.enterprise-card:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Animation Classes */
+.pulse-critical {
+  animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+    background-color: hsl(var(--critical) / 0.8);
+  }
+}

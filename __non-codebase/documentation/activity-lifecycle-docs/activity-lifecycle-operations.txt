@@ -1,0 +1,235 @@
+================================================================================
+              SITU8 SECURITY OPERATIONS GUIDE - FIELD MANUAL
+================================================================================
+
+QUICK REFERENCE - ACTIVITY TYPES & PRIORITIES
+----------------------------------------------
+TYPE                    AUTO-INCIDENT?    DEFAULT PRIORITY    RESPONSE TIME
+medical                 YES               CRITICAL            Immediate
+security-breach         YES               HIGH                5 minutes
+bol-event              YES               HIGH                5 minutes
+alert                  YES               MEDIUM              10 minutes
+property-damage        YES               MEDIUM              15 minutes
+patrol                 NO                LOW                 N/A
+evidence               NO                LOW                 N/A
+
+STATUS WORKFLOW - ACTIVITIES
+-----------------------------
+[DETECTING] → [ASSIGNED] → [RESPONDING] → [RESOLVED]
+
+Officer Permissions:
+• Can only move forward (detecting → resolved)
+• Cannot move backwards
+• Can add notes and evidence
+
+Supervisor Permissions:
+• Can move any direction
+• Can reassign to different officers
+• Must approve backwards movements from resolved
+
+STATUS WORKFLOW - INCIDENTS
+----------------------------
+[PENDING] → [ACTIVE] → [INVESTIGATING] → [RESOLVED]
+    ↓
+[DISMISSED]
+
+⚠️ ALL INCIDENTS START AS PENDING - YOU MUST VALIDATE!
+
+================================================================================
+                        GUARD/OFFICER PROCEDURES
+================================================================================
+
+CREATING AN ACTIVITY
+--------------------
+1. Click "New Activity" button
+2. Select type (medical, security-breach, etc.)
+3. Fill required fields:
+   - Title: Brief description (e.g., "Unauthorized person at Gate 3")
+   - Location: Specific location/building/zone
+   - Priority: Leave default unless critical
+   - Description: Detailed observations
+4. Submit → System auto-creates PENDING incident
+
+RESPONDING TO ACTIVITIES
+------------------------
+When Assigned to You:
+1. Review activity details
+2. Change status to "RESPONDING"
+3. Proceed to location
+4. Update with findings:
+   - Add photos/videos as evidence
+   - Update description with observations
+   - Change status to "RESOLVED" when complete
+
+Important Notes:
+• Update status BEFORE going to location
+• Add evidence IMMEDIATELY upon collection
+• If situation escalates, change priority to HIGH/CRITICAL
+
+================================================================================
+                        SUPERVISOR PROCEDURES
+================================================================================
+
+VALIDATING PENDING INCIDENTS
+-----------------------------
+⏰ YOU HAVE 5 MINUTES TO REVIEW BEFORE AUTO-ESCALATION
+
+1. Check "Pending Incidents" dashboard
+2. Review each pending incident:
+   
+   APPROVE if:
+   • Legitimate security concern
+   • Requires response/investigation
+   • Pattern of similar events
+   
+   DISMISS if:
+   • False positive
+   • Duplicate report
+   • Non-security issue
+   
+   ESCALATE if:
+   • Beyond your authority
+   • Requires executive decision
+   • Multi-site coordination needed
+
+3. Add validation notes for audit trail
+
+MANAGING ACTIVE INCIDENTS
+--------------------------
+1. Assign responding officers
+2. Monitor real-time updates
+3. Coordinate with dispatch
+4. Request additional resources if needed
+5. Ensure evidence collection
+6. Review and close when resolved
+
+ESCALATION MATRIX
+-----------------
+PRIORITY     INITIAL RESPONSE    ESCALATE TO         ESCALATE AFTER
+Critical     Immediate          Duty Manager         5 minutes
+High         5 minutes          Supervisor           10 minutes
+Medium       10 minutes         Supervisor           20 minutes
+Low          As available       N/A                  N/A
+
+================================================================================
+                        COMMON SCENARIOS
+================================================================================
+
+SCENARIO: Medical Emergency
+---------------------------
+1. Guard creates MEDICAL activity → Auto-creates CRITICAL incident
+2. Supervisor IMMEDIATELY validates (no 5-minute wait for medical)
+3. Dispatch emergency services
+4. Assign closest guard to assist
+5. Document everything for liability
+
+SCENARIO: Suspicious Person
+----------------------------
+1. Guard creates SECURITY-BREACH activity
+2. System creates PENDING incident (HIGH priority)
+3. Supervisor reviews camera footage
+4. If legitimate threat → APPROVE and dispatch
+5. If employee without badge → DISMISS as false positive
+
+SCENARIO: Multiple Related Activities
+-------------------------------------
+1. System auto-clusters similar activities
+2. Creates single incident for pattern
+3. Supervisor sees "3 related activities" flag
+4. Review pattern for coordinated threat
+5. Escalate if pattern suggests larger issue
+
+SCENARIO: After-Hours Alert
+---------------------------
+1. Sensor triggers auto-create activity
+2. Tagged as "after-hours" automatically
+3. Higher false-positive likelihood
+4. Check cameras before dispatching
+5. May dismiss if wildlife/weather cause
+
+================================================================================
+                        QUICK TROUBLESHOOTING
+================================================================================
+
+"I can't change status backwards"
+→ Only supervisors can reverse status. Request supervisor assistance.
+
+"Incident disappeared from my queue"
+→ Check if auto-escalated after timeout. Check escalation queue.
+
+"Can't see evidence attachments"
+→ Check network connection. Evidence loads separately from text.
+
+"Multiple incidents for same event"
+→ System will auto-merge related incidents. Wait 30 seconds.
+
+"Wrong priority assigned"
+→ Supervisors can override. Request priority change if critical.
+
+================================================================================
+                        SHIFT HANDOVER CHECKLIST
+================================================================================
+
+Before Shift End:
+□ Resolve or reassign all your activities
+□ Add notes to ongoing incidents
+□ Upload any pending evidence
+□ Brief incoming shift on:
+  - Unresolved activities
+  - Patterns observed
+  - Equipment issues
+  - Special instructions
+
+Shift Start:
+□ Review pending incidents queue
+□ Check unresolved activities
+□ Read previous shift notes
+□ Verify equipment status
+□ Confirm communication channels
+
+================================================================================
+                        EMERGENCY PROCEDURES
+================================================================================
+
+SYSTEM DOWN:
+1. Switch to manual logging
+2. Use radio for coordination
+3. Document on paper forms
+4. Input when system returns
+
+MASS CASUALTY EVENT:
+1. Create single MEDICAL activity
+2. Mark as CRITICAL
+3. Add "MASS CASUALTY" to title
+4. System auto-notifies all supervisors
+5. Follow emergency response plan
+
+ACTIVE THREAT:
+1. Create SECURITY-BREACH activity
+2. Mark CRITICAL
+3. Add "ACTIVE THREAT" to title
+4. System triggers lockdown protocols
+5. DO NOT attempt to validate - auto-approves
+
+================================================================================
+                        PERFORMANCE METRICS
+================================================================================
+
+Your Performance Tracked On:
+• Response time to assigned activities
+• Evidence collection completeness
+• Status update timeliness
+• False positive rate (supervisors)
+• Validation speed (supervisors)
+
+Target Metrics:
+• Acknowledge assignment: <2 minutes
+• Update to RESPONDING: <5 minutes
+• Evidence upload: Same shift
+• Resolution notes: Detailed
+• Validation decision: <5 minutes
+
+================================================================================
+                    REMEMBER: EVERY ACTION CREATES AN AUDIT TRAIL
+                           DOCUMENT EVERYTHING - ASSUME NOTHING
+================================================================================

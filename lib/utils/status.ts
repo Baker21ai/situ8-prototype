@@ -3,7 +3,7 @@
  */
 
 export type Priority = 'critical' | 'high' | 'medium' | 'low';
-export type Status = 'detecting' | 'assigned' | 'responding' | 'resolved';
+export type Status = 'detecting' | 'pending' | 'escalated' | 'in-progress' | 'review' | 'resolved' | 'deferred' | 'cancelled' | 'assigned' | 'responding' | 'active';
 export type BusinessImpact = 'none' | 'low' | 'medium' | 'high' | 'critical';
 
 export interface ColorSet {
@@ -77,6 +77,48 @@ export function getStatusColor(status: Status): ColorSet {
       text: 'text-blue-800',
       icon: 'text-blue-600'
     },
+    pending: {
+      border: 'border-purple-500',
+      background: 'bg-purple-50',
+      text: 'text-purple-800',
+      icon: 'text-purple-600'
+    },
+    escalated: {
+      border: 'border-red-500',
+      background: 'bg-red-50',
+      text: 'text-red-800',
+      icon: 'text-red-600'
+    },
+    'in-progress': {
+      border: 'border-indigo-500',
+      background: 'bg-indigo-50',
+      text: 'text-indigo-800',
+      icon: 'text-indigo-600'
+    },
+    review: {
+      border: 'border-amber-500',
+      background: 'bg-amber-50',
+      text: 'text-amber-800',
+      icon: 'text-amber-600'
+    },
+    resolved: {
+      border: 'border-green-500',
+      background: 'bg-green-50',
+      text: 'text-green-800',
+      icon: 'text-green-600'
+    },
+    deferred: {
+      border: 'border-gray-500',
+      background: 'bg-gray-50',
+      text: 'text-gray-800',
+      icon: 'text-gray-600'
+    },
+    cancelled: {
+      border: 'border-gray-500',
+      background: 'bg-gray-50',
+      text: 'text-gray-800',
+      icon: 'text-gray-600'
+    },
     assigned: {
       border: 'border-orange-500',
       background: 'bg-orange-50',
@@ -89,11 +131,11 @@ export function getStatusColor(status: Status): ColorSet {
       text: 'text-yellow-800',
       icon: 'text-yellow-600'
     },
-    resolved: {
-      border: 'border-green-500',
-      background: 'bg-green-50',
-      text: 'text-green-800',
-      icon: 'text-green-600'
+    active: {
+      border: 'border-blue-500',
+      background: 'bg-blue-50',
+      text: 'text-blue-800',
+      icon: 'text-blue-600'
     }
   };
 
@@ -160,6 +202,34 @@ export function getStatusDisplay(status: Status) {
       label: 'DETECTING',
       description: 'Initial detection phase'
     },
+    pending: {
+      label: 'PENDING',
+      description: 'Awaiting review/approval'
+    },
+    escalated: {
+      label: 'ESCALATED',
+      description: 'Requires immediate attention'
+    },
+    'in-progress': {
+      label: 'IN PROGRESS',
+      description: 'Work in progress'
+    },
+    review: {
+      label: 'REVIEW',
+      description: 'Under review'
+    },
+    resolved: {
+      label: 'RESOLVED',
+      description: 'Issue resolved'
+    },
+    deferred: {
+      label: 'DEFERRED',
+      description: 'Postponed for later'
+    },
+    cancelled: {
+      label: 'CANCELLED',
+      description: 'No longer active'
+    },
     assigned: {
       label: 'ASSIGNED',
       description: 'Assigned to personnel'
@@ -168,9 +238,9 @@ export function getStatusDisplay(status: Status) {
       label: 'RESPONDING',
       description: 'Personnel responding to incident'
     },
-    resolved: {
-      label: 'RESOLVED',
-      description: 'Issue resolved'
+    active: {
+      label: 'ACTIVE',
+      description: 'Currently active'
     }
   };
 
@@ -212,7 +282,7 @@ export function sortByPriority<T extends { priority: Priority }>(items: T[]): T[
  */
 export function getActivityClasses(priority: Priority, status: Status) {
   const priorityColors = getPriorityColor(priority);
-  const isActive = status === 'detecting' || status === 'responding';
+  const isActive = status === 'detecting' || status === 'responding' || status === 'in-progress' || status === 'escalated';
   
   return {
     container: `${priorityColors.border} ${priorityColors.background} ${isActive ? 'animate-pulse' : ''}`,

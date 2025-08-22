@@ -102,8 +102,19 @@ const cognitoConfigs: Record<string, CognitoConfig> = {
 
 // Get current environment
 const getCurrentEnvironment = (): string => {
-  return import.meta.env.VITE_ENVIRONMENT || 
-         import.meta.env.MODE === 'production' ? 'production' : 'local';
+  // First check explicit environment variable
+  if (import.meta.env.VITE_ENVIRONMENT) {
+    return import.meta.env.VITE_ENVIRONMENT;
+  }
+  // Then check Vite mode
+  if (import.meta.env.MODE === 'production') {
+    return 'production';
+  }
+  if (import.meta.env.MODE === 'development') {
+    return 'development';
+  }
+  // Default to local for dev server
+  return 'local';
 };
 
 // Get Cognito configuration for current environment

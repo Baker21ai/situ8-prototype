@@ -317,6 +317,10 @@ export function CommandCenter() {
   
   const activities = getInitialActivities(storeActivities);
   
+  // Debug logging for CommandCenter activities
+  console.log('🏢 CommandCenter - storeActivities count:', storeActivities.length);
+  console.log('🏢 CommandCenter - processed activities count:', activities.length);
+  
   const [guards, setGuards] = useState(initialGuards);
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null);
   const [selectedActivityDetail, setSelectedActivityDetail] = useState<ActivityData | null>(null);

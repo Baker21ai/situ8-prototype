@@ -58,9 +58,23 @@ export class AWSApiClient {
   }
 
   /**
+   * Get base URL for API
+   */
+  getBaseUrl(): string {
+    return this.config.apiBaseUrl;
+  }
+
+  /**
+   * Get current auth token
+   */
+  getAuthToken(): string | null {
+    return this.authToken;
+  }
+
+  /**
    * Make authenticated API request with retry logic
    */
-  private async makeRequest<T>(
+  async makeRequest<T>(
     endpoint: string, 
     options: RequestOptions = {}
   ): Promise<APIResponse<T>> {
@@ -127,6 +141,23 @@ export class AWSApiClient {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  // ==================== AI (Bedrock) API ====================
+
+  /**
+   * Send conversation to AI backend (Bedrock) and receive assistant reply
+   */
+  async aiChat(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>, options?: { modelId?: string; temperature?: number; maxTokens?: number }): Promise<APIResponse<{ reply: string }>> {
+    return this.makeRequest('/api/ai/chat', {
+      method: 'POST',
+      body: {
+        messages,
+        modelId: options?.modelId,
+        temperature: options?.temperature,
+        maxTokens: options?.maxTokens
+      }
+    });
   }
 
   /**

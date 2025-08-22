@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,9 @@ import {
   Zap,
   Shield,
   Activity,
-  MessageSquare
+  MessageSquare,
+  ChevronDown,
+  Copy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,28 +36,34 @@ interface AIChatProps {
   messages: ChatMessage[];
   isProcessing: boolean;
   onSendMessage: (message: string) => void;
-  onActionConfirm: (messageId: string, confirmed: boolean) => void;
+  onClearConversation: () => void;
 }
 
 export function AIChat({ 
   messages, 
   isProcessing, 
   onSendMessage, 
-  onActionConfirm 
+  onClearConversation 
 }: AIChatProps) {
   const [inputValue, setInputValue] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth'
+        });
       }
     }
-  }, [messages]);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim() || isProcessing) return;
@@ -69,6 +77,14 @@ export function AIChat({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const handleClear = () => {
+    onClearConversation();
   };
 
   const renderMessage = (message: ChatMessage) => {
@@ -115,56 +131,16 @@ export function AIChat({
               )}
             </div>
 
-            {/* Action Preview */}
-            {message.actionType && message.actionData && (
-              <div className="mt-3 p-2 bg-background/50 rounded border">
-                <div className="flex items-center gap-2 mb-2">
-                  {message.actionType === 'create_incident' && (
-                    <AlertTriangle className="w-4 h-4 text-orange-500" />
-                  )}
-                  {message.actionType === 'create_activity' && (
-                    <Activity className="w-4 h-4 text-blue-500" />
-                  )}
-                  {message.actionType === 'search' && (
-                    <MessageSquare className="w-4 h-4 text-green-500" />
-                  )}
-                  <span className="text-xs font-medium">
-                    {message.actionType.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-                
-                <div className="text-xs space-y-1">
-                  {Object.entries(message.actionData).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-muted-foreground capitalize">
-                        {key.replace('_', ' ')}:
-                      </span>
-                      <span className="font-mono">{String(value)}</span>
-                    </div>
-                  ))}
-                </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-0 right-0 w-6 h-6 opacity-0 group-hover:opacity-100"
+              onClick={() => handleCopy(message.content)}
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    size="sm"
-                    onClick={() => onActionConfirm(message.id, true)}
-                    className="h-6 px-2 text-xs"
-                  >
-                    <Check className="w-3 h-3 mr-1" />
-                    Confirm
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onActionConfirm(message.id, false)}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
+            
 
             {/* Message Status */}
             <div className={cn(
@@ -200,14 +176,14 @@ export function AIChat({
       <div className="bg-blue-50 border-l-4 border-blue-400 p-3 m-2 rounded-r-md">
         <div className="flex items-center">
           <Bot className="w-4 h-4 text-blue-600 mr-2" />
-          <p className="text-sm text-blue-800 font-medium">
-            AI Assistant is ready to help! 🚀
-          </p>
+          <p className="text-sm text-blue-800 font-medium">AI Assistant is ready to help! 🚀</p>
+          <span className="ml-auto text-[11px] text-blue-700/80">Powered by AWS Bedrock</span>
         </div>
       </div>
 
       {/* Messages Area */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-2">
+      <div className="relative flex-1 overflow-y-auto">
+        <ScrollArea ref={scrollAreaRef} className="px-4 py-2">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
@@ -220,45 +196,7 @@ export function AIChat({
               </p>
             </div>
             
-            {/* Quick Action Buttons */}
-            <div className="space-y-2 w-full max-w-[240px]">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs justify-start"
-                onClick={() => setInputValue("Create a fire incident in Building A")}
-              >
-                <Zap className="w-3 h-3 mr-2" />
-                Create Fire Incident
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs justify-start"
-                onClick={() => setInputValue("Create medical incident in Building B")}
-              >
-                <Activity className="w-3 h-3 mr-2" />
-                Medical Emergency
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs justify-start"
-                onClick={() => setInputValue("Show today's incidents")}
-              >
-                <MessageSquare className="w-3 h-3 mr-2" />
-                Show Today's Incidents
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs justify-start"
-                onClick={() => setInputValue("Assign Unit 5 to patrol")}
-              >
-                <Shield className="w-3 h-3 mr-2" />
-                Assign Guards
-              </Button>
-            </div>
+            
           </div>
         ) : (
           <div>
@@ -283,7 +221,10 @@ export function AIChat({
             )}
           </div>
         )}
-      </ScrollArea>
+        </ScrollArea>
+        
+        
+      </div>
 
       {/* Input Area */}
       <Separator />
@@ -316,14 +257,18 @@ export function AIChat({
           >
             Send
           </Button>
+          <Button
+            onClick={handleClear}
+            disabled={isProcessing}
+            size="sm"
+            variant="outline"
+            className="h-8 px-3"
+          >
+            Clear
+          </Button>
         </div>
 
-        {/* Character Count */}
-        {inputValue.length > 0 && (
-          <div className="text-xs text-muted-foreground mt-1 text-right">
-            {inputValue.length}/500
-          </div>
-        )}
+        
       </div>
     </div>
   );

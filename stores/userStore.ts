@@ -27,7 +27,7 @@ interface UserState {
   authService: AuthService | null;
   
   // Actions
-  initializeAuthService: () => void;
+  initializeAuthService: (providedService?: AuthService) => void;
   login: (request: LoginRequest) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
@@ -73,14 +73,22 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       ...initialState,
 
-      // Initialize auth service
-      initializeAuthService: () => {
+      // Initialize auth service - MUST be called with an AuthService instance
+      initializeAuthService: (providedService?: AuthService) => {
         if (!get().authService) {
-          const service = new AuthService();
-          const demoUsers = service.getDemoUsers();
+          // Use provided service or get from window (set by ServiceProvider)
+          const service = providedService || (window as any).__AUTH_SERVICE__;
           
-          // Always enable demo mode for now
-          service.enableDemoMode();
+          if (!service) {
+            console.error('❌ No AuthService provided to userStore!');
+            // As a last resort, create one (but this shouldn't happen)
+            console.warn('⚠️  Creating AuthService in userStore (not recommended)');
+            const fallbackService = new AuthService();
+            set({ authService: fallbackService });
+            return;
+          }
+          
+          const demoUsers = service.getDemoUsers();
           
           set({
             authService: service,
@@ -88,7 +96,7 @@ export const useUserStore = create<UserState>()(
             isAuthenticated: service.isAuthenticated(),
             currentUser: service.getCurrentUser(),
             sessionInfo: service.getSessionInfo(),
-            isDemoMode: false // Use real AWS authentication by default
+            isDemoMode: service.isInDemoMode()
           });
 
           // Check if we have a valid session on initialization
@@ -114,7 +122,22 @@ export const useUserStore = create<UserState>()(
           const result = await authService.login(request);
           
           if (result.success && result.data) {
-            const { user, sessionInfo } = result.data;
+            const { user, sessionInfo, tokens } = result.data;
+            
+            // CRITICAL FIX: Set authentication token in API client
+            try {
+              const apiClient = (window as any).__SITU8_SERVICES__?.apiClient;
+              if (apiClient && tokens?.idToken) {
+                apiClient.setAuthToken(tokens.idToken);
+                console.log('✅ Auth token set in API client');
+              } else if (!apiClient) {
+                console.warn('⚠️ API client not available for token setting');
+              } else if (!tokens?.idToken) {
+                console.warn('⚠️ No ID token available for API client');
+              }
+            } catch (tokenError) {
+              console.error('❌ Failed to set auth token in API client:', tokenError);
+            }
             
             set({
               isAuthenticated: true,
@@ -162,6 +185,17 @@ export const useUserStore = create<UserState>()(
         try {
           await authService.logout();
           
+          // CRITICAL FIX: Clear authentication token from API client
+          try {
+            const apiClient = (window as any).__SITU8_SERVICES__?.apiClient;
+            if (apiClient) {
+              apiClient.clearAuthToken();
+              console.log('✅ Auth token cleared from API client');
+            }
+          } catch (tokenError) {
+            console.error('❌ Failed to clear auth token from API client:', tokenError);
+          }
+          
           set({
             ...initialState,
             authService, // Keep the service instance
@@ -171,6 +205,18 @@ export const useUserStore = create<UserState>()(
           console.log('🔓 Logout successful:', currentUser?.email);
         } catch (error) {
           console.error('Logout error:', error);
+          
+          // Even if logout fails, clear local state and API client token
+          try {
+            const apiClient = (window as any).__SITU8_SERVICES__?.apiClient;
+            if (apiClient) {
+              apiClient.clearAuthToken();
+              console.log('✅ Auth token cleared from API client (fallback)');
+            }
+          } catch (tokenError) {
+            console.error('❌ Failed to clear auth token from API client (fallback):', tokenError);
+          }
+          
           // Still clear the session even if logout fails
           set({
             ...initialState,
@@ -450,10 +496,5 @@ export const useDemoMode = () => {
   };
 };
 
-// Initialize the auth service when the module loads
-if (typeof window !== 'undefined') {
-  // Delay initialization to avoid SSR issues
-  setTimeout(() => {
-    useUserStore.getState().initializeAuthService();
-  }, 0);
-}
+// Note: Initialization moved to ServiceProvider to prevent race conditions
+// The ServiceProvider will call initializeAuthService() after creating the AuthService

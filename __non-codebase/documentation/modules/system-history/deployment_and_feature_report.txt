@@ -1,0 +1,121 @@
+4## Project Status and Roadmap for Collaborative Testing
+
+**Generated on:** {current_date}
+
+### 1. Executive Summary
+
+This document outlines the necessary steps to prepare the Situ8 application for live, collaborative testing on AWS. The codebase has a solid foundation with AWS Cognito for authentication, a WebSocket implementation for chat, and data models for key entities like Guards and Incidents. 
+
+The primary focus areas for achieving the desired state are:
+
+1.  **Solidifying the AWS infrastructure** and establishing a clear CI/CD pipeline.
+2.  **Implementing missing features**, notably real-time radio communication and the Standard Operating Procedure (SOP) management engine.
+3.  **Building out the full user workflow**, from incident creation to guard assignment and action.
+4.  **Enhancing testing capabilities** with comprehensive mock data and end-to-end tests.
+
+Below is a detailed breakdown of the work required for each feature.
+
+---
+
+### 2. Multi-User Authentication
+
+**Goal:** Allow colleagues to sign up and log in with their own email accounts.
+
+*   **Current State:** The project is configured to use AWS Cognito (`config/cognito.ts`, `src/aws-exports.js`), which is the correct service for this requirement.
+*   **What Needs to Be Done:**
+    *   **Finalize Cognito User Pool Setup:** Configure the production User Pool in AWS to handle user registration, confirmation (via email or phone), and password policies.
+    *   **Implement User Invitation Flow:** Create a UI/backend mechanism for admins or supervisors to invite new users to the organization.
+    *   **Role-Based Access Control (RBAC):** Define user roles (e.g., Admin, Supervisor, Guard) within Cognito Groups and ensure the application backend and frontend respect these permissions.
+    *   **Testing:** Thoroughly test the sign-up, sign-in, password reset, and invitation flows.
+
+---
+
+### 3. Live AWS Deployment
+
+**Goal:** Have the application running live on AWS.
+
+*   **Current State:** The project contains various configuration files for AWS (`aws-setup/`, `infrastructure/`) and Vercel (`.env.vercel`, `vercel.json`). A GitHub Actions workflow file also exists (`.github/workflows/ci.yml`).
+*   **What Needs to Be Done:**
+    *   **Define Deployment Strategy:** Decide on a definitive architecture. A common pattern is hosting the React frontend on AWS S3 with CloudFront for distribution, and the backend services on AWS Lambda with API Gateway.
+    *   **Infrastructure as Code (IaC):** Solidify the infrastructure setup using a framework like AWS CDK or Terraform to ensure repeatable and manageable deployments.
+    *   **Configure CI/CD Pipeline:** Fully implement the `ci.yml` workflow to automatically build, test, and deploy the frontend and backend to AWS upon pushes to a `main` or `production` branch.
+    *   **Environment Management:** Securely manage environment variables (`.env.production`) for the production environment using AWS Secrets Manager or Parameter Store.
+
+---
+
+### 4. Full Chat Functionality
+
+**Goal:** Ensure real-time chat is robust and fully functional.
+
+*   **Current State:** A WebSocket-based system is in place (`hooks/useWebSocket.ts`, `lambdas/websocket/`), which is excellent for real-time communication.
+*   **What Needs to Be Done:**
+    *   **Scalability & Reliability Testing:** Test the WebSocket API's performance under load. Ensure connections are stable and gracefully handle reconnects.
+    *   **Message Persistence:** Verify that chat messages are being saved to the database (likely DynamoDB) so that history is preserved.
+    *   **UI/UX Refinement:** Polish the `ChatPage.tsx` component, ensuring it's intuitive and handles message states (sending, sent, failed) correctly.
+
+---
+
+### 5. Guard Management
+
+**Goal:** Enable the management and assignment of guards.
+
+*   **Current State:** The application has data models (`lib/types/guards.ts`) and state management (`stores/guardStore.ts`) for guards.
+*   **What Needs to Be Done:**
+    *   **Implement Management UI:** Create a dedicated UI for supervisors to view, add, and edit guard profiles.
+    *   **Assignment Logic:** Build the functionality to assign guards to specific incidents or sites. This involves both frontend UI for making the assignment and backend logic to link the records.
+    *   **Status Tracking:** Implement a system to track guard status (e.g., On-Duty, Off-Duty, Assigned).
+
+---
+
+### 6. Site Map Uploads
+
+**Goal:** Allow organizations to upload and view site maps.
+
+*   **Current State:** A map component appears to exist (`components/map/`), but the upload functionality is not apparent.
+*   **What Needs to Be Done:**
+    *   **Secure File Upload Service:** Implement a backend service for securely uploading files. The standard AWS approach is to use a Lambda function that generates a pre-signed S3 URL for the client to upload the file directly to an S3 bucket.
+    *   **Frontend Upload Component:** Build a React component that allows users to select a map file and upload it using the pre-signed URL.
+    *   **Map Rendering:** Once uploaded, the map component needs to be able to fetch and render the map image from S3.
+
+---
+
+### 7. Radio Functionality
+
+**Goal:** Implement real-time, push-to-talk radio communication.
+
+*   **Current State:** This feature appears to be largely unimplemented, aside from a test file (`test-voice-simple.html`).
+*   **What Needs to Be Done:**
+    *   **Technology Selection:** This is a significant feature. It will likely require a WebRTC-based solution for peer-to-peer communication or integration with a third-party service like Twilio for more robust managed communication.
+    *   **Full Implementation:** This involves:
+        *   Backend signaling server to manage connections.
+        *   Frontend UI for initiating and participating in voice channels.
+        *   Handling audio permissions, input/output devices, and connection state.
+
+---
+
+### 8. Automated Incidents & SOP Management
+
+**Goal:** Automatically create incidents and allow supervisors to manage them according to SOPs.
+
+*   **Current State:** Data models for incidents exist (`lib/types/incident.ts`). The user noted that SOPs are not yet implemented.
+*   **What Needs to Be Done:**
+    *   **Auto-Incident Engine:** Define and implement the backend logic that triggers incident creation (e.g., based on an incoming alert from an external system, or a manual trigger).
+    *   **Supervisor Workflow UI:** Create the dashboard for supervisors to see pending incidents, review details, and perform actions like 'Validate' or 'Escalate'.
+    *   **SOP Engine (Major Task):**
+        1.  **SOP Definition:** Design a system (UI and database schema) for creating and managing SOPs. An SOP would consist of a series of steps or rules.
+        2.  **SOP Execution:** When an incident is escalated, the backend should associate it with the relevant SOP and create actionable tasks.
+    *   **Guard Tasking:** Implement the logic to assign the SOP tasks to the designated guards and provide them with clear directions on their devices.
+
+---
+
+### 9. Mock Data for Demos
+
+**Goal:** Demonstrate the full workflow using mock data.
+
+*   **Current State:** A `components/mock-data/` directory exists.
+*   **What Needs to Be Done:**
+    *   **Develop Mocking Scripts:** Create scripts that can be run to populate the DynamoDB database with a complete, realistic scenario. This should include:
+        *   Mock users (supervisors, guards).
+        *   Pending activities that can be escalated.
+        *   Pre-defined incidents.
+    *   **Create a 'Demo' Mode:** Consider adding a special mode or an admin panel in the application to trigger these mock data injections, making it easy to reset and run demos.

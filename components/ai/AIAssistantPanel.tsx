@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { 
   Bot, 
   Minimize2, 
@@ -22,7 +23,8 @@ import { AIChat } from './AIChat';
 import { VoiceInput } from './VoiceInput';
 import { AIHistory } from './AIHistory';
 import { ActionConfirmation } from './ActionConfirmation';
-import { useServices, createAuditContext } from '../../services/ServiceProvider';
+import { AIDebugPanel } from './AIDebugPanel';
+import { useServices, useAIService, createAuditContext } from '../../services/ServiceProvider';
 import { useActivityStore } from '../../stores/activityStore';
 import { useIncidentStore } from '../../stores/incidentStore';
 import { useAuditStore } from '../../stores/auditStore';
@@ -54,7 +56,7 @@ interface PendingAction {
 interface AIAssistantState {
   isMinimized: boolean;
   isExpanded: boolean;
-  currentView: 'chat' | 'history' | 'settings' | 'voice';
+  currentView: 'chat' | 'history' | 'settings' | 'voice' | 'debug';
   isListening: boolean;
   pendingAction: PendingAction | null;
   isProcessing: boolean;
@@ -76,6 +78,7 @@ export function AIAssistantPanel() {
   const incidentService = useIncidentService();
   const activityService = useActivityService();
   const searchService = useSearchService();
+  const aiService = useAIService();
 
   const [state, setState] = useState<AIAssistantState>({
     isMinimized: true,
@@ -85,13 +88,88 @@ export function AIAssistantPanel() {
     pendingAction: null,
     isProcessing: false,
     hasNewMessage: false,
-    messages: [],
+    messages: [
+      {
+        id: 'test-1',
+        role: 'assistant',
+        content: 'Hello! I\'m your AI assistant. I can help you create incidents, manage activities, and search records.',
+        timestamp: new Date(Date.now() - 300000),
+        status: 'sent'
+      },
+      {
+        id: 'test-2',
+        role: 'user',
+        content: 'Can you show me today\'s incidents?',
+        timestamp: new Date(Date.now() - 240000),
+        status: 'sent'
+      },
+      {
+        id: 'test-3',
+        role: 'assistant',
+        content: 'I found 3 incidents for today:\n\n1. Fire alarm in Building A (Resolved)\n2. Medical emergency in Building B (In Progress)\n3. Security breach in Parking Lot C (Under Investigation)',
+        timestamp: new Date(Date.now() - 180000),
+        status: 'sent'
+      },
+      {
+        id: 'test-4',
+        role: 'user',
+        content: 'Create a new patrol activity for Building A',
+        timestamp: new Date(Date.now() - 120000),
+        status: 'sent'
+      },
+      {
+        id: 'test-5',
+        role: 'assistant',
+        content: 'I\'ve created a new patrol activity for Building A. The patrol has been assigned to Unit 3 and is scheduled to begin in 15 minutes.',
+        timestamp: new Date(Date.now() - 60000),
+        status: 'sent'
+      },
+      {
+        id: 'test-6',
+        role: 'user',
+        content: 'What\'s the status of the medical emergency?',
+        timestamp: new Date(Date.now() - 30000),
+        status: 'sent'
+      },
+      {
+        id: 'test-7',
+        role: 'assistant',
+        content: 'The medical emergency in Building B is currently in progress. Emergency services arrived 10 minutes ago and the patient is being treated. The area has been secured and normal operations can continue in other parts of the building.',
+        timestamp: new Date(Date.now() - 10000),
+        status: 'sent'
+      }
+    ],
   });
 
   const [position, setPosition] = useState<Position>({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Test function to add messages for scrolling testing
+  const addTestMessage = () => {
+    const testMessages = [
+      'This is a test message to check scrolling behavior.',
+      'Another message to see if auto-scroll works properly.',
+      'Let\'s see if the scroll-to-bottom button appears when needed.',
+      'Testing the unread message counter functionality.',
+      'This should trigger the smart scrolling features.',
+      'Final test message to verify everything works correctly.'
+    ];
+    
+    const randomMessage = testMessages[Math.floor(Math.random() * testMessages.length)];
+    
+    setState(prev => ({
+      ...prev,
+      messages: [...prev.messages, {
+        id: `test-${Date.now()}`,
+        role: Math.random() > 0.5 ? 'assistant' : 'user',
+        content: randomMessage,
+        timestamp: new Date(),
+        status: 'sent'
+      }]
+    }));
+  };
 
   // AI Assistant Settings
   const [settings, setSettings] = useState({
@@ -166,7 +244,7 @@ export function AIAssistantPanel() {
     }));
   };
 
-  const handleViewChange = (view: 'chat' | 'history' | 'settings' | 'voice') => {
+  const handleViewChange = (view: 'chat' | 'history' | 'settings' | 'voice' | 'debug') => {
     setState(prev => ({ ...prev, currentView: view }));
   };
 
@@ -213,7 +291,7 @@ export function AIAssistantPanel() {
         case 'Tab':
           if (!event.shiftKey) {
             event.preventDefault();
-            const views = ['chat', 'voice', 'history', 'settings'] as const;
+            const views = ['chat', 'voice', 'history', 'settings', 'debug'] as const;
             const currentIndex = views.indexOf(state.currentView);
             const nextIndex = (currentIndex + 1) % views.length;
             handleViewChange(views[nextIndex]);
@@ -246,9 +324,10 @@ export function AIAssistantPanel() {
         case '2':
         case '3':
         case '4':
+        case '5':
           if (event.altKey) {
             event.preventDefault();
-            const views = ['chat', 'voice', 'history', 'settings'] as const;
+            const views = ['chat', 'voice', 'history', 'settings', 'debug'] as const;
             const viewIndex = parseInt(event.key) - 1;
             if (viewIndex < views.length) {
               handleViewChange(views[viewIndex]);
@@ -501,7 +580,7 @@ export function AIAssistantPanel() {
           return {
             id: `msg-${Date.now() + 1}`,
             role: 'assistant',
-            content: `🔍 **Today's Incidents**\n\nFound ${results.length} incidents:\n\n${results.map((inc, i) => `• **${inc.id}**: ${inc.type} - ${inc.location} (${inc.priority}, ${inc.status})`).join('\n')}\n\nTo view detailed information, navigate to the Command Center Timeline.`,
+            content: `🔍 **Today's Incidents**\n\nFound ${results.length} incidents:\n\n${results.map((inc, i) => `• **${inc.id}**: ${inc.type} - ${(inc as any).location || 'Unknown Location'} (${inc.priority}, ${inc.status})`).join('\n')}\n\nTo view detailed information, navigate to the Command Center Timeline.`,
             timestamp: new Date(),
             status: 'sent',
           };
@@ -577,7 +656,7 @@ export function AIAssistantPanel() {
           user_id: 'ai-assistant',
           user_name: 'AI Assistant',
           action: 'assign_guard',
-          entity_type: 'assignment',
+          entity_type: 'activity',
           entity_id: `assign-${Date.now()}`,
           description: `Assigned Guard ${guardUnit} to ${target}`,
         });
@@ -600,14 +679,27 @@ export function AIAssistantPanel() {
       };
     }
 
-    // Default response for unrecognized commands
-    return {
-      id: `msg-${Date.now() + 1}`,
-      role: 'assistant',
-      content: `I can help you with:\n\n🔥 **Fire incidents**: "Create fire incident in Building A"\n🚑 **Medical incidents**: "Create medical incident in Building B"\n📝 **Activities**: "Log patrol activity in North Wing"\n🔍 **Search**: "Show today's incidents" or "Find open incidents"\n📊 **Status updates**: "Update incident INC-001 to resolved"\n👮 **Guard assignments**: "Assign Unit 5 to Building A"\n📋 **Activity logs**: "Show recent activities"\n\n**Pro tip**: You can also check the History tab to retry any failed actions!\n\nWhat would you like me to do?`,
-      timestamp: new Date(),
-      status: 'sent',
-    };
+    // Fallback to Bedrock-generated reply via AI service
+    try {
+      const history = [...state.messages.map(m => ({ role: m.role, content: m.content })), { role: 'user' as const, content: message }];
+      const reply = await aiService.generateReply(history);
+      return {
+        id: `msg-${Date.now() + 1}`,
+        role: 'assistant',
+        content: reply,
+        timestamp: new Date(),
+        status: 'sent',
+      };
+    } catch (e) {
+      // Default help message if AI fails
+      return {
+        id: `msg-${Date.now() + 1}`,
+        role: 'assistant',
+        content: `I can help you with:\n\n🔥 **Fire incidents**: "Create fire incident in Building A"\n🚑 **Medical incidents**: "Create medical incident in Building B"\n📝 **Activities**: "Log patrol activity in North Wing"\n🔍 **Search**: "Show today's incidents" or "Find open incidents"\n📊 **Status updates**: "Update incident INC-001 to resolved"\n👮 **Guard assignments**: "Assign Unit 5 to Building A"\n📋 **Activity logs**: "Show recent activities"\n\n**Pro tip**: You can also check the History tab to retry any failed actions!\n\nWhat would you like me to do?`,
+        timestamp: new Date(),
+        status: 'sent',
+      };
+    }
   };
 
   // Execute confirmed action using custom hooks
@@ -693,7 +785,7 @@ export function AIAssistantPanel() {
         user_id: 'ai-assistant',
         user_name: 'AI Assistant',
         action: 'failed_action',
-        entity_type: 'ai_command',
+        entity_type: 'activity',
         entity_id: `failed-${Date.now()}`,
         description: `Failed to process command: ${message} - Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       });
@@ -870,348 +962,355 @@ export function AIAssistantPanel() {
     );
   }
 
-  const panelWidth = state.isExpanded ? 400 : 320;
-  const panelHeight = state.isExpanded ? 600 : 450;
-
   return (
-    <div
-      ref={panelRef}
-      className="fixed z-50 select-none transition-all duration-300 ease-out"
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="absolute z-50 select-none transition-all duration-300 ease-out"
       style={{ 
         left: `${position.x}px`, 
         top: `${position.y}px`,
-        width: `${panelWidth}px`,
-        height: `${panelHeight}px`,
       }}
     >
-      <Card className={cn(
-        "h-full shadow-2xl backdrop-blur-md border-2 overflow-hidden",
-        "bg-card/95 border-border/50",
-        isDragging && "cursor-grabbing"
-      )}>
-        {/* Header */}
-        <CardHeader 
-          className={cn(
-            "pb-3 cursor-grab active:cursor-grabbing",
-            "bg-gradient-to-r from-primary/10 to-accent/10"
-          )}
-          onMouseDown={handleMouseDown}
+      <ResizablePanel defaultSize={50}>
+        <div
+          ref={panelRef}
+          className="h-full"
         >
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Bot className="h-4 w-4 text-primary" />
-              AI Assistant
-              {state.isProcessing && (
-                <div className="flex space-x-1">
-                  <div className="w-1 h-1 bg-primary rounded-full animate-bounce" />
-                  <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
-                  <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-                </div>
+          <Card className={cn(
+            "h-full shadow-2xl backdrop-blur-md border-2 overflow-hidden",
+            "bg-card/95 border-border/50",
+            isDragging && "cursor-grabbing"
+          )}>
+            {/* Header */}
+            <CardHeader 
+              className={cn(
+                "pb-3 cursor-grab active:cursor-grabbing",
+                "bg-gradient-to-r from-primary/10 to-accent/10"
               )}
-            </CardTitle>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleExpand}
-                className="h-6 w-6 p-0 hover:bg-background/50"
-              >
-                {state.isExpanded ? (
-                  <Minimize2 className="h-3 w-3" />
-                ) : (
-                  <Maximize2 className="h-3 w-3" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMinimize}
-                className="h-6 w-6 p-0 hover:bg-background/50"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex items-center gap-1 mt-2">
-            <Button
-              variant={state.currentView === 'chat' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleViewChange('chat')}
-              className="h-7 px-2 text-xs"
+              onMouseDown={handleMouseDown}
             >
-              <MessageSquare className="h-3 w-3 mr-1" />
-              Chat
-            </Button>
-            <Button
-              variant={state.currentView === 'voice' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleViewChange('voice')}
-              className="h-7 px-2 text-xs"
-            >
-              <Mic className="h-3 w-3 mr-1" />
-              Voice
-            </Button>
-            <Button
-              variant={state.currentView === 'history' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleViewChange('history')}
-              className="h-7 px-2 text-xs"
-            >
-              <History className="h-3 w-3 mr-1" />
-              History
-            </Button>
-            <Button
-              variant={state.currentView === 'settings' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleViewChange('settings')}
-              className="h-7 px-2 text-xs"
-            >
-              <Settings className="h-3 w-3 mr-1" />
-              Settings
-            </Button>
-          </div>
-        </CardHeader>
-
-        <Separator />
-
-        {/* Content */}
-        <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-          {/* Chat View */}
-          {state.currentView === 'chat' && (
-            <AIChat
-              messages={state.messages}
-              isProcessing={state.isProcessing}
-              onSendMessage={handleSendMessage}
-              onActionConfirm={handleActionConfirm}
-            />
-          )}
-
-          {/* Voice View */}
-          {state.currentView === 'voice' && (
-            <div className="flex-1 p-4">
-              <VoiceInput
-                isListening={state.isListening}
-                onStartListening={handleStartListening}
-                onStopListening={handleStopListening}
-                onTranscriptReady={handleVoiceTranscript}
-                isProcessing={state.isProcessing}
-              />
-            </div>
-          )}
-
-          {/* History View */}
-          {state.currentView === 'history' && (
-            <div className="flex-1 p-4">
-              <AIHistory onRetryAction={handleRetryAction} />
-            </div>
-          )}
-
-          {/* Settings View */}
-          {state.currentView === 'settings' && (
-            <div className="flex-1 p-4 space-y-4">
-              <div className="text-center text-sm text-muted-foreground mb-4">
-                AI Assistant Settings
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Voice Responses</span>
-                    <div className="text-xs text-muted-foreground">Enable audio feedback for AI responses</div>
-                  </div>
-                  <Switch
-                    checked={settings.voiceResponses}
-                    onCheckedChange={(checked) => handleSettingChange('voiceResponses', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Auto-approve Low Priority</span>
-                    <div className="text-xs text-muted-foreground">Skip confirmation for low-priority actions</div>
-                  </div>
-                  <Switch
-                    checked={settings.autoApproveLowPriority}
-                    onCheckedChange={(checked) => handleSettingChange('autoApproveLowPriority', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Show Transcription</span>
-                    <div className="text-xs text-muted-foreground">Display voice input transcription</div>
-                  </div>
-                  <Switch
-                    checked={settings.showTranscription}
-                    onCheckedChange={(checked) => handleSettingChange('showTranscription', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Remember Position</span>
-                    <div className="text-xs text-muted-foreground">Save panel position between sessions</div>
-                  </div>
-                  <Switch
-                    checked={settings.rememberPosition}
-                    onCheckedChange={(checked) => handleSettingChange('rememberPosition', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Keyboard Shortcuts</span>
-                    <div className="text-xs text-muted-foreground">Enable keyboard navigation</div>
-                  </div>
-                  <Switch
-                    checked={settings.enableKeyboardShortcuts}
-                    onCheckedChange={(checked) => handleSettingChange('enableKeyboardShortcuts', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">Notification Sounds</span>
-                    <div className="text-xs text-muted-foreground">Play sounds for important notifications</div>
-                  </div>
-                  <Switch
-                    checked={settings.playNotificationSounds}
-                    onCheckedChange={(checked) => handleSettingChange('playNotificationSounds', checked)}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Keyboard Shortcuts</div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div>• <Badge variant="secondary" className="text-xs">Cmd/Ctrl + K</Badge> Open AI Assistant</div>
-                  <div>• <Badge variant="secondary" className="text-xs">ESC</Badge> Close/Cancel action</div>
-                  <div>• <Badge variant="secondary" className="text-xs">Enter</Badge> Send message</div>
-                  <div>• <Badge variant="secondary" className="text-xs">Tab</Badge> Switch between views</div>
-                  <div>• <Badge variant="secondary" className="text-xs">Space</Badge> Start/stop voice input</div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Reset</div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setSettings({
-                      voiceResponses: true,
-                      autoApproveLowPriority: false,
-                      showTranscription: true,
-                      rememberPosition: true,
-                      enableKeyboardShortcuts: true,
-                      playNotificationSounds: true
-                    });
-                  }}
-                  className="w-full"
-                >
-                  Reset to Defaults
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-
-        {/* Keyboard Shortcut Helper Overlay */}
-        {showShortcutHelper && (
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-md bg-card/95 border border-border/50">
-              <CardContent className="p-4">
-                <div className="text-center mb-4">
-                  <h3 className="text-sm font-semibold text-foreground">Keyboard Shortcuts</h3>
-                  <p className="text-xs text-muted-foreground">Press any key to dismiss</p>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Toggle AI</span>
-                        <Badge variant="secondary" className="text-xs">⌘+K</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Close/Cancel</span>
-                        <Badge variant="secondary" className="text-xs">ESC</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Next Tab</span>
-                        <Badge variant="secondary" className="text-xs">TAB</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Voice Toggle</span>
-                        <Badge variant="secondary" className="text-xs">Space</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Focus Input</span>
-                        <Badge variant="secondary" className="text-xs">⌘+↵</Badge>
-                      </div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Bot className="h-4 w-4 text-primary" />
+                  AI Assistant
+                  {state.isProcessing && (
+                    <div className="flex space-x-1">
+                      <div className="w-1 h-1 bg-primary rounded-full animate-bounce" />
+                      <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                      <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Chat View</span>
-                        <Badge variant="secondary" className="text-xs">Alt+1</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Voice View</span>
-                        <Badge variant="secondary" className="text-xs">Alt+2</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">History View</span>
-                        <Badge variant="secondary" className="text-xs">Alt+3</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Settings View</span>
-                        <Badge variant="secondary" className="text-xs">Alt+4</Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">This Help</span>
-                        <Badge variant="secondary" className="text-xs">⌘+H</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <Separator className="my-3" />
-                <div className="text-center">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowShortcutHelper(false)}
-                    className="text-xs"
+                  )}
+                </CardTitle>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleMinimize}
+                    className="h-6 w-6 p-0 hover:bg-background/50"
                   >
-                    Got it!
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              </div>
 
-        {/* Action Confirmation Dialog */}
-        <ActionConfirmation
-          pendingAction={state.pendingAction}
-          isOpen={!!state.pendingAction}
-          onConfirm={() => {
-            if (state.pendingAction) {
-              handleActionConfirm(state.pendingAction.id, true);
-            }
-          }}
-          onCancel={() => {
-            if (state.pendingAction) {
-              handleActionConfirm(state.pendingAction.id, false);
-            }
-          }}
-        />
-      </Card>
-    </div>
+              {/* Tab Navigation */}
+              <div className="flex items-center gap-1 mt-2">
+                <Button
+                  variant={state.currentView === 'chat' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewChange('chat')}
+                  className="h-7 px-2 text-xs"
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  Chat
+                </Button>
+                <Button
+                  variant={state.currentView === 'voice' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewChange('voice')}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Mic className="h-3 w-3 mr-1" />
+                  Voice
+                </Button>
+                <Button
+                  variant={state.currentView === 'history' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewChange('history')}
+                  className="h-7 px-2 text-xs"
+                >
+                  <History className="h-3 w-3 mr-1" />
+                  History
+                </Button>
+                <Button
+                  variant={state.currentView === 'settings' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewChange('settings')}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Settings className="h-3 w-3 mr-1" />
+                  Settings
+                </Button>
+                <Button
+                  variant={state.currentView === 'debug' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewChange('debug')}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  Debug
+                </Button>
+              </div>
+            </CardHeader>
+
+            <Separator />
+
+            {/* Content */}
+            <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+              {/* Chat View */}
+              {state.currentView === 'chat' && (
+                <AIChat
+                  messages={state.messages}
+                  isProcessing={state.isProcessing}
+                  onSendMessage={handleSendMessage}
+                  onClearConversation={() => setState(prev => ({ ...prev, messages: [] }))}
+                />
+              )}
+
+              {/* Voice View */}
+              {state.currentView === 'voice' && (
+                <div className="flex-1 p-4">
+                  <VoiceInput
+                    isListening={state.isListening}
+                    onStartListening={handleStartListening}
+                    onStopListening={handleStopListening}
+                    onTranscriptReady={handleVoiceTranscript}
+                    isProcessing={state.isProcessing}
+                  />
+                </div>
+              )}
+
+              {/* History View */}
+              {state.currentView === 'history' && (
+                <div className="flex-1 p-4">
+                  <AIHistory onRetryAction={handleRetryAction} />
+                </div>
+              )}
+
+              {/* Settings View */}
+              {state.currentView === 'settings' && (
+                <div className="flex-1 p-4 space-y-4">
+                  <div className="text-center text-sm text-muted-foreground mb-4">
+                    AI Assistant Settings
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Voice Responses</span>
+                        <div className="text-xs text-muted-foreground">Enable audio feedback for AI responses</div>
+                      </div>
+                      <Switch
+                        checked={settings.voiceResponses}
+                        onCheckedChange={(checked) => handleSettingChange('voiceResponses', checked)}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Auto-approve Low Priority</span>
+                        <div className="text-xs text-muted-foreground">Skip confirmation for low-priority actions</div>
+                      </div>
+                      <Switch
+                        checked={settings.autoApproveLowPriority}
+                        onCheckedChange={(checked) => handleSettingChange('autoApproveLowPriority', checked)}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Show Transcription</span>
+                        <div className="text-xs text-muted-foreground">Display voice input transcription</div>
+                      </div>
+                      <Switch
+                        checked={settings.showTranscription}
+                        onCheckedChange={(checked) => handleSettingChange('showTranscription', checked)}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Remember Position</span>
+                        <div className="text-xs text-muted-foreground">Save panel position between sessions</div>
+                      </div>
+                      <Switch
+                        checked={settings.rememberPosition}
+                        onCheckedChange={(checked) => handleSettingChange('rememberPosition', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Keyboard Shortcuts</span>
+                        <div className="text-xs text-muted-foreground">Enable keyboard navigation</div>
+                      </div>
+                      <Switch
+                        checked={settings.enableKeyboardShortcuts}
+                        onCheckedChange={(checked) => handleSettingChange('enableKeyboardShortcuts', checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-medium">Notification Sounds</span>
+                        <div className="text-xs text-muted-foreground">Play sounds for important notifications</div>
+                      </div>
+                      <Switch
+                        checked={settings.playNotificationSounds}
+                        onCheckedChange={(checked) => handleSettingChange('playNotificationSounds', checked)}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Keyboard Shortcuts</div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>• <Badge variant="secondary" className="text-xs">Cmd/Ctrl + K</Badge> Open AI Assistant</div>
+                      <div>• <Badge variant="secondary" className="text-xs">ESC</Badge> Close/Cancel action</div>
+                      <div>• <Badge variant="secondary" className="text-xs">Enter</Badge> Send message</div>
+                      <div>• <Badge variant="secondary" className="text-xs">Tab</Badge> Switch between views</div>
+                      <div>• <Badge variant="secondary" className="text-xs">Space</Badge> Start/stop voice input</div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Reset</div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSettings({
+                          voiceResponses: true,
+                          autoApproveLowPriority: false,
+                          showTranscription: true,
+                          rememberPosition: true,
+                          enableKeyboardShortcuts: true,
+                          playNotificationSounds: true
+                        });
+                      }}
+                      className="w-full"
+                    >
+                      Reset to Defaults
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Debug View */}
+              {state.currentView === 'debug' && (
+                <div className="flex-1 p-4">
+                  <AIDebugPanel />
+                </div>
+              )}
+            </CardContent>
+
+            {/* Keyboard Shortcut Helper Overlay */}
+            {showShortcutHelper && (
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <Card className="w-full max-w-md bg-card/95 border border-border/50">
+                  <CardContent className="p-4">
+                    <div className="text-center mb-4">
+                      <h3 className="text-sm font-semibold text-foreground">Keyboard Shortcuts</h3>
+                      <p className="text-xs text-muted-foreground">Press any key to dismiss</p>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Toggle AI</span>
+                            <Badge variant="secondary" className="text-xs">⌘+K</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Close/Cancel</span>
+                            <Badge variant="secondary" className="text-xs">ESC</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Next Tab</span>
+                            <Badge variant="secondary" className="text-xs">TAB</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Voice Toggle</span>
+                            <Badge variant="secondary" className="text-xs">Space</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Focus Input</span>
+                            <Badge variant="secondary" className="text-xs">⌘+↵</Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Chat View</span>
+                            <Badge variant="secondary" className="text-xs">Alt+1</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Voice View</span>
+                            <Badge variant="secondary" className="text-xs">Alt+2</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">History View</span>
+                            <Badge variant="secondary" className="text-xs">Alt+3</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Settings View</span>
+                            <Badge variant="secondary" className="text-xs">Alt+4</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">This Help</span>
+                            <Badge variant="secondary" className="text-xs">⌘+H</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="text-center">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowShortcutHelper(false)}
+                        className="text-xs"
+                      >
+                        Got it!
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Action Confirmation Dialog */}
+            <ActionConfirmation
+              pendingAction={state.pendingAction}
+              isOpen={!!state.pendingAction}
+              onConfirm={() => {
+                if (state.pendingAction) {
+                  handleActionConfirm(state.pendingAction.id, true);
+                }
+              }}
+              onCancel={() => {
+                if (state.pendingAction) {
+                  handleActionConfirm(state.pendingAction.id, false);
+                }
+              }}
+            />
+          </Card>
+        </div>
+      </ResizablePanel>
+      <ResizableHandle />
+    </ResizablePanelGroup>
   );
 }

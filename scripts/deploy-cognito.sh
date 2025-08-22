@@ -51,7 +51,7 @@ check_aws_config() {
         exit 1
     fi
     
-    if ! aws sts get-caller-identity &> /dev/null; then
+    if ! aws sts get-caller-identity >/dev/null 2>&1; then
         print_error "AWS CLI is not configured or credentials are invalid."
         print_status "Run 'aws configure' to set up your credentials."
         exit 1

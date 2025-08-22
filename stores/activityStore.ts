@@ -8,12 +8,15 @@ import { persist } from 'zustand/middleware';
 import { ActivityData, ActivityFilters, ActivityStats, ActivityCluster, EnterpriseActivity } from '../lib/types/activity';
 import { Priority, Status } from '../lib/utils/status';
 import { ActivityType } from '../lib/utils/security';
-import { generateEnterpriseActivities, generateRealtimeActivity } from '../components/enterpriseMockData';
+import { generateEnterpriseActivities, generateRealtimeActivity } from '../components/mock-data/enterpriseMockData.tsx';
 import { ActivityService } from '../services/activity.service';
 import { AuditService } from '../services/audit.service';
 import { BOLService } from '../services/bol.service';
 import { AuditContext } from '../services/types';
 import { useUserStore } from './userStore';
+import { useAlertStore } from './alertStore';
+import { ambientAlertsToActivities, activityToAmbientAlert } from '../lib/adapters/ambientToActivity';
+import { debug } from '../utils/debug';
 
 // Type alias for Activity
 type Activity = ActivityData | EnterpriseActivity;
@@ -44,6 +47,10 @@ interface ActivityState {
   activityService: ActivityService | null;
   auditService: AuditService | null;
   bolService: BOLService | null;
+  
+  // Ambient.AI integration
+  ambientMode: boolean;
+  ambientConnected: boolean;
   
   // Real-time generation
   realtimeEnabled: boolean;
@@ -86,7 +93,7 @@ interface ActivityActions {
   
   // Activity management (service-backed)
   loadActivities: () => Promise<void>;
-  createActivity: (activity: Partial<EnterpriseActivity>, context: AuditContext) => Promise<void>;
+  createActivity: (activity: Partial<EnterpriseActivity>, context: AuditContext) => Promise<EnterpriseActivity>;
   updateActivity: (id: string, updates: Partial<EnterpriseActivity>, context: AuditContext) => Promise<void>;
   deleteActivity: (id: string, context: AuditContext) => Promise<void>;
   selectActivity: (activity: EnterpriseActivity | null) => void;
@@ -94,6 +101,11 @@ interface ActivityActions {
   // Status management (with business logic compliance)
   updateActivityStatus: (id: string, status: Status, context: AuditContext, reason?: string) => Promise<void>;
   assignActivity: (id: string, assignedTo: string, context: AuditContext) => Promise<void>;
+  
+  // Ambient.AI integration
+  enableAmbientMode: () => void;
+  disableAmbientMode: () => void;
+  syncWithAmbientAlerts: () => void;
   
   // Real-time operations
   startRealtimeGeneration: () => void;
@@ -244,9 +256,9 @@ const sortActivities = (
 export const useActivityStore = create<ActivityStore>()(
   persist(
     (set, get) => {
-      // Generate initial activities immediately if store is empty
-      const initialActivities = generateEnterpriseActivities(5000);
-      const initialLastId = Math.max(...initialActivities.map(a => parseInt(a.id.split('-')[1]) || 0));
+      // Initialize with empty state - activities will be loaded based on mode
+      const initialActivities: EnterpriseActivity[] = [];
+      const initialLastId = 0;
       
       return {
         // Initial state with immediate data
@@ -256,6 +268,8 @@ export const useActivityStore = create<ActivityStore>()(
         activityService: null,
         auditService: null,
         bolService: null,
+        ambientMode: true,
+        ambientConnected: false,
         realtimeEnabled: false,
         lastActivityId: initialLastId,
         filters: defaultFilters,
@@ -279,7 +293,14 @@ export const useActivityStore = create<ActivityStore>()(
       
       // Activity management
       loadActivities: async () => {
-        const { activityService } = get();
+        const { activityService, ambientMode } = get();
+        
+        // If in ambient mode, sync with alerts instead of loading regular activities
+        if (ambientMode) {
+          console.log('🚫 loadActivities called but in ambient mode - syncing with alerts instead');
+          get().syncWithAmbientAlerts();
+          return;
+        }
         
         set({ loading: true, error: null });
         
@@ -305,6 +326,7 @@ export const useActivityStore = create<ActivityStore>()(
             }
           } else {
             // Fallback to mock data generation
+            console.log('📦 Loading mock enterprise activities (5000)');
             const activities = generateEnterpriseActivities(5000);
             const lastId = Math.max(...activities.map(a => parseInt(a.id.split('-')[1]) || 0));
             
@@ -349,16 +371,22 @@ export const useActivityStore = create<ActivityStore>()(
               type: activity.type || 'note',
               title: activity.title || 'New Activity',
               description: activity.description || '',
-              timestamp: new Date().toISOString(),
+              timestamp: new Date(),
+              created_at: new Date(),
+              updated_at: new Date(),
               created_by: safeContext.userId,
               updated_by: safeContext.userId,
-              status: 'active',
+              status: 'detecting',
               priority: 'medium',
-              tags: activity.tags || [],
-              metadata: activity.metadata || {},
-              attachments: activity.attachments || [],
-              links: activity.links || [],
-              comments: activity.comments || [],
+              system_tags: [],
+              user_tags: [],
+              incident_contexts: [],
+              retention_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+              is_archived: false,
+              allowed_status_transitions: ['detecting', 'assigned', 'responding', 'resolved'],
+              requires_approval: false,
+              location: activity.location || 'Unknown',
+              source: 'MANUAL' as const,
               ...activity
             };
           }
@@ -406,7 +434,7 @@ export const useActivityStore = create<ActivityStore>()(
                 ...activity,
                 ...updates,
                 updated_by: ensuredContext.userId,
-                updated_at: new Date().toISOString()
+                updated_at: new Date()
               };
               
               return {
@@ -464,7 +492,7 @@ export const useActivityStore = create<ActivityStore>()(
       },
       
       // Status management with business logic
-      updateActivityStatus: async (id: string, status: string, context?: AuditContext, reason?: string) => {
+      updateActivityStatus: async (id: string, status: Status, context?: AuditContext, reason?: string) => {
         const { activityService } = get();
         const ensuredContext = ensureContext(context);
         
@@ -498,7 +526,7 @@ export const useActivityStore = create<ActivityStore>()(
       },
       
       assignActivity: async (id: string, assignedTo: string, context?: AuditContext) => {
-        const { activityService } = get();
+        const { activityService, ambientMode } = get();
         const ensuredContext = ensureContext(context);
         
         set({ loading: true, error: null });
@@ -518,6 +546,16 @@ export const useActivityStore = create<ActivityStore>()(
             }));
           } else {
             await get().updateActivity(id, { assignedTo, status: 'assigned' }, ensuredContext);
+            
+            // If in ambient mode, also update the corresponding alert
+            if (ambientMode) {
+              const alertStore = useAlertStore.getState();
+              const activity = get().activities.find(a => a.id === id);
+              if (activity && activity.ambient_alert_id) {
+                // Find and update the corresponding alert
+                alertStore.updateAlertAssignment(activity.ambient_alert_id, assignedTo);
+              }
+            }
           }
           
           get().applyFilters();
@@ -774,10 +812,78 @@ export const useActivityStore = create<ActivityStore>()(
         if (!realtimeEnabled) return;
         
         const newId = lastActivityId + 1;
-        const newActivity = generateRealtimeActivity(newId);
+        const newActivity = {
+          ...generateRealtimeActivity(newId),
+          id: newId.toString(),
+          timestamp: new Date(),
+        };
+
         
         // Use system context through ensureContext
-        await get().createActivity(newActivity);
+        await get().createActivity(newActivity, ensureContext());
+      },
+      
+      // Ambient.AI integration methods
+      enableAmbientMode: () => {
+        set({ 
+          ambientMode: true,
+          ambientConnected: true
+        });
+        
+        // Sync with Ambient alerts immediately
+        get().syncWithAmbientAlerts();
+      },
+      
+              disableAmbientMode: () => {
+          set({ 
+            ambientMode: false,
+            ambientConnected: false
+          });
+          
+          // Load regular activities when disabling Ambient mode
+          get().loadActivities();
+        },
+      
+      syncWithAmbientAlerts: () => {
+        const { ambientMode } = get();
+        console.log('🔄 syncWithAmbientAlerts called, ambientMode:', ambientMode);
+        if (!ambientMode) return;
+        
+        try {
+          // Get alerts from alert store
+          const alertStore = useAlertStore.getState();
+          const ambientAlerts = alertStore.alerts;
+          console.log('📡 Found ambient alerts:', ambientAlerts.length);
+          
+          // Convert to activities
+          const ambientActivities = ambientAlertsToActivities(ambientAlerts);
+          console.log('🔄 Converted to activities:', ambientActivities.length);
+          
+          // Generate additional mock activities with full status range for demonstration
+          // This ensures we have activities in all Kanban columns to show the complete incident flow
+          const mockActivities = generateEnterpriseActivities(20); // Generate 20 mock activities
+          console.log('🎭 Generated mock activities:', mockActivities.length);
+          
+          // Combine ambient and mock activities
+          const allActivities = [...ambientActivities, ...mockActivities];
+          console.log('🎯 Total activities for Kanban:', allActivities.length);
+          
+          set({ 
+            activities: allActivities,
+            filteredActivities: allActivities,
+            ambientConnected: true,
+            loading: false,
+            error: null
+          });
+          
+          get().applyFilters();
+        } catch (error) {
+          console.error('Failed to sync with Ambient alerts:', error);
+          set({ 
+            ambientConnected: false,
+            error: 'Failed to sync with Ambient.AI'
+          });
+        }
       },
     };
   },
@@ -791,6 +897,7 @@ export const useActivityStore = create<ActivityStore>()(
       sorting: state.sorting,
       realtimeEnabled: state.realtimeEnabled,
       lastActivityId: state.lastActivityId,
+      ambientMode: state.ambientMode,
     }),
   }
 ));

@@ -8,7 +8,8 @@ import {
   Eye, 
   MoreVertical,
   Camera,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 import { EnterpriseActivity, ActivityCluster } from '../lib/types/activity';
 import { getPriorityColor, getStatusColor, getBusinessImpactColor, Priority } from '../lib/utils/status';
@@ -279,7 +280,7 @@ const EnterpriseStreamCard = memo<{
         <ActivityActionsCompact 
           activity={activity}
           onAction={onAction}
-          showQuickActions={false}
+          showQuickActions={true}
           showMainActions={false}
         />
       </CardContent>
@@ -362,7 +363,7 @@ export const EnterpriseActivityCard = memo<EnterpriseActivityCardProps>(({
     return <div className="h-0" />;
   }
 
-  const baseClassName = `${className}`;
+  const baseClassName = `enterprise-activity-card ${className}`;
 
   // Handle both individual activities and clusters
   const isCluster = 'clusterType' in activity && (activity as any).clusterType === 'cluster';

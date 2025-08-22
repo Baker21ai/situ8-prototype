@@ -13,6 +13,7 @@ import {
   ServiceException,
   AuthorizationException
 } from './types';
+import { debug } from '../utils/debug';
 import {
   getCognitoConfig,
   UserRole,
@@ -26,12 +27,13 @@ import {
   rolePermissions,
   clearanceLevelRequirements
 } from '../config/cognito';
-import cognitoOperations, { getCognitoInitStatus } from './cognito-client';
+import cognitoOperations, { getCognitoInitStatus, ensureCognitoInitialized, recoverCognitoConfiguration } from './cognito-client';
 
 // Auth-specific types
 export interface LoginRequest {
   email: string;
   password: string;
+  newPassword?: string; // For handling NEW_PASSWORD_REQUIRED challenge
   rememberMe?: boolean;
 }
 
@@ -135,23 +137,66 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       cacheEnabled: false // Auth tokens should not be cached
     });
 
-    // Check Cognito initialization status
-    const cognitoStatus = getCognitoInitStatus();
-    if (!cognitoStatus.isInitialized) {
-      console.warn('⚠️  AuthService: Cognito not initialized, enabling demo mode as fallback');
-      console.warn('⚠️  Error:', cognitoStatus.error?.message);
-      this.isDemoMode = true; // Enable demo mode as fallback
-    }
-
-    console.log('🔐 AuthService: Initializing with config:', {
-      isDemoMode: this.isDemoMode,
-      cognitoInitialized: cognitoStatus.isInitialized,
-      userPoolId: this.cognitoConfig.userPoolId,
-      clientId: this.cognitoConfig.userPoolWebClientId
-    });
+    console.log('🔍 AUTH SERVICE DEBUG START:', new Date().toISOString());
+    
+    // Check for force AWS mode (for debugging)
+    const forceAWSMode = window.location.search.includes('forceAWS=true');
+    
+    // Initialize Cognito and set mode based on result
+    this.initializeCognitoAndSetMode(forceAWSMode);
 
     // Initialize from stored session if available
     this.initializeFromStorage();
+  }
+
+  private async initializeCognitoAndSetMode(forceAWSMode: boolean): Promise<void> {
+    try {
+      // Wait for Cognito to initialize
+      console.log('🔧 AuthService: Waiting for Cognito initialization...');
+      await ensureCognitoInitialized();
+      
+      // Check status after initialization
+      const cognitoStatus = getCognitoInitStatus();
+      
+      console.log('🔍 AUTH SERVICE DECISION TREE (POST-INIT):', {
+        timestamp: new Date().toISOString(),
+        envVarsDirectCheck: {
+          VITE_COGNITO_USER_POOL_ID: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+          VITE_COGNITO_CLIENT_ID: import.meta.env.VITE_COGNITO_CLIENT_ID,
+        },
+        cognitoConfig: this.cognitoConfig,
+        cognitoStatus: {
+          isInitialized: cognitoStatus.isInitialized,
+          error: cognitoStatus.error?.message,
+          hasCognitoConfig: cognitoStatus.hasCognitoConfig
+        },
+        forceAWSMode,
+        willUseDemoMode: false,
+        reason: 'Cognito is ready'
+      });
+      
+      // Cognito initialized successfully, use AWS mode
+      console.log('✅ AuthService: Cognito initialized successfully, using AWS mode');
+      this.isDemoMode = false;
+      
+    } catch (error) {
+      console.error('❌ AuthService: Failed to initialize Cognito:', error);
+      
+      if (forceAWSMode) {
+        console.log('🔧 AuthService: Force AWS mode enabled, keeping AWS mode despite error');
+        this.isDemoMode = false;
+      } else {
+        console.error('❌ AuthService: Cognito not available - AWS mode only');
+        this.isDemoMode = false; // NEVER auto-enable demo mode
+      }
+    }
+    
+    console.log('🔐 AuthService: FINAL MODE:', {
+      isDemoMode: this.isDemoMode,
+      userPoolId: this.cognitoConfig.userPoolId,
+      clientId: this.cognitoConfig.userPoolWebClientId,
+      forceAWSMode
+    });
   }
 
   protected validateEntity(entity: Partial<AuthenticatedUser>): ValidationResult {
@@ -231,36 +276,157 @@ export class AuthService extends BaseService<AuthenticatedUser> {
    * Login with email and password
    */
   async login(request: LoginRequest): ServiceMethod<LoginResponse> {
+    console.log('🔐 LOGIN ATTEMPT:', {
+      timestamp: new Date().toISOString(),
+      email: request.email,
+      isDemoMode: this.isDemoMode,
+      cognitoInitialized: getCognitoInitStatus().isInitialized,
+      willTryAWS: !this.isDemoMode,
+      willTryDemo: this.isDemoMode
+    });
+    
     try {
       // In demo mode, handle demo login
       if (this.isDemoMode) {
+        console.log('📍 LOGIN FLOW: Entering demo mode login for:', request.email);
         return this.loginDemoUser(request.email);
       }
 
+      console.log('📍 LOGIN FLOW: Attempting AWS Cognito login for:', request.email);
+      
+      // Ensure Cognito is initialized before attempting login
+      console.log('🔧 Ensuring Cognito is initialized before login...');
+      try {
+        await ensureCognitoInitialized();
+        console.log('✅ Cognito ready for login');
+      } catch (initError) {
+        console.error('❌ Failed to initialize Cognito:', initError);
+        // DO NOT fall back to demo mode
+        return this.createErrorResponse(
+          'Failed to initialize authentication. Please refresh the page.',
+          'INIT_FAILED'
+        );
+      }
+      
       // Validate request
       const validation = this.validateLoginRequest(request);
       if (!validation.isValid) {
+        console.log('❌ LOGIN FLOW: Validation failed:', validation.errors);
         return this.createErrorResponse('Invalid login request', 'VALIDATION_ERROR');
       }
 
       // Authenticate with AWS Cognito
-      console.log('🔑 Attempting Cognito sign in for:', request.email);
+      debug.service('AuthService', 'login', { email: request.email, rememberMe: request.rememberMe });
       let signInResult;
       
       try {
         signInResult = await cognitoOperations.signIn(request.email, request.password);
-        console.log('🔑 Sign in result:', signInResult);
+        debug.service('AuthService', 'signIn successful', { isSignedIn: signInResult.isSignedIn });
       } catch (cognitoError: any) {
-        console.error('❌ Cognito sign in error:', cognitoError);
+        debug.error('AuthService', cognitoError, { 
+          email: request.email,
+          errorName: cognitoError.name,
+          errorCode: cognitoError.code 
+        });
         
-        // If Cognito fails, check if we should fallback to demo mode
-        if (cognitoError.name === 'AuthUserPoolException') {
-          console.warn('⚠️  Falling back to demo mode due to Cognito error');
-          this.isDemoMode = true;
-          return this.loginDemoUser(request.email);
+        // Handle UserAlreadyAuthenticatedException by signing out and retrying
+        if (cognitoError.name === 'UserAlreadyAuthenticatedException') {
+          console.log('🔄 User already authenticated, signing out existing session and retrying...');
+          try {
+            // Sign out the existing user
+            await cognitoOperations.signOut();
+            console.log('✅ Existing session signed out successfully');
+            
+            // Clear local session data
+            this.clearSession();
+            
+            // Retry the login
+            console.log('🔄 Retrying login after signout...');
+            signInResult = await cognitoOperations.signIn(request.email, request.password);
+            debug.service('AuthService', 'signIn successful after retry', { isSignedIn: signInResult.isSignedIn });
+            
+            // If retry was successful, continue with normal login flow
+            if (signInResult && signInResult.isSignedIn) {
+              console.log('✅ Login retry successful, proceeding with authentication...');
+              // Continue to the normal login flow below
+            } else {
+              throw new Error('Login retry failed - user not signed in');
+            }
+          } catch (retryError: any) {
+            console.error('❌ Failed to sign out or retry login:', retryError);
+            return this.createErrorResponse(
+              'Failed to clear existing session. Please refresh the page and try again.',
+              'SESSION_CONFLICT'
+            );
+          }
+        } else {
+          // If Cognito fails, check if we should fallback to demo mode
+          if (cognitoError.name === 'AuthUserPoolException') {
+          debug.warn('AuthService', 'Cognito configuration lost, attempting recovery...');
+          
+          // Try to recover configuration
+          const recovered = recoverCognitoConfiguration();
+          if (recovered) {
+            // Retry login after recovery
+            debug.info('AuthService', 'Configuration recovered, retrying login...');
+            try {
+              const retryResult = await cognitoOperations.signIn(request.email, request.password);
+              if (retryResult.isSignedIn) {
+                // Continue with successful login flow
+                const userAttributes = await cognitoOperations.getUserAttributes();
+                const session = await cognitoOperations.getSession();
+                const authenticatedUser = await this.parseAndCreateUser(userAttributes);
+                const tokens = await this.extractTokensFromSession(session);
+                const sessionInfo = this.createSessionInfo();
+                
+                this.currentUser = authenticatedUser;
+                this.tokens = tokens;
+                this.sessionInfo = sessionInfo;
+                
+                return {
+                  success: true,
+                  data: { user: authenticatedUser, tokens, sessionInfo },
+                  message: 'Login successful after recovery'
+                };
+              }
+            } catch (retryError) {
+              debug.error('AuthService', 'Retry failed after recovery', retryError);
+            }
+          }
+          
+          // DO NOT fall back to demo mode - return proper error
+          debug.error('AuthService', 'Cognito configuration lost and recovery failed');
+          return this.createErrorResponse(
+            'Authentication system is not configured. Please check AWS Cognito settings.',
+            'AUTH_NOT_CONFIGURED'
+          );
         }
         
-        throw cognitoError;
+        // Log all auth errors for debugging
+        console.error('🔴 AUTH ERROR:', {
+          name: cognitoError.name,
+          message: cognitoError.message,
+          code: cognitoError.code,
+          time: new Date().toISOString()
+        });
+        
+        // Store error in global log
+        if (typeof window !== 'undefined') {
+          window.ERROR_LOG = window.ERROR_LOG || [];
+          window.ERROR_LOG.push({
+            time: new Date().toISOString(),
+            error: `Auth: ${cognitoError.name} - ${cognitoError.message}`,
+            stack: cognitoError.stack
+          });
+        }
+        
+        // For user not found, return proper error message
+        if (cognitoError.name === 'UserNotFoundException') {
+          return this.createErrorResponse('User not found. Please check your email address.', 'USER_NOT_FOUND');
+        }
+          
+          throw cognitoError;
+        }
       }
       
       // Handle different authentication states
@@ -303,14 +469,50 @@ export class AuthService extends BaseService<AuthenticatedUser> {
         };
       } else if (signInResult.nextStep?.signInStep === 'NEW_PASSWORD_REQUIRED') {
         // User needs to change password
-        return {
-          success: false,
-          error: {
-            code: 'NEW_PASSWORD_REQUIRED',
-            message: 'Password change required',
-            details: { challengeName: 'NEW_PASSWORD_REQUIRED' }
+        if (request.newPassword) {
+          // Complete the password change challenge
+          try {
+            const confirmResult = await cognitoOperations.confirmSignIn(request.newPassword);
+            if (confirmResult.isSignedIn) {
+              // Password changed successfully, now get user data
+              const userAttributes = await cognitoOperations.getUserAttributes();
+              const session = await cognitoOperations.getSession();
+              const authenticatedUser = await this.parseAndCreateUser(userAttributes);
+              const tokens = await this.extractTokensFromSession(session);
+              const sessionInfo = this.createSessionInfo();
+              
+              this.currentUser = authenticatedUser;
+              this.tokens = tokens;
+              this.sessionInfo = sessionInfo;
+              
+              return {
+                success: true,
+                data: { user: authenticatedUser, tokens, sessionInfo },
+                message: 'Password changed and login successful'
+              };
+            }
+          } catch (confirmError) {
+            console.error('Password change confirmation error:', confirmError);
+            return {
+              success: false,
+              error: {
+                code: 'PASSWORD_CHANGE_FAILED',
+                message: 'Failed to change password. Please check password requirements.',
+                details: confirmError
+              }
+            };
           }
-        };
+        } else {
+          // Return the challenge to the UI
+          return {
+            success: false,
+            error: {
+              code: 'NEW_PASSWORD_REQUIRED',
+              message: 'Password change required',
+              details: { challengeName: 'NEW_PASSWORD_REQUIRED' }
+            }
+          };
+        }
       } else {
         // Other authentication challenges
         return {
@@ -322,8 +524,8 @@ export class AuthService extends BaseService<AuthenticatedUser> {
           }
         };
       }
-
     } catch (error) {
+      debug.error('Login failed:', error);
       return this.createErrorResponse(error, 'LOGIN_ERROR');
     }
   }
@@ -660,8 +862,9 @@ export class AuthService extends BaseService<AuthenticatedUser> {
     if (!enabled) {
       const cognitoStatus = getCognitoInitStatus();
       if (!cognitoStatus.isInitialized) {
-        console.warn('⚠️  Cannot disable demo mode - Cognito not initialized');
-        this.isDemoMode = true;
+        console.warn('⚠️  Cognito not initialized');
+        // Keep demo mode disabled regardless
+        this.isDemoMode = false;
       }
     }
   }
@@ -956,11 +1159,6 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       clearanceLevel: parsed.clearanceLevel,
       badgeNumber: parsed.badgeNumber,
       facilityCodes: parsed.facilityCodes,
-      name: attributes.name || parsed.email.split('@')[0],
-      avatar: this.generateAvatar(parsed.email),
-      lastLogin: new Date(),
-      status: 'active',
-      permissions: rolePermissions[parsed.role],
       profile: {
         fullName: attributes.name || parsed.email.split('@')[0],
         avatar: this.generateAvatar(parsed.email)
@@ -979,8 +1177,6 @@ export class AuthService extends BaseService<AuthenticatedUser> {
       accessToken: tokens?.accessToken?.toString() || '',
       idToken: tokens?.idToken?.toString() || '',
       refreshToken: session.credentials?.refreshToken || '',
-      expiresIn,
-      tokenType: 'Bearer',
       expiresAt: new Date(Date.now() + expiresIn * 1000)
     };
   }
@@ -999,4 +1195,43 @@ export class AuthService extends BaseService<AuthenticatedUser> {
     ];
     return avatars[hash];
   }
+}
+
+// Debug helper for browser console
+if (typeof window !== 'undefined') {
+  (window as any).debugAuth = () => {
+    const cognitoStatus = getCognitoInitStatus();
+    const cognitoConfig = getCognitoConfig();
+    
+    console.log('=== 🔍 AUTH DEBUG SUMMARY ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('---');
+    console.log('ENV VARS (Direct Check):');
+    console.log('  VITE_COGNITO_USER_POOL_ID:', import.meta.env.VITE_COGNITO_USER_POOL_ID);
+    console.log('  VITE_COGNITO_CLIENT_ID:', import.meta.env.VITE_COGNITO_CLIENT_ID);
+    console.log('---');
+    console.log('COGNITO CONFIG:');
+    console.log('  userPoolId:', cognitoConfig.userPoolId);
+    console.log('  clientId:', cognitoConfig.userPoolWebClientId);
+    console.log('---');
+    console.log('COGNITO STATUS:');
+    console.log('  isInitialized:', cognitoStatus.isInitialized);
+    console.log('  hasCognitoConfig:', cognitoStatus.hasCognitoConfig);
+    console.log('  error:', cognitoStatus.error?.message);
+    console.log('---');
+    console.log('URL PARAMS:');
+    console.log('  forceAWS:', window.location.search.includes('forceAWS=true'));
+    console.log('---');
+    console.log('ALL VITE ENV VARS:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+    console.log('============================');
+    
+    return {
+      cognitoStatus,
+      cognitoConfig,
+      envVars: {
+        poolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+        clientId: import.meta.env.VITE_COGNITO_CLIENT_ID
+      }
+    };
+  };
 }

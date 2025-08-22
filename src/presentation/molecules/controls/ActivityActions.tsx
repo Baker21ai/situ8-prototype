@@ -15,7 +15,8 @@ import {
   Clock, 
   FileText,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Zap
 } from 'lucide-react';
 import { EnterpriseActivity, ActivityCluster } from '../../../../lib/types/activity';
 
@@ -62,10 +63,25 @@ export const ActivityActions: React.FC<ActivityActionsProps> = ({
   const buttonSize = getButtonSize();
   const isCluster = 'clusterType' in activity;
 
-  // Minimal variant: just a toggle button
+  // Minimal variant: just a toggle button and lightning bolt
   if (variant === 'minimal') {
     return (
-      <div className={className}>
+      <div className={`flex items-center gap-1 ${className}`}>
+        {/* Lightning Bolt - Command Center */}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAction('command-center');
+          }}
+          disabled={disabled}
+          title="Open Command Center"
+        >
+          <Zap className="h-2 w-2" />
+        </Button>
+        
         {showExpandCollapse && (
           <Button
             size="sm"
@@ -109,6 +125,21 @@ export const ActivityActions: React.FC<ActivityActionsProps> = ({
       {/* Quick Actions */}
       {showQuickActions && !isCluster && (
         <div className="flex items-center gap-1">
+          {/* Lightning Bolt - Command Center */}
+          <Button
+            size={buttonSize}
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction('command-center');
+            }}
+            disabled={disabled}
+            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            title="Open Modular Command Center"
+          >
+            <Zap className="h-4 w-4" />
+          </Button>
+
           <Button
             size={buttonSize}
             variant="ghost"

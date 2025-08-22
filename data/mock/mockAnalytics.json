@@ -1,0 +1,196 @@
+{
+  "coverageAnalytics": {
+    "dailyCoverage": {
+      "date": "2024-08-17",
+      "totalPatrolTime": 420,
+      "coveredAreas": 85,
+      "missedCheckpoints": 3,
+      "complianceRate": 94.2,
+      "zones": [
+        {
+          "zoneId": "Zone A-1",
+          "coverage": 98.5,
+          "patrolCount": 12,
+          "avgResponseTime": 8.5,
+          "incidents": 0
+        },
+        {
+          "zoneId": "Zone A-2", 
+          "coverage": 92.1,
+          "patrolCount": 10,
+          "avgResponseTime": 12.3,
+          "incidents": 1
+        },
+        {
+          "zoneId": "Zone A-7",
+          "coverage": 88.7,
+          "patrolCount": 8,
+          "avgResponseTime": 15.2,
+          "incidents": 2
+        },
+        {
+          "zoneId": "Zone B-1",
+          "coverage": 95.8,
+          "patrolCount": 11,
+          "avgResponseTime": 9.8,
+          "incidents": 0
+        }
+      ]
+    },
+    "heatmapData": [
+      {
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "intensity": 0.9,
+        "visits": 24,
+        "avgDwellTime": 180
+      },
+      {
+        "latitude": 37.7751,
+        "longitude": -122.4192,
+        "intensity": 0.7,
+        "visits": 18,
+        "avgDwellTime": 120
+      },
+      {
+        "latitude": 37.7755,
+        "longitude": -122.4188,
+        "intensity": 0.8,
+        "visits": 16,
+        "avgDwellTime": 240
+      },
+      {
+        "latitude": 37.7745,
+        "longitude": -122.4198,
+        "intensity": 0.6,
+        "visits": 14,
+        "avgDwellTime": 150
+      }
+    ]
+  },
+  "assetPerformance": {
+    "overallUptime": 96.8,
+    "byType": {
+      "camera": {
+        "uptime": 96.4,
+        "totalAssets": 25,
+        "onlineCount": 23,
+        "alertCount": 2,
+        "offlineCount": 0
+      },
+      "door": {
+        "uptime": 98.1,
+        "totalAssets": 18,
+        "onlineCount": 17,
+        "alertCount": 1,
+        "offlineCount": 0
+      },
+      "sensor": {
+        "uptime": 92.5,
+        "totalAssets": 15,
+        "onlineCount": 13,
+        "alertCount": 1,
+        "offlineCount": 1
+      },
+      "alarm": {
+        "uptime": 99.8,
+        "totalAssets": 8,
+        "onlineCount": 8,
+        "alertCount": 0,
+        "offlineCount": 0
+      },
+      "access_point": {
+        "uptime": 94.2,
+        "totalAssets": 12,
+        "onlineCount": 10,
+        "alertCount": 0,
+        "offlineCount": 2
+      }
+    },
+    "trends": [
+      { "date": "2024-08-10", "uptime": 97.2 },
+      { "date": "2024-08-11", "uptime": 96.8 },
+      { "date": "2024-08-12", "uptime": 98.1 },
+      { "date": "2024-08-13", "uptime": 95.9 },
+      { "date": "2024-08-14", "uptime": 96.5 },
+      { "date": "2024-08-15", "uptime": 97.0 },
+      { "date": "2024-08-16", "uptime": 96.3 },
+      { "date": "2024-08-17", "uptime": 96.8 }
+    ]
+  },
+  "patrolCompliance": {
+    "overallScore": 91.5,
+    "guards": [
+      {
+        "guardId": 1,
+        "guardName": "Garcia, M.",
+        "complianceScore": 94.2,
+        "completedRoutes": 17,
+        "missedCheckpoints": 2,
+        "avgPatrolTime": 45,
+        "incidents": 3
+      },
+      {
+        "guardId": 2,
+        "guardName": "Chen, L.",
+        "complianceScore": 88.7,
+        "completedRoutes": 15,
+        "missedCheckpoints": 4,
+        "avgPatrolTime": 52,
+        "incidents": 1
+      },
+      {
+        "guardId": 3,
+        "guardName": "Officer Smith",
+        "complianceScore": 92.1,
+        "completedRoutes": 16,
+        "missedCheckpoints": 3,
+        "avgPatrolTime": 38,
+        "incidents": 0
+      },
+      {
+        "guardId": 4,
+        "guardName": "Officer Davis",
+        "complianceScore": 91.8,
+        "completedRoutes": 14,
+        "missedCheckpoints": 2,
+        "avgPatrolTime": 41,
+        "incidents": 2
+      }
+    ]
+  },
+  "incidentCorrelation": [
+    {
+      "incidentId": "INC-001",
+      "timestamp": "2024-08-17T08:45:00Z",
+      "type": "security_alert",
+      "location": {
+        "building": "building-a",
+        "floor": 3,
+        "zone": "Zone A-7"
+      },
+      "guardPresent": true,
+      "guardId": 1,
+      "guardDistance": 5.2,
+      "responseTime": 90,
+      "assetInvolved": "cam-002",
+      "resolved": true
+    },
+    {
+      "incidentId": "INC-002",
+      "timestamp": "2024-08-17T14:20:00Z",
+      "type": "equipment_failure",
+      "location": {
+        "building": "building-a",
+        "floor": 3,
+        "zone": "Zone A-7"
+      },
+      "guardPresent": false,
+      "guardId": null,
+      "guardDistance": null,
+      "responseTime": 300,
+      "assetInvolved": "sensor-002",
+      "resolved": false
+    }
+  ]
+}

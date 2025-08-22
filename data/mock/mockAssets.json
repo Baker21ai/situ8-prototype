@@ -1,0 +1,236 @@
+[
+  {
+    "id": "cam-001",
+    "name": "Main Entrance Camera",
+    "type": "camera",
+    "status": "online",
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "floor": 1,
+      "building": "building-a",
+      "room": "a-1-lobby",
+      "zone": "Zone A-1"
+    },
+    "metadata": {
+      "installationDate": "2023-06-15",
+      "lastMaintenance": "2024-08-10",
+      "firmwareVersion": "v2.3.1",
+      "manufacturer": "Axis Communications",
+      "model": "P3248-LVE",
+      "coverage": "120°",
+      "resolution": "4K",
+      "nightVision": true
+    },
+    "performance": {
+      "uptime": 98.5,
+      "lastStatusChange": "2024-08-15T14:30:00Z",
+      "avgResponseTime": 120,
+      "errorCount": 2
+    }
+  },
+  {
+    "id": "door-001", 
+    "name": "Main Entrance Door",
+    "type": "door",
+    "status": "alert",
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4195,
+      "floor": 1,
+      "building": "building-a", 
+      "room": "a-1-lobby",
+      "zone": "Zone A-1"
+    },
+    "metadata": {
+      "installationDate": "2023-05-20",
+      "lastMaintenance": "2024-07-25",
+      "firmwareVersion": "v1.8.3",
+      "manufacturer": "HID Global",
+      "model": "VertX V1000",
+      "accessLevel": "high",
+      "emergencyOverride": true
+    },
+    "performance": {
+      "uptime": 99.2,
+      "lastStatusChange": "2024-08-17T09:15:00Z",
+      "avgResponseTime": 85,
+      "errorCount": 1
+    }
+  },
+  {
+    "id": "sensor-001",
+    "name": "Motion Sensor - Lobby",
+    "type": "sensor",
+    "status": "online",
+    "location": {
+      "latitude": 37.7750,
+      "longitude": -122.4193,
+      "floor": 1,
+      "building": "building-a",
+      "room": "a-1-lobby", 
+      "zone": "Zone A-1"
+    },
+    "metadata": {
+      "installationDate": "2023-06-20",
+      "lastMaintenance": "2024-08-05",
+      "firmwareVersion": "v3.1.2",
+      "manufacturer": "Bosch Security",
+      "model": "ISC-BPR2-W12",
+      "detectionRange": "12m",
+      "sensitivity": "medium"
+    },
+    "performance": {
+      "uptime": 97.8,
+      "lastStatusChange": "2024-08-16T16:45:00Z",
+      "avgResponseTime": 95,
+      "errorCount": 3
+    }
+  },
+  {
+    "id": "alarm-001",
+    "name": "Fire Alarm Panel",
+    "type": "alarm",
+    "status": "online",
+    "location": {
+      "latitude": 37.7751,
+      "longitude": -122.4192,
+      "floor": 1,
+      "building": "building-a",
+      "room": "a-1-reception",
+      "zone": "Zone A-2"
+    },
+    "metadata": {
+      "installationDate": "2023-04-10",
+      "lastMaintenance": "2024-08-01",
+      "firmwareVersion": "v4.2.1",
+      "manufacturer": "Honeywell",
+      "model": "NOTIFIER NFS2-3030",
+      "zones": 8,
+      "certification": "UL Listed"
+    },
+    "performance": {
+      "uptime": 99.9,
+      "lastStatusChange": "2024-08-10T11:20:00Z",
+      "avgResponseTime": 50,
+      "errorCount": 0
+    }
+  },
+  {
+    "id": "access-001",
+    "name": "WiFi Access Point - Reception",
+    "type": "access_point",
+    "status": "maintenance",
+    "location": {
+      "latitude": 37.7752,
+      "longitude": -122.4191,
+      "floor": 1,
+      "building": "building-a",
+      "room": "a-1-reception",
+      "zone": "Zone A-2"
+    },
+    "metadata": {
+      "installationDate": "2023-08-12",
+      "lastMaintenance": "2024-08-17",
+      "firmwareVersion": "v6.1.4",
+      "manufacturer": "Cisco",
+      "model": "Aironet 2802i",
+      "frequency": "2.4/5 GHz",
+      "maxClients": 200
+    },
+    "performance": {
+      "uptime": 96.3,
+      "lastStatusChange": "2024-08-17T08:00:00Z",
+      "avgResponseTime": 200,
+      "errorCount": 5
+    }
+  },
+  {
+    "id": "cam-002",
+    "name": "Executive Floor Camera 1",
+    "type": "camera",
+    "status": "alert",
+    "location": {
+      "latitude": 37.7755,
+      "longitude": -122.4188,
+      "floor": 3,
+      "building": "building-a",
+      "room": "a-3-zone7",
+      "zone": "Zone A-7"
+    },
+    "metadata": {
+      "installationDate": "2023-07-08",
+      "lastMaintenance": "2024-07-30",
+      "firmwareVersion": "v2.1.8",
+      "manufacturer": "Hikvision",
+      "model": "DS-2CD2387G2-LU",
+      "coverage": "90°",
+      "resolution": "4K",
+      "nightVision": true
+    },
+    "performance": {
+      "uptime": 94.2,
+      "lastStatusChange": "2024-08-17T12:30:00Z",
+      "avgResponseTime": 180,
+      "errorCount": 8
+    }
+  },
+  {
+    "id": "door-002",
+    "name": "Executive Suite Door",
+    "type": "door",
+    "status": "online",
+    "location": {
+      "latitude": 37.7756,
+      "longitude": -122.4187,
+      "floor": 3,
+      "building": "building-a",
+      "room": "a-3-zone7",
+      "zone": "Zone A-7"
+    },
+    "metadata": {
+      "installationDate": "2023-07-15",
+      "lastMaintenance": "2024-08-12",
+      "firmwareVersion": "v2.0.1",
+      "manufacturer": "Schlage",
+      "model": "NDE Series",
+      "accessLevel": "restricted",
+      "biometricEnabled": true
+    },
+    "performance": {
+      "uptime": 99.5,
+      "lastStatusChange": "2024-08-12T15:45:00Z",
+      "avgResponseTime": 75,
+      "errorCount": 1
+    }
+  },
+  {
+    "id": "sensor-002",
+    "name": "Executive Floor Motion Detector",
+    "type": "sensor",
+    "status": "offline",
+    "location": {
+      "latitude": 37.7757,
+      "longitude": -122.4186,
+      "floor": 3,
+      "building": "building-a",
+      "room": "a-3-zone7",
+      "zone": "Zone A-7"
+    },
+    "metadata": {
+      "installationDate": "2023-07-20",
+      "lastMaintenance": "2024-06-15",
+      "firmwareVersion": "v2.8.5",
+      "manufacturer": "DSC",
+      "model": "LC-100-PI",
+      "detectionRange": "15m",
+      "sensitivity": "high"
+    },
+    "performance": {
+      "uptime": 87.1,
+      "lastStatusChange": "2024-08-16T22:10:00Z",
+      "avgResponseTime": 0,
+      "errorCount": 15
+    }
+  }
+]

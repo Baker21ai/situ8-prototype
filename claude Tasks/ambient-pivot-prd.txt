@@ -1,0 +1,254 @@
+# SITU8 AMBIENT.AI OPERATIONS LAYER - PRD
+
+## Executive Summary
+
+Transform Situ8 from a standalone security platform into an operations layer on top of Ambient.AI. Ambient becomes the source of truth for detections while Situ8 adds SOP automation, case management, and human-in-the-loop approval workflows.
+
+## Core Architecture Vision
+
+```
+AMBIENT.AI → Webhook → API Gateway → Lambda Ingest → EventBridge → [Activities, SOP Engine, Cases]
+                                                            ↓
+                                                    Pending Queue → UI Approval → Action Executor
+```
+
+## Product Requirements
+
+### 1. Ambient Integration Foundation
+
+**1.1 Webhook Ingestion System**
+- Build Lambda function for Ambient webhook receiver at `/ambient/webhook`
+- Implement schema validation for Ambient alert format: `alert_id, type, location, ts, severity, preview_url`
+- Add authentication and rate limiting for webhook endpoint
+- Map Ambient events to existing Activity data structure
+- Handle webhook failures with retry logic and dead letter queue
+
+**1.2 Activity Model Evolution**
+- Add `ambient_alert_id` field to Activity entity
+- Add `source` field with values: AMBIENT, SITU8, MANUAL
+- Add `preview_url` for Ambient evidence links
+- Add `deep_link_url` for directing to Ambient console
+- Maintain backward compatibility with existing mock data
+- Update Activity service to handle Ambient-sourced activities
+
+**1.3 Evidence Proxy Layer**
+- Create Lambda function for evidence preview proxy
+- Generate signed URLs for Ambient images/GIFs
+- Implement deep-link generation to Ambient console
+- Add evidence metadata storage (no file storage, just URLs)
+- Build preview component for Activity cards
+
+### 2. SOP Engine & Human-in-Loop Workflow
+
+**2.1 SOP Rules System**
+- Create `sop_rules` DynamoDB table with schema:
+  - tenant_id, rule_id, name, match_conditions, actions, requires_approval
+- Build rule matching engine for: activity_type, location, severity, time_of_day
+- Support multiple action types: assign_guard, notify_supervisor, create_incident, radio_broadcast
+- Create SOP rule management UI for administrators
+- Implement rule priority and conflict resolution
+
+**2.2 Pending Case Orchestration**
+- Add PENDING_APPROVAL status to Activity state machine
+- Create `pending_case_queue` table for approval workflow
+- Build approval UI in Activities dashboard:
+  - Show recommended actions from SOP matching
+  - Allow editing of proposed actions
+  - Approve/Reject/Edit workflow buttons
+- Auto-create Cases from approved activities
+- Implement timeout handling for unactioned pending cases
+
+**2.3 Action Execution Engine**
+- Build action executor Lambda/Step Function
+- Implement action types:
+  - `assign_guard`: Update user assignments
+  - `notify_supervisor`: Send notifications
+  - `create_incident`: Auto-create incident from activity
+  - `radio_broadcast`: Trigger Chime PTT template
+  - `log_entry`: Add timeline entry
+- Integrate with existing Chime communications
+- Add comprehensive audit logging for all executions
+- Handle action failures and rollback scenarios
+
+### 3. UI/UX Transformation
+
+**3.1 Operations Dashboard**
+- Transform Activities page into Operations Dashboard
+- Add "Pending Approvals" section at top with priority sorting
+- Redesign activity cards to highlight Ambient data:
+  - Preview thumbnail from Ambient
+  - Source indicator (Ambient logo)
+  - Deep-link button to Ambient console
+  - SOP-recommended actions display
+- Add bulk approval capabilities for similar activities
+
+**3.2 Case Management Enhancement**
+- Link multiple Ambient activities to single case
+- Build case timeline with Ambient events chronologically
+- Add evidence attachment as links to Ambient
+- Integrate communications log with case history
+- Show SOP compliance status for each case
+
+**3.3 Simplified Guard Assignment**
+- Remove real-time tracking features (out of scope)
+- Build static assignment from activities/cases/incidents
+- Status updates only: assigned/responding/complete/unavailable
+- Use existing UserGroup system for bulk assignments
+- Add assignment history and workload balancing
+
+### 4. Multi-tenant & Production Features
+
+**4.1 Tenant Isolation**
+- Add tenant_id to all new tables
+- Implement tenant-specific SOP rules and configurations
+- Add webhook authentication per tenant (API keys)
+- Ensure complete data isolation between tenants
+- Build tenant management interface
+
+**4.2 Monitoring & Analytics**
+- CloudWatch metrics for webhook processing latency
+- SOP rule hit rates and effectiveness tracking
+- Approval/rejection rates and patterns
+- Response time analytics (detection to resolution)
+- System health dashboard for operations
+
+**4.3 Security & Compliance**
+- Implement audit logging for all operations
+- Add data retention policies for Ambient data
+- Build chain-of-custody for evidence links
+- RBAC integration with existing Cognito setup
+- SOC2 compliance preparation
+
+## Technical Specifications
+
+### Data Models
+
+```typescript
+// Enhanced Activity with Ambient integration
+interface AmbientActivity extends Activity {
+  ambient_alert_id: string;
+  source: 'AMBIENT' | 'SITU8' | 'MANUAL';
+  preview_url?: string;
+  deep_link_url?: string;
+  confidence_score?: number;
+  detection_metadata?: AmbientMetadata;
+}
+
+// SOP Rule Configuration
+interface SOPRule {
+  tenant_id: string;
+  rule_id: string;
+  name: string;
+  match_conditions: {
+    activity_type?: string[];
+    location_pattern?: string;
+    severity?: string[];
+    time_range?: TimeRange;
+    metadata_filters?: Record<string, any>;
+  };
+  actions: SOPAction[];
+  requires_approval: boolean;
+  priority: number;
+  is_active: boolean;
+}
+
+// Pending Case Queue
+interface PendingCase {
+  tenant_id: string;
+  queue_id: string;
+  activity_id: string;
+  proposed_actions: SOPAction[];
+  created_ts: number;
+  expires_ts: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  assigned_approver?: string;
+}
+```
+
+### API Endpoints
+
+```
+POST /ambient/webhook - Receive Ambient alerts
+GET /api/pending-cases - List pending approvals
+POST /api/pending-cases/{id}/approve - Approve case
+POST /api/pending-cases/{id}/reject - Reject case
+PUT /api/pending-cases/{id}/actions - Edit proposed actions
+GET /api/sop-rules - List SOP rules
+POST /api/sop-rules - Create SOP rule
+GET /api/evidence/preview/{id} - Proxy Ambient evidence
+```
+
+### Integration Points
+
+- **Ambient.AI**: Webhook receiver, evidence proxy, deep-links
+- **AWS Chime**: PTT radio, messaging for action execution
+- **Existing Services**: Activity, Case, Incident, User management
+- **AWS Infrastructure**: Lambda, API Gateway, DynamoDB, EventBridge
+
+## Success Criteria
+
+### Performance Metrics
+- Webhook ingestion latency < 500ms (p95)
+- SOP rule matching accuracy > 95%
+- Operator approval time < 30 seconds average
+- Zero data loss from Ambient events
+- Case creation automation > 80% of eligible activities
+
+### Business Metrics
+- Reduce manual case creation by 70%
+- Improve response time by 40% through SOP automation
+- Achieve 95% SOP compliance rate
+- Reduce false positive escalations by 50%
+
+### Technical Metrics
+- 99.9% webhook uptime
+- < 1% action execution failures
+- Complete audit trail for all operations
+- Multi-tenant data isolation verification
+
+## Development Phases
+
+### Phase 1: Foundation (Weeks 1-2)
+- Ambient webhook ingestion
+- Activity model enhancement
+- Evidence proxy layer
+- Basic SOP rule matching
+
+### Phase 2: SOP Engine (Weeks 3-4)
+- SOP rules management
+- Pending case orchestration
+- Action execution engine
+- Approval UI workflow
+
+### Phase 3: UI Enhancement (Weeks 5-6)
+- Operations dashboard redesign
+- Case management improvements
+- Guard assignment simplification
+- Evidence preview integration
+
+### Phase 4: Production (Weeks 7-8)
+- Multi-tenant implementation
+- Monitoring and analytics
+- Security hardening
+- Testing and documentation
+
+## Risk Mitigation
+
+1. **Parallel Development**: Maintain existing system during transition
+2. **Feature Flags**: Toggle between old/new behaviors
+3. **Incremental Migration**: Move activity types gradually
+4. **Rollback Capability**: Ability to disconnect from Ambient
+5. **Data Validation**: Comprehensive testing of Ambient data mapping
+
+## Post-MVP Roadmap
+
+- Advanced SOP rule conditions (machine learning)
+- Full evidence management with chain-of-custody
+- Real-time guard tracking integration
+- Advanced analytics and reporting
+- Mobile app for field operations
+- Integration with additional detection systems
+
+---
+
+This PRD transforms Situ8 into a powerful operations layer that adds intelligence and automation on top of Ambient.AI's detection capabilities while maintaining the existing investment in AWS infrastructure and React components.

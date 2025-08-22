@@ -10,7 +10,7 @@ import { enableMapSet } from 'immer';
 import { EnterpriseActivity } from '../lib/types/activity';
 import { Priority, Status } from '../lib/utils/status';
 import { ActivityType } from '../lib/utils/security';
-import { generateEnterpriseActivities, generateRealtimeActivity } from '../components/enterpriseMockData';
+import { generateEnterpriseActivities, generateRealtimeActivity } from '../components/mock-data/enterpriseMockData.tsx';
 import { ActivityService } from '../services/activity.service';
 import { AuditService } from '../services/audit.service';
 import { BOLService } from '../services/bol.service';
@@ -526,28 +526,14 @@ export const useOptimizedActivityStore = create<ActivityStore>()(
           },
         }),
         // Custom serialization for Maps and Sets
-        serialize: (state) => JSON.stringify(state),
-        deserialize: (str) => {
-          const parsed = JSON.parse(str);
-          if (parsed.state?.activities) {
-            parsed.state.activities = new Map(parsed.state.activities);
-          }
-          if (parsed.state?.filters) {
-            parsed.state.filters.types = new Set(parsed.state.filters.types || []);
-            parsed.state.filters.statuses = new Set(parsed.state.filters.statuses || []);
-            parsed.state.filters.priorities = new Set(parsed.state.filters.priorities || []);
-            parsed.state.filters.sites = new Set(parsed.state.filters.sites || []);
-            parsed.state.filters.searchIndex = new Map();
-          }
-          return parsed;
-        },
+
       }
     )
   )
 );
 
 // Performance hooks with shallow comparison
-export const useActivityData = () => useOptimizedActivityStore(activitySelectors.activities, shallow);
-export const useFilteredActivities = () => useOptimizedActivityStore(activitySelectors.filteredActivities, shallow);
-export const useActivityStats = () => useOptimizedActivityStore(activitySelectors.getActivityStats(), shallow);
-export const useActivityPerformance = () => useOptimizedActivityStore(activitySelectors.performanceMetrics, shallow);
+export const useActivityData = () => useOptimizedActivityStore(activitySelectors.activities);
+export const useFilteredActivities = () => useOptimizedActivityStore(activitySelectors.filteredActivities);
+export const useActivityStats = () => useOptimizedActivityStore(activitySelectors.getActivityStats());
+export const useActivityPerformance = () => useOptimizedActivityStore(activitySelectors.performanceMetrics);

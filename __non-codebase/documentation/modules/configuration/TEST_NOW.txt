@@ -1,0 +1,18 @@
+SIMPLE TEST STEPS:
+
+1. Open browser to: http://localhost:5175
+   (Note: Port changed to 5175)
+
+2. Press F12 to open console
+
+3. Copy and paste this exact code:
+
+localStorage.clear();
+useUserStore.getState().disableDemoMode();
+useUserStore.getState().login({email:'yamen@example.com',password:'SecurePass123!'}).then(r=>console.log(r?'✅ WORKS':'❌ BROKEN:',useUserStore.getState().error))
+
+4. Press Enter
+
+5. Look for:
+   ✅ WORKS = Fixed!
+   ❌ BROKEN = Still broken (will show error)

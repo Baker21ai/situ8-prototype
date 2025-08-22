@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+</head>
+<body>
+    <h1>Authentication Debug</h1>
+    <pre id="output"></pre>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        // Check environment variables
+        output.textContent += '=== ENVIRONMENT VARIABLES ===\n';
+        output.textContent += `VITE_COGNITO_USER_POOL_ID: ${import.meta.env.VITE_COGNITO_USER_POOL_ID}\n`;
+        output.textContent += `VITE_COGNITO_CLIENT_ID: ${import.meta.env.VITE_COGNITO_CLIENT_ID}\n`;
+        output.textContent += `VITE_ENABLE_MOCK_DATA: ${import.meta.env.VITE_ENABLE_MOCK_DATA}\n`;
+        output.textContent += `VITE_USE_AWS_API: ${import.meta.env.VITE_USE_AWS_API}\n`;
+        output.textContent += `MODE: ${import.meta.env.MODE}\n`;
+        output.textContent += `DEV: ${import.meta.env.DEV}\n\n`;
+        
+        // Check Cognito initialization
+        try {
+            const { hasCognitoConfig } = await import('../utils/env-adapter.ts');
+            const { getCognitoInitStatus } = await import('../services/cognito-client.ts');
+            
+            output.textContent += '=== COGNITO STATUS ===\n';
+            output.textContent += `Has Cognito Config: ${hasCognitoConfig()}\n`;
+            
+            const status = getCognitoInitStatus();
+            output.textContent += `Is Initialized: ${status.isInitialized}\n`;
+            output.textContent += `Error: ${status.error ? status.error.message : 'None'}\n\n`;
+            
+            // Check auth service
+            const { AuthService } = await import('../services/auth.service.ts');
+            const authService = new AuthService();
+            
+            output.textContent += '=== AUTH SERVICE STATUS ===\n';
+            output.textContent += `Is Demo Mode: ${authService.isDemoMode()}\n`;
+            
+        } catch (error) {
+            output.textContent += `\nERROR: ${error.message}\n`;
+            output.textContent += error.stack;
+        }
+    </script>
+</body>
+</html>

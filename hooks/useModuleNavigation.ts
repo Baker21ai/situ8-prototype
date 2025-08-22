@@ -5,7 +5,7 @@
 
 import React, { useCallback } from 'react';
 
-export type ModuleName = 'activities' | 'incidents' | 'cases' | 'passdowns' | 'command-center' | 'communications' | 'visitors' | 'bol' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings' | 'performance-test' | 'performance-dashboard';
+export type ModuleName = 'activities' | 'incidents' | 'cases' | 'passdowns' | 'command-center' | 'communications' | 'visitors' | 'bol' | 'lost-found' | 'keys' | 'reports' | 'users' | 'settings' | 'performance-test' | 'performance-dashboard' | 'admin';
 
 export interface NavigationContext {
   sourceModule?: ModuleName;
@@ -48,6 +48,7 @@ export const generateBreadcrumbs = (module: ModuleName, context?: NavigationCont
     'keys': 'Key Management',
     'reports': 'Reports',
     'users': 'User Management',
+    'admin': 'Admin Panel',
     'settings': 'Settings',
     'performance-test': 'Performance Test',
     'performance-dashboard': 'Performance Dashboard'

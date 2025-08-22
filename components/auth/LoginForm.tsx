@@ -16,6 +16,7 @@ import { Loader2, Shield, Eye, EyeOff, AlertCircle, UserCheck } from 'lucide-rea
 import { useAuth, useDemoMode } from '../../stores/userStore';
 import { LoginRequest } from '../../services/auth.service';
 import { AuthStatusToggle } from './AuthStatusToggle';
+import { AWSStatusIndicator } from '../AWSStatusIndicator';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -26,7 +27,7 @@ interface LoginFormProps {
 export const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
   redirectTo = '/command-center',
-  showDemoMode = true
+  showDemoMode = false // DISABLED - AWS only
 }) => {
   // Auth state
   const { isLoading, error, login, isAuthenticated } = useAuth();
@@ -46,12 +47,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  // Password change state
+  const [passwordChangeRequired, setPasswordChangeRequired] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordChangeEmail, setPasswordChangeEmail] = useState('');
 
   // Demo mode state
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   
-  // Don't enable demo mode by default - use real AWS authentication
-  // Users can manually toggle demo mode if needed
+  // AWS ONLY - Demo mode removed to prevent conflicts
+  // Always use real AWS Cognito authentication
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -90,6 +98,55 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       rememberMe: formData.rememberMe
     };
 
+    const success = await login(loginRequest);
+    
+    // Check if password change is required
+    if (!success && error?.includes('NEW_PASSWORD_REQUIRED')) {
+      setPasswordChangeRequired(true);
+      setPasswordChangeEmail(formData.email);
+      return;
+    }
+    
+    if (success && onSuccess) {
+      onSuccess();
+    }
+  };
+  
+  // Handle password change submission
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate new passwords
+    const errors: Record<string, string> = {};
+    
+    if (!newPassword) {
+      errors.newPassword = 'New password is required';
+    } else if (newPassword.length < 8) {
+      errors.newPassword = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+      errors.newPassword = 'Password must contain uppercase, lowercase, and numbers';
+    }
+    
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (newPassword !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
+    // Call auth service to complete password change
+    // For now, we'll need to add this to the auth service
+    const loginRequest: LoginRequest = {
+      email: passwordChangeEmail,
+      password: formData.password,
+      newPassword: newPassword,
+      rememberMe: formData.rememberMe
+    };
+    
     const success = await login(loginRequest);
     if (success && onSuccess) {
       onSuccess();
@@ -132,147 +189,140 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center pb-2">
-          <div className="flex items-center justify-center mb-4">
-            <Shield className="h-12 w-12 text-blue-600" />
+    <Card className="w-full max-w-md shadow-lg border-0">
+        <CardHeader className="text-center pb-6">
+          <div className="flex items-center justify-center mb-6">
+            <Shield className="h-8 w-8 text-slate-600" />
           </div>
-          <CardTitle className="text-2xl font-bold">Situ8 Security Platform</CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">
-            Sign in to access your security dashboard
-          </p>
+          <CardTitle className="text-xl font-semibold text-slate-900">Sign In</CardTitle>
+          
+          {/* AWS Connection Status */}
+          <div className="mt-4">
+            <AWSStatusIndicator className="justify-center" />
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Demo Mode Toggle */}
-          {showDemoMode && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Demo Mode</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Enable for presentations and testing
-                  </p>
-                </div>
-                <Switch
-                  checked={isDemoMode}
-                  onCheckedChange={handleDemoModeToggle}
-                  disabled={isLoading}
-                />
-              </div>
-              
-              {isDemoMode && (
-                <Alert>
-                  <UserCheck className="h-4 w-4" />
-                  <AlertDescription>
-                    Demo mode enabled. Select a user below or use any email with demo mode.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
 
-          {/* Quick Role Login Buttons - Always Visible */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Quick Access</Label>
-            <div className="grid gap-2">
-              <Button
-                variant="default"
-                className="justify-start h-auto p-4 bg-red-600 hover:bg-red-700"
-                onClick={() => handleDemoUserSelect('demo-admin-001')}
-                disabled={isLoading}
-              >
-                <div className="flex items-center space-x-3 text-left w-full">
-                  <span className="text-xl">👑</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Admin Access</p>
-                    <p className="text-xs text-red-100">Full system control</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-red-300 text-red-100">
-                    L5
-                  </Badge>
-                </div>
-              </Button>
-              
-              <Button
-                variant="default"
-                className="justify-start h-auto p-4 bg-blue-600 hover:bg-blue-700"
-                onClick={() => handleDemoUserSelect('demo-guard-001')}
-                disabled={isLoading}
-              >
-                <div className="flex items-center space-x-3 text-left w-full">
-                  <span className="text-xl">👮‍♂️</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Security Officer Access</p>
-                    <p className="text-xs text-blue-100">Field operations</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-blue-300 text-blue-100">
-                    L2
-                  </Badge>
-                </div>
-              </Button>
-              
-              <Button
-                variant="default"
-                className="justify-start h-auto p-4 bg-green-600 hover:bg-green-700"
-                onClick={() => handleDemoUserSelect('demo-dev-001')}
-                disabled={isLoading}
-              >
-                <div className="flex items-center space-x-3 text-left w-full">
-                  <span className="text-xl">🛡️</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Developer Access</p>
-                    <p className="text-xs text-green-100">Technical operations</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs border-green-300 text-green-100">
-                    L3
-                  </Badge>
-                </div>
-              </Button>
-            </div>
-          </div>
 
-          {/* Demo User Selection */}
-          {isDemoMode && showDemoUsers && (
-            <div className="space-y-3">
-              <Separator className="my-4" />
-              <Label className="text-sm font-medium">All Demo Users</Label>
-              <div className="grid gap-2">
-                {availableDemoUsers.map((user) => (
+          {/* Password Change Form */}
+          {passwordChangeRequired ? (
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your password must be changed before you can continue.
+                </AlertDescription>
+              </Alert>
+              
+              {/* New Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      setValidationErrors({});
+                    }}
+                    disabled={isLoading}
+                    className={validationErrors.newPassword ? 'border-destructive pr-10' : 'pr-10'}
+                  />
                   <Button
-                    key={user.id}
-                    variant="outline"
-                    className="justify-start h-auto p-3"
-                    onClick={() => handleDemoUserSelect(user.id)}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
                     disabled={isLoading}
                   >
-                    <div className="flex items-center space-x-3 text-left">
-                      <span className="text-lg">{user.avatar}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{user.name}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {user.role.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            L{user.clearanceLevel}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
-                ))}
+                </div>
+                {validationErrors.newPassword && (
+                  <p className="text-sm text-destructive flex items-center space-x-1">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>{validationErrors.newPassword}</span>
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Must be at least 8 characters with uppercase, lowercase, and numbers
+                </p>
               </div>
               
-              <Separator className="my-4" />
-              <p className="text-xs text-muted-foreground text-center">
-                Or sign in with any email below</p>
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type={showNewPassword ? 'text' : 'password'}
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setValidationErrors({});
+                  }}
+                  disabled={isLoading}
+                  className={validationErrors.confirmPassword ? 'border-destructive' : ''}
+                />
+                {validationErrors.confirmPassword && (
+                  <p className="text-sm text-destructive flex items-center space-x-1">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>{validationErrors.confirmPassword}</span>
+                  </p>
+                )}
+              </div>
+              
+              {/* Error Display */}
+              {error && !error.includes('NEW_PASSWORD_REQUIRED') && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Changing Password...
+                  </>
+                ) : (
+                  <>Change Password and Sign In</>
+                )}
+              </Button>
+              
+              {/* Cancel Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setPasswordChangeRequired(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setValidationErrors({});
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            </form>
+          ) : (
+            /* Login Form */
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -369,6 +419,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               )}
             </Button>
           </form>
+          )}
 
           {/* Forgot Password */}
           <div className="text-center">
@@ -377,16 +428,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             </Button>
           </div>
 
-          {/* Demo Mode Info */}
-          {isDemoMode && (
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                🎭 Demo mode is active. Any email will work for testing.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
-    </div>
   );
 };

@@ -11,6 +11,7 @@ import { Badge } from '../../../../../components/ui/badge';
 import { useActivityListContext } from './ActivityListContext';
 import { ActivityListContentProps, PrioritySegment } from './types';
 import { Priority } from '../../../../../lib/utils/status';
+import { KanbanLayout } from './KanbanLayout';
 
 // Priority configuration for segments
 const PRIORITY_CONFIGS = {
@@ -129,27 +130,32 @@ const PrioritySegmentedList = React.memo(({ items, onSelect, onAction, selectedI
     );
   };
 
+  // Compute totals for overview visibility
+  const totalCount = groupedItems.critical.length + groupedItems.high.length + groupedItems.medium.length + groupedItems.low.length;
+
   return (
-    <div className="p-4 space-y-4">
-      {/* Priority Overview */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-red-600">{groupedItems.critical.length}</div>
-          <div className="text-sm text-red-800">Critical</div>
+    <div className="p-3 space-y-4">
+      {/* Priority Overview - show only when there is at least one item */}
+      {totalCount > 0 && (
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-red-600">{groupedItems.critical.length}</div>
+            <div className="text-xs text-red-800">Critical</div>
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-orange-600">{groupedItems.high.length}</div>
+            <div className="text-xs text-orange-800">High</div>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-yellow-600">{groupedItems.medium.length}</div>
+            <div className="text-xs text-yellow-800">Medium</div>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+            <div className="text-lg font-bold text-green-600">{groupedItems.low.length}</div>
+            <div className="text-xs text-green-800">Low</div>
+          </div>
         </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-orange-600">{groupedItems.high.length}</div>
-          <div className="text-sm text-orange-800">High</div>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-yellow-600">{groupedItems.medium.length}</div>
-          <div className="text-sm text-yellow-800">Medium</div>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-green-600">{groupedItems.low.length}</div>
-          <div className="text-sm text-green-800">Low</div>
-        </div>
-      </div>
+      )}
 
       {/* Priority Sections */}
       {renderPrioritySection('critical', groupedItems.critical, PRIORITY_CONFIGS.critical)}
@@ -175,6 +181,9 @@ export function Content({ className = '', height: propHeight }: ActivityListCont
     onActivityAction,
     height: contextHeight
   } = useActivityListContext();
+  
+  // Debug logging for filtering issues
+  console.log('📋 Content component - isEmpty:', isEmpty, 'filteredActivities:', filteredActivities.length);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(propHeight || contextHeight || 400);
@@ -222,23 +231,21 @@ export function Content({ className = '', height: propHeight }: ActivityListCont
           compactMode={compactMode}
           layoutMode={layoutMode}
           height={listHeight}
-          showPrioritySegments={true}
+          // Hide overview by default to prevent top whitespace; pass true to enable
+          showPrioritySegments={false}
           enableScrollRestoration={true}
           enableKeyboardNavigation={true}
           className="h-full"
         />
       ) : (
-        <ScrollArea className="h-full">
-          <PrioritySegmentedList
-            items={filteredActivities}
-            onSelect={onActivitySelect}
-            onAction={onActivityAction}
-            selectedItems={selectedItems}
-            variant={viewMode}
-            compactMode={compactMode}
-            layoutMode={layoutMode}
-          />
-        </ScrollArea>
+        <KanbanLayout
+          items={filteredActivities}
+          onSelect={onActivitySelect}
+          onAction={onActivityAction}
+          selectedItems={selectedItems}
+          variant={viewMode}
+          compactMode={compactMode}
+        />
       )}
     </div>
   );

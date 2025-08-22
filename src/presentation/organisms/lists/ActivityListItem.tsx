@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useLayoutEffect, useRef } from 'react';
 import { EnterpriseActivity, ActivityCluster } from '../../../../lib/types/activity';
 import { EnterpriseActivityCard, EnterpriseCardVariant } from '../../../../components/EnterpriseActivityCard';
 
@@ -25,6 +25,7 @@ export interface ActivityListItemProps {
     selectedItems: Set<string>;
     compactMode: boolean;
     layoutMode: 'grid' | 'horizontal';
+    onMeasureHeight?: (index: number, height: number) => void;
   };
 }
 
@@ -45,6 +46,31 @@ export const ActivityListItem = memo<ActivityListItemProps>(({
   } = data;
   
   const item = items[index];
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure the rendered row height and report to virtualizer (if provided)
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el || !data.onMeasureHeight) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      if (Number.isFinite(rect.height) && rect.height > 0) {
+        data.onMeasureHeight!(index, Math.ceil(rect.height));
+      }
+    };
+
+    // Initial measure
+    measure();
+
+    // Observe future size changes
+    const RO = (window as any).ResizeObserver;
+    const ro = RO ? new RO(() => measure()) : null;
+    if (ro) {
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+  }, [index, data, data?.variant, data?.compactMode, data?.layoutMode, item]);
   if (!item) {
     return <div style={style} />;
   }
@@ -56,7 +82,7 @@ export const ActivityListItem = memo<ActivityListItemProps>(({
   // For grid layout mode, we need to handle multiple items per row
   if (layoutMode === 'grid') {
     return (
-      <div style={style} className="px-4 py-2">
+      <div ref={containerRef} style={style} className="px-4 py-2">
         <EnterpriseActivityCard
           activity={item}
           variant={variant}
@@ -74,7 +100,7 @@ export const ActivityListItem = memo<ActivityListItemProps>(({
 
   // For horizontal layout mode (scrolling)
   return (
-    <div style={style} className="px-3 py-1 flex-shrink-0">
+    <div ref={containerRef} style={style} className="px-3 py-1 flex-shrink-0">
       <div className="w-72">
         <EnterpriseActivityCard
           activity={item}

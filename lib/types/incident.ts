@@ -105,6 +105,7 @@ export type IncidentType =
   | 'crowd_control'        // Crowd management issues
   | 'external_threat'      // External security threats
   | 'communication_failure' // System/communication failures
+  | 'system_anomaly'       // System anomalies and unusual patterns
   | 'other';               // Manually created incidents
 
 // Incident status progression

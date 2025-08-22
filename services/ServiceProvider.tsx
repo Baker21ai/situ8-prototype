@@ -14,6 +14,8 @@ import { PassdownService } from './passdown.service';
 import { AuthService } from './auth.service';
 import { CommunicationService } from './communication.service';
 import { ChatService } from './chat.service';
+import { AdminService } from './admin.service';
+import AIService from './ai.service';
 import { initializeApiClient, type AWSConfig } from './aws-api';
 import { useActivityStore } from '../stores/activityStore';
 import { useUserStore, useAuth } from '../stores/userStore';
@@ -31,6 +33,8 @@ interface ServiceContextType {
   authService: AuthService;
   communicationService: CommunicationService;
   chatService: ChatService;
+  adminService: AdminService;
+  aiService: AIService;
   apiClient?: any; // AWS API client instance
   isInitialized: boolean;
 }
@@ -43,15 +47,19 @@ interface ServiceProviderProps {
   children: React.ReactNode;
 }
 
+// Track initialization globally to prevent React StrictMode double-initialization
+let globalInitializationInProgress = false;
+let globalServices: ServiceContextType | null = null;
+
 export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) => {
-  const [services, setServices] = useState<ServiceContextType | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [services, setServices] = useState<ServiceContextType | null>(globalServices);
+  const [isInitialized, setIsInitialized] = useState(!!globalServices);
   
   // Get communication store for service integration
   const communicationStore = useCommunicationStore();
 
   useEffect(() => {
-    if (isInitialized) return; // Prevent re-initialization
+    if (isInitialized || globalInitializationInProgress) return; // Prevent re-initialization
     
     // Set a timeout to force initialization after 5 seconds
     const timeout = setTimeout(() => {
@@ -68,15 +76,22 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           authService: new AuthService(),
           communicationService: null as any,
           chatService: null as any,
+          adminService: null as any,
+          aiService: new AIService(),
           apiClient: null,
           isInitialized: true
         };
+        globalServices = fallbackServices;
         setServices(fallbackServices);
         setIsInitialized(true);
+        globalInitializationInProgress = false;
       }
     }, 5000);
     
     const initializeAllServices = async () => {
+      // Mark initialization as in progress
+      globalInitializationInProgress = true;
+      
       try {
         // Initialize AWS API client if configured
         let apiClient: any = null;
@@ -106,6 +121,34 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         const passdownService = new PassdownService();
         const chatService = new ChatService();
         
+        // Initialize AI service (uses API client)
+        let aiService: AIService;
+        try {
+          aiService = new AIService();
+        } catch (aiError) {
+          console.warn('AI service initialization failed, using mock AI:', aiError);
+          aiService = new AIService();
+        }
+
+        // Initialize admin service with API client
+        let adminService;
+        try {
+          adminService = new AdminService(apiClient);
+          console.log('Admin service initialized successfully');
+        } catch (adminError) {
+          console.warn('Admin service initialization failed, using mock admin service:', adminError);
+          // Create a mock admin service that doesn't crash
+          adminService = {
+            healthCheck: () => Promise.resolve({ status: 'degraded', message: 'Mock admin service' }),
+            getSystemHealth: () => Promise.resolve({ success: false, error: 'Admin service not available' }),
+            getUserList: () => Promise.resolve({ success: false, error: 'Admin service not available' }),
+            getSOPLibrary: () => Promise.resolve({ success: false, error: 'Admin service not available' }),
+            getAutomationRules: () => Promise.resolve({ success: false, error: 'Admin service not available' }),
+            getIntegrations: () => Promise.resolve({ success: false, error: 'Admin service not available' }),
+            getComplianceSettings: () => Promise.resolve({ success: false, error: 'Admin service not available' })
+          };
+        }
+        
         // Initialize communication service with API client (or null if not configured)
         let communicationService;
         try {
@@ -132,6 +175,17 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
         try {
           authService = new AuthService();
           console.log('Auth service initialized successfully');
+          
+          // IMPORTANT: Expose AuthService to window IMMEDIATELY for userStore
+          if (typeof window !== 'undefined') {
+            (window as any).__AUTH_SERVICE__ = authService;
+            console.log('✅ AuthService exposed to window.__AUTH_SERVICE__');
+            
+            // Initialize userStore with the AuthService to prevent race condition
+            const { initializeAuthService } = useUserStore.getState();
+            initializeAuthService(authService);
+            console.log('✅ UserStore initialized with AuthService');
+          }
         } catch (authError) {
           console.warn('Auth service initialization failed, using mock auth:', authError);
           // Create a mock auth service that doesn't crash
@@ -203,14 +257,17 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       ],
       access_control: {
         lenel_config: {
-          base_url: 'https://lenel-api.example.com',
-          api_key: 'mock-key',
-          timeout: 30000
+          server_url: 'lenel://lenel-server.example.com',
+          database_connection: 'lenel_db_connection_string',
+          card_format: 'H10301',
+          clearance_levels: ['visitor', 'contractor', 'vip', 'emergency'],
+          visitor_card_type: 'TEMPORARY',
+          default_expiry_hours: 8
         },
         access_levels: [
-          { id: 'lobby_access', name: 'Lobby Access', description: 'Access to lobby areas only' },
-          { id: 'building_access', name: 'Building Access', description: 'Access to building interior' },
-          { id: 'secure_access', name: 'Secure Access', description: 'Access to secure areas' }
+          { id: 'lobby_access', name: 'Lobby Access', description: 'Access to lobby areas only', zones: ['lobby', 'reception'] },
+          { id: 'building_access', name: 'Building Access', description: 'Access to building interior', zones: ['lobby', 'reception', 'office_areas'] },
+          { id: 'secure_access', name: 'Secure Access', description: 'Access to secure areas', zones: ['lobby', 'reception', 'office_areas', 'secure_zones'] }
         ],
         card_templates: [],
         visitor_zones: []
@@ -224,7 +281,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           { id: 'check_in', name: 'Check-in Confirmation', type: 'check_in' as const, body: 'Welcome!', variables: ['name'] }
         ],
         rules: [
-          { id: 'host_notification', event_type: 'visitor_check_in', recipients: ['host'] as const, channels: ['email'], delay_minutes: 0 }
+          { id: 'host_notification', event_type: 'visitor_check_in', recipients: ['host'], channels: ['email'], delay_minutes: 0 }
         ]
       },
       compliance: {
@@ -293,10 +350,14 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           authService,
           communicationService,
           chatService,
+          adminService,
+          aiService,
           apiClient,
           isInitialized: true
         };
 
+        // Save services globally to prevent re-initialization
+        globalServices = serviceContext;
         setServices(serviceContext);
         console.log('✅ Services set successfully');
 
@@ -305,8 +366,21 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           (window as any).__SITU8_SERVICES__ = serviceContext;
         }
 
+        // Initialize domain event handlers if enabled
+        const domainEventsEnabled = import.meta.env.VITE_ENABLE_DOMAIN_EVENTS === 'true';
+        if (domainEventsEnabled) {
+          try {
+            // Import and initialize the activity event handler
+            const { activityEventHandler } = await import('../src/domains/activities/events/ActivityEventHandler');
+            console.log('✅ Domain event handlers initialized');
+          } catch (eventError) {
+            console.warn('Failed to initialize domain event handlers:', eventError);
+          }
+        }
+
         // Mark as initialized AFTER setting services
         setIsInitialized(true);
+        globalInitializationInProgress = false;
         clearTimeout(timeout);
         if (import.meta.env.DEV) console.log('✅ ServiceProvider initialization complete')
 
@@ -320,7 +394,8 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           visitorService.healthCheck(),
           passdownService.healthCheck(),
           communicationService.healthCheck(),
-          chatService.healthCheck()
+          chatService.healthCheck(),
+          adminService.healthCheck()
           // Note: AuthService doesn't implement healthCheck, it's handled by store initialization
         ]).then(results => {
           const unhealthyServices = results
@@ -351,11 +426,15 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
           authService: new AuthService(), // Use new auth service instance
           communicationService: null as any,
           chatService: null as any,
+          adminService: null as any,
+          aiService: new AIService(),
           apiClient: null,
           isInitialized: true // Set to true so app can proceed
         };
+        globalServices = fallbackServices;
         setServices(fallbackServices);
         setIsInitialized(true);
+        globalInitializationInProgress = false;
         clearTimeout(timeout);
         if (import.meta.env.DEV) console.warn('⚠️ Using fallback services due to initialization error');
       }
@@ -438,6 +517,16 @@ export const useAuthService = () => {
 export const useCommunicationService = () => {
   const { communicationService } = useServices();
   return communicationService;
+};
+
+export const useAdminService = () => {
+  const { adminService } = useServices();
+  return adminService;
+};
+
+export const useAIService = () => {
+  const { aiService } = useServices();
+  return aiService;
 };
 
 // AWS API Client hook

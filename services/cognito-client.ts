@@ -277,7 +277,7 @@ export const ensureCognitoInitialized = async (): Promise<void> => {
   initializationPromise = (async () => {
     try {
       // Only initialize if we have proper configuration
-      if (!hasCognitoConfig()) {
+      if (!hasCognitoConfigSafe()) {
         throw new Error('No Cognito configuration found');
       }
       

@@ -1,0 +1,555 @@
+================================================================================
+                SITU8 PLATFORM - TECHNICAL ARCHITECTURE DOCUMENTATION
+                       Activity Processing & Incident Management
+================================================================================
+
+SYSTEM ARCHITECTURE
+-------------------
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Input Sources  │────▶│ Activity Service │────▶│ Incident Store  │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+         │                       │                         │
+         ▼                       ▼                         ▼
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   WebSocket     │────▶│   Event Bus      │────▶│   Audit Store   │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+
+SERVICE LAYER COMPONENTS
+------------------------
+BaseService (Abstract)
+├── ActivityService
+├── IncidentService  
+├── CaseService
+├── BOLService
+├── AuditService
+└── AuthService (AWS Cognito)
+
+================================================================================
+                            DATA MODELS & INTERFACES
+================================================================================
+
+ACTIVITY ENTITY
+---------------
+```typescript
+interface EnterpriseActivity {
+  // Identifiers
+  id: string;                    // Pattern: 'ACT-{timestamp}'
+  timestamp: Date;
+  
+  // Core Properties
+  type: ActivityType;             // See ActivityType enum below
+  title: string;
+  location: string;
+  priority: Priority;             // low|medium|high|critical
+  status: Status;                 // detecting|assigned|responding|resolved
+  
+  // User Properties
+  created_by: string;             // UserId or 'system'
+  assigned_to?: string;
+  updated_by: string;
+  
+  // System Properties
+  system_tags: string[];          // Auto-generated tags
+  user_tags: string[];           
+  incident_contexts: string[];    // Linked incident IDs
+  retention_date: Date;           // Auto-set to +30 days
+  is_archived: boolean;
+  
+  // Enhanced Properties
+  confidence?: number;            // 0-1 for AI/sensor inputs
+  metadata?: SiteMetadata;
+  externalData?: ExternalSystemData;
+  evidence?: Evidence[];
+  
+  // Business Rules
+  allowed_status_transitions: Status[];
+  requires_approval: boolean;
+}
+
+enum ActivityType {
+  'medical',          // Creates critical incident
+  'security-breach',  // Creates high incident
+  'bol-event',       // Creates high incident
+  'alert',           // Creates medium incident
+  'property-damage', // Creates medium incident
+  'patrol',          // No incident
+  'evidence'         // No incident
+}
+```
+
+INCIDENT ENTITY
+---------------
+```typescript
+interface Incident {
+  id: string;                     // Pattern: 'INC-{timestamp}'
+  title: string;
+  type: string;
+  status: 'pending'|'active'|'investigating'|'resolved';
+  priority: Priority;
+  
+  // Validation Properties
+  is_pending: boolean;            // Always starts true
+  requires_validation: boolean;    // Always true initially
+  dismissible: boolean;           // Can be marked false positive
+  pending_until: Date;            // Validation deadline
+  
+  // Escalation
+  escalation_time: Date;          // Auto-escalate timestamp
+  escalation_target: string;      // Role to escalate to
+  
+  // Validation Tracking
+  validation_status?: 'approved'|'dismissed'|'escalated';
+  validated_by?: string;
+  validated_at?: Date;
+  
+  // Relationships
+  trigger_activity_id: string;    // Source activity
+  related_activities: string[];   // All linked activities
+  
+  // Audit
+  created_by: string;
+  auto_created: boolean;
+  creation_rule: string;
+}
+```
+
+EXTERNAL SYSTEM DATA
+--------------------
+```typescript
+interface ExternalSystemData {
+  sourceSystem: string;           // 'camera-ai'|'access-control'|'sensor'
+  originalType: string;           // Original event type
+  rawPayload: Record<string, any>;
+  processingTimestamp: string;
+  mappingUsed: string;            // Transformation rule applied
+  originalEvent: Record<string, any>;
+}
+```
+
+================================================================================
+                            SERVICE IMPLEMENTATION
+================================================================================
+
+ACTIVITY SERVICE - KEY METHODS
+-------------------------------
+```typescript
+class ActivityService extends BaseService<EnterpriseActivity, string> {
+  
+  // Main creation flow
+  async createActivity(
+    activityData: Partial<EnterpriseActivity>,
+    context: AuditContext
+  ): ServiceMethod<EnterpriseActivity> {
+    // 1. Validation
+    await this.validateInput(activityData);
+    
+    // 2. Business rules
+    await this.enforceRules(activityData, 'create');
+    
+    // 3. Create domain entity
+    const domainActivity = ActivityFactory.createManual({...});
+    
+    // 4. Store activity
+    this.activityStore.createActivity(activity);
+    
+    // 5. Publish domain events
+    await eventBus.publish(event);
+    
+    // 6. Check auto-incident creation
+    await this.checkAutoIncidentCreation(activity, context);
+    
+    // 7. Audit logging
+    await this.auditLog(context, 'create', activity.id);
+    
+    return this.createSuccessResponse(activity);
+  }
+  
+  // Auto-incident logic
+  private async checkAutoIncidentCreation(
+    activity: EnterpriseActivity,
+    context: AuditContext
+  ): Promise<boolean> {
+    const rules = this.getAutoIncidentRules(activity.type);
+    
+    for (const rule of rules) {
+      if (await this.shouldCreateIncident(activity, rule)) {
+        await this.createIncidentFromActivity(activity, rule, context);
+        return true;
+      }
+    }
+    return false;
+  }
+}
+```
+
+BUSINESS RULES ENGINE
+---------------------
+```typescript
+// Auto-tagging rules
+private readonly tagGenerationRules: TagGenerationRule[] = [
+  { 
+    type: 'system', 
+    source: 'created_by', 
+    template: 'trigger:{value}',
+    conditions: [] 
+  },
+  { 
+    type: 'system',
+    source: 'metadata.site',
+    template: 'location:{value}',
+    conditions: []
+  },
+  {
+    type: 'system',
+    source: 'timestamp',
+    template: 'time:{businessHours}',
+    conditions: []
+  },
+  {
+    type: 'system',
+    source: 'confidence',
+    template: 'confidence:{value}',
+    conditions: [{ field: 'confidence', operator: 'gt', value: 0 }]
+  }
+];
+
+// Status transition rules
+private readonly statusTransitionRules: StatusTransitionRule[] = [
+  // Officers: Forward only
+  { 
+    fromStatus: 'detecting',
+    toStatus: 'assigned',
+    requiredRole: ['officer', 'supervisor', 'admin'],
+    requiresApproval: false
+  },
+  // Supervisors: Backwards allowed
+  {
+    fromStatus: 'resolved',
+    toStatus: 'responding',
+    requiredRole: ['supervisor', 'admin'],
+    requiresApproval: true
+  }
+];
+```
+
+================================================================================
+                            WEBSOCKET PROTOCOL
+================================================================================
+
+CONNECTION
+----------
+```javascript
+// WebSocket URL with signed token
+wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev?token={JWT}
+
+// Connection flow
+1. Generate signed URL via Cognito
+2. Establish WebSocket connection
+3. Send authentication message
+4. Receive connection confirmation
+5. Join relevant channels
+```
+
+MESSAGE FORMAT
+--------------
+```typescript
+interface WebSocketMessage {
+  action: string;
+  timestamp: string;
+  userId?: string;
+  data?: any;
+  error?: string;
+}
+
+// Activity creation broadcast
+{
+  action: 'activity_created',
+  timestamp: '2024-03-15T14:23:00Z',
+  data: {
+    activity: { /* Full activity object */ },
+    incident: { /* Auto-created incident */ }
+  }
+}
+
+// Incident validation
+{
+  action: 'incident_validated',
+  timestamp: '2024-03-15T14:25:00Z',
+  userId: 'supervisor-123',
+  data: {
+    incidentId: 'INC-000456',
+    validation: 'approved',
+    notes: 'Confirmed threat'
+  }
+}
+```
+
+SUBSCRIPTION PATTERN
+--------------------
+```javascript
+// Client-side subscription
+const ws = useWebSocket();
+
+ws.subscribe('activity_created', (data) => {
+  activityStore.addActivity(data.activity);
+  if (data.incident) {
+    incidentStore.addIncident(data.incident);
+  }
+});
+
+ws.subscribe('incident_validated', (data) => {
+  incidentStore.updateIncident(data.incidentId, {
+    validation_status: data.validation,
+    validated_by: data.userId
+  });
+});
+```
+
+================================================================================
+                            DATABASE SCHEMA
+================================================================================
+
+DYNAMODB TABLES
+---------------
+```yaml
+situ8-activities:
+  PartitionKey: id (String)
+  SortKey: timestamp (String)
+  GSI1: status-index (status, timestamp)
+  GSI2: type-index (type, timestamp)
+  GSI3: assigned-index (assigned_to, status)
+
+situ8-incidents:
+  PartitionKey: id (String)
+  SortKey: created_at (String)
+  GSI1: status-index (status, priority)
+  GSI2: validation-index (requires_validation, pending_until)
+
+situ8-audit-trail:
+  PartitionKey: entity_id (String)
+  SortKey: timestamp (String)
+  GSI1: user-index (user_id, timestamp)
+  GSI2: action-index (action, timestamp)
+
+situ8-websocket-connections:
+  PartitionKey: connectionId (String)
+  TTL: expires_at (Number)
+```
+
+================================================================================
+                            API ENDPOINTS
+================================================================================
+
+REST API
+--------
+```
+POST   /api/activities
+GET    /api/activities?status={status}&type={type}
+GET    /api/activities/{id}
+PUT    /api/activities/{id}
+PATCH  /api/activities/{id}/status
+POST   /api/activities/{id}/assign
+
+POST   /api/incidents/{id}/validate
+POST   /api/incidents/{id}/dismiss
+POST   /api/incidents/{id}/escalate
+
+GET    /api/audit/entity/{type}/{id}
+GET    /api/audit/user/{userId}
+```
+
+LAMBDA FUNCTIONS
+----------------
+```
+situ8-activity-processor
+├── Triggers: API Gateway, DynamoDB Stream
+├── Runtime: Node.js 18.x
+├── Memory: 512MB
+├── Timeout: 30s
+└── Environment:
+    ├── ACTIVITIES_TABLE
+    ├── INCIDENTS_TABLE
+    └── WEBSOCKET_ENDPOINT
+
+situ8-incident-validator
+├── Triggers: API Gateway, EventBridge (timer)
+├── Runtime: Node.js 18.x
+├── Memory: 256MB
+├── Timeout: 15s
+└── Handles: Validation, escalation, dismissal
+
+situ8-websocket-handler
+├── Triggers: API Gateway WebSocket
+├── Runtime: Node.js 18.x
+├── Memory: 256MB
+├── Timeout: 30s
+└── Routes: $connect, $disconnect, $default
+```
+
+================================================================================
+                            INTEGRATION PATTERNS
+================================================================================
+
+EXTERNAL SYSTEM INTEGRATION
+----------------------------
+```javascript
+// Camera AI Integration
+const cameraEvent = {
+  sourceSystem: 'camera-ai',
+  originalType: 'person_detected',
+  confidence: 0.92,
+  rawPayload: {
+    camera_id: 'CAM-004',
+    detection_type: 'unauthorized_access',
+    bounding_box: {...},
+    timestamp: '2024-03-15T14:23:00Z'
+  }
+};
+
+const activity = ActivityFactory.createFromExternalSystem({
+  externalData: cameraEvent,
+  type: mapEventType(cameraEvent.originalType),
+  title: generateTitle(cameraEvent),
+  location: getCameraLocation(cameraEvent.rawPayload.camera_id),
+  priority: calculatePriority(cameraEvent.confidence),
+  created_by: 'system',
+  confidence: cameraEvent.confidence
+});
+```
+
+EVENT-DRIVEN ARCHITECTURE
+--------------------------
+```typescript
+// Domain Events
+eventBus.subscribe('ActivityCreated', async (event) => {
+  await notificationService.notify(event);
+  await analyticsService.track(event);
+});
+
+eventBus.subscribe('IncidentValidated', async (event) => {
+  if (event.validation === 'approved') {
+    await dispatchService.assignResources(event.incidentId);
+  }
+});
+
+// CQRS Pattern
+const commandBus = new CommandBus();
+const queryBus = new QueryBus();
+
+// Command
+commandBus.handle(new CreateActivityCommand(data));
+
+// Query
+const activities = await queryBus.handle(
+  new GetActivitiesByStatusQuery('pending')
+);
+```
+
+================================================================================
+                        PERFORMANCE OPTIMIZATIONS
+================================================================================
+
+VIRTUAL SCROLLING
+-----------------
+```javascript
+// For lists > 100 items
+import { FixedSizeList } from 'react-window';
+
+<FixedSizeList
+  height={600}
+  itemCount={activities.length}
+  itemSize={80}
+  width="100%"
+>
+  {ActivityRow}
+</FixedSizeList>
+```
+
+CACHING STRATEGY
+----------------
+```typescript
+// Zustand persist middleware
+const useActivityStore = create<ActivityStore>()(
+  persist(
+    (set, get) => ({...}),
+    {
+      name: 'situ8-activity-cache',
+      partialize: (state) => ({
+        activities: state.activities.slice(0, 100), // Cache recent
+        filters: state.filters
+      })
+    }
+  )
+);
+```
+
+BATCH PROCESSING
+----------------
+```javascript
+// Process activities in batches
+const BATCH_SIZE = 100;
+for (let i = 0; i < activities.length; i += BATCH_SIZE) {
+  const batch = activities.slice(i, i + BATCH_SIZE);
+  await processBatch(batch);
+  await sleep(100); // Prevent UI blocking
+}
+```
+
+================================================================================
+                            DEPLOYMENT & DEVOPS
+================================================================================
+
+INFRASTRUCTURE AS CODE
+-----------------------
+```yaml
+# CloudFormation Stack
+Resources:
+  ActivityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+        
+  ActivityProcessor:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Events:
+        - DynamoDBStream
+        - APIGateway
+```
+
+CI/CD PIPELINE
+--------------
+```yaml
+# GitHub Actions
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    steps:
+      - npm run test
+      - npm run build
+      - aws s3 sync dist/ s3://$BUCKET
+      - aws cloudfront create-invalidation
+```
+
+MONITORING
+----------
+```javascript
+// CloudWatch Metrics
+putMetric('ActivityCreated', 1, 'Count');
+putMetric('IncidentValidationTime', duration, 'Milliseconds');
+putMetric('FalsePositiveRate', rate, 'Percent');
+
+// Alarms
+ValidationTimeout: threshold > 10 minutes
+HighFalsePositiveRate: threshold > 30%
+SystemErrors: threshold > 5 per minute
+```
+
+================================================================================

@@ -1,0 +1,154 @@
+[
+  {
+    "id": "patrol-001",
+    "guardId": 1,
+    "guardName": "Garcia, M.",
+    "timestamp": "2024-08-17T08:00:00Z",
+    "position": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "floor": 1,
+      "building": "building-a",
+      "accuracy": 3
+    },
+    "checkPoint": "CP-001",
+    "checkPointName": "Main Entrance",
+    "status": "checked",
+    "notes": "All clear, normal activity",
+    "patrolRoute": "morning-routine",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  },
+  {
+    "id": "patrol-002",
+    "guardId": 1,
+    "guardName": "Garcia, M.",
+    "timestamp": "2024-08-17T08:15:00Z",
+    "position": {
+      "latitude": 37.7751,
+      "longitude": -122.4192,
+      "floor": 1,
+      "building": "building-a",
+      "accuracy": 4
+    },
+    "checkPoint": "CP-002",
+    "checkPointName": "Reception Area",
+    "status": "checked",
+    "notes": "Equipment maintenance in progress",
+    "patrolRoute": "morning-routine",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  },
+  {
+    "id": "patrol-003",
+    "guardId": 1,
+    "guardName": "Garcia, M.",
+    "timestamp": "2024-08-17T08:45:00Z",
+    "position": {
+      "latitude": 37.7755,
+      "longitude": -122.4188,
+      "floor": 3,
+      "building": "building-a",
+      "accuracy": 2
+    },
+    "checkPoint": "CP-007",
+    "checkPointName": "Executive Floor",
+    "status": "incident",
+    "notes": "Camera alert triggered, investigating",
+    "patrolRoute": "morning-routine",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  },
+  {
+    "id": "patrol-004",
+    "guardId": 2,
+    "guardName": "Chen, L.",
+    "timestamp": "2024-08-17T08:30:00Z",
+    "position": {
+      "latitude": 37.7745,
+      "longitude": -122.4198,
+      "floor": 1,
+      "building": "building-b",
+      "accuracy": 3
+    },
+    "checkPoint": "CP-101",
+    "checkPointName": "Operations Center",
+    "status": "checked",
+    "notes": "All systems operational",
+    "patrolRoute": "operations-patrol",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  },
+  {
+    "id": "patrol-005",
+    "guardId": 3,
+    "guardName": "Officer Smith",
+    "timestamp": "2024-08-17T09:00:00Z",
+    "position": {
+      "latitude": 37.7740,
+      "longitude": -122.4200,
+      "floor": 1,
+      "building": "parking-main",
+      "accuracy": 5
+    },
+    "checkPoint": "CP-201",
+    "checkPointName": "Parking Level 1",
+    "status": "checked",
+    "notes": "Routine patrol, no issues",
+    "patrolRoute": "parking-sweep",
+    "shiftStart": "2024-08-17T07:00:00Z"
+  },
+  {
+    "id": "patrol-006",
+    "guardId": 1,
+    "guardName": "Garcia, M.",
+    "timestamp": "2024-08-17T09:15:00Z",
+    "position": {
+      "latitude": 37.7753,
+      "longitude": -122.4190,
+      "floor": 2,
+      "building": "building-a",
+      "accuracy": 3
+    },
+    "checkPoint": null,
+    "checkPointName": null,
+    "status": "patrolling",
+    "notes": "Moving between floors",
+    "patrolRoute": "morning-routine",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  },
+  {
+    "id": "patrol-007",
+    "guardId": 4,
+    "guardName": "Officer Davis",
+    "timestamp": "2024-08-17T09:30:00Z",
+    "position": {
+      "latitude": 37.7849,
+      "longitude": -122.4094,
+      "floor": 1,
+      "building": "building-c",
+      "accuracy": 2
+    },
+    "checkPoint": "CP-301",
+    "checkPointName": "Research Lobby",
+    "status": "checked",
+    "notes": "Access logs reviewed, all authorized",
+    "patrolRoute": "research-security",
+    "shiftStart": "2024-08-17T07:30:00Z"
+  },
+  {
+    "id": "patrol-008",
+    "guardId": 2,
+    "guardName": "Chen, L.",
+    "timestamp": "2024-08-17T10:00:00Z",
+    "position": {
+      "latitude": 37.7747,
+      "longitude": -122.4196,
+      "floor": 2,
+      "building": "building-b",
+      "accuracy": 4
+    },
+    "checkPoint": "CP-102",
+    "checkPointName": "Operations Floor 2",
+    "status": "missed",
+    "notes": "Checkpoint missed - responding to incident",
+    "patrolRoute": "operations-patrol",
+    "shiftStart": "2024-08-17T06:00:00Z"
+  }
+]

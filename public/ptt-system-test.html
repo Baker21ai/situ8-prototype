@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situ8 PTT System Test Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-pending { background: #6c757d; }
+        .status-running { background: #ffc107; animation: pulse 1s infinite; }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-item.success { border-left-color: #28a745; }
+        .test-item.error { border-left-color: #dc3545; }
+        .test-item.warning { border-left-color: #ffc107; }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .btn-success { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .ptt-test-area {
+            grid-column: span 2;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        .ptt-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: #28a745;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .ptt-button:active, .ptt-button.transmitting {
+            background: #dc3545;
+            transform: scale(1.1);
+        }
+        .ptt-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .log-area {
+            grid-column: span 2;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .metric {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Situ8 PTT System Test Suite</h1>
+            <p>Comprehensive testing for Push-to-Talk infrastructure</p>
+        </div>
+
+        <div class="grid">
+            <!-- Authentication Section -->
+            <div class="test-section">
+                <h3><span class="status-indicator status-pending" id="auth-status"></span> Authentication</h3>
+                <div class="input-group">
+                    <label>Cognito ID Token:</label>
+                    <input type="text" id="auth-token" placeholder="Paste token here">
+                </div>
+                <button class="btn" onclick="testAuthentication()">Test Auth</button>
+                <div id="auth-results"></div>
+            </div>
+
+            <!-- Infrastructure Tests -->
+            <div class="test-section">
+                <h3><span class="status-indicator status-pending" id="infra-status"></span> Infrastructure</h3>
+                <div class="test-item" id="test-browser-support">
+                    <span>Browser Support</span>
+                    <button class="btn" onclick="testBrowserSupport()">Test</button>
+                </div>
+                <div class="test-item" id="test-audio-devices">
+                    <span>Audio Devices</span>
+                    <button class="btn" onclick="testAudioDevices()">Test</button>
+                </div>
+                <div class="test-item" id="test-websocket">
+                    <span>WebSocket Connection</span>
+                    <button class="btn" onclick="testWebSocket()">Test</button>
+                </div>
+            </div>
+
+            <!-- Lambda Functions -->
+            <div class="test-section">
+                <h3><span class="status-indicator status-pending" id="lambda-status"></span> Lambda Functions</h3>
+                <div class="test-item" id="test-create-meeting">
+                    <span>Create Meeting</span>
+                    <button class="btn" onclick="testCreateMeeting()">Test</button>
+                </div>
+                <div class="test-item" id="test-create-attendee">
+                    <span>Create Attendee</span>
+                    <button class="btn" onclick="testCreateAttendee()" disabled>Test</button>
+                </div>
+                <div class="test-item" id="test-meeting-management">
+                    <span>Meeting Management</span>
+                    <button class="btn" onclick="testMeetingManagement()" disabled>Test</button>
+                </div>
+            </div>
+
+            <!-- Chime SDK Integration -->
+            <div class="test-section">
+                <h3><span class="status-indicator status-pending" id="chime-status"></span> Chime SDK</h3>
+                <div class="test-item" id="test-sdk-init">
+                    <span>SDK Initialization</span>
+                    <button class="btn" onclick="testChimeSDKInit()">Test</button>
+                </div>
+                <div class="test-item" id="test-audio-session">
+                    <span>Audio Session</span>
+                    <button class="btn" onclick="testAudioSession()" disabled>Test</button>
+                </div>
+                <div class="test-item" id="test-active-speakers">
+                    <span>Active Speaker Detection</span>
+                    <button class="btn" onclick="testActiveSpeakers()" disabled>Test</button>
+                </div>
+            </div>
+
+            <!-- PTT Testing Area -->
+            <div class="ptt-test-area">
+                <h3>🎙️ Push-to-Talk Testing</h3>
+                <p>Test the actual PTT functionality</p>
+                
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 20px 0;">
+                    <button id="ptt-button" class="ptt-button" 
+                            onmousedown="startPTT()" 
+                            onmouseup="stopPTT()"
+                            onmouseleave="stopPTT()"
+                            ontouchstart="startPTT()"
+                            ontouchend="stopPTT()"
+                            disabled>
+                        🎤<br>PUSH TO TALK
+                    </button>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value" id="ptt-count">0</div>
+                            <div class="metric-label">PTT Activations</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="avg-duration">0ms</div>
+                            <div class="metric-label">Avg Duration</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="connection-status">❌</div>
+                            <div class="metric-label">Connection</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Log -->
+            <div class="log-area">
+                <h3>📋 Event Log</h3>
+                <div id="event-log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/amazon-chime-sdk-js@latest/build/amazon-chime-sdk.min.js"></script>
+    <script>
+        // Global state
+        let state = {
+            authenticated: false,
+            token: null,
+            ws: null,
+            meetingSession: null,
+            audioVideo: null,
+            currentMeeting: null,
+            currentAttendee: null,
+            pttActivations: 0,
+            pttStartTime: null,
+            pttDurations: [],
+            testResults: {}
+        };
+
+        // Configuration
+        const CONFIG = {
+            apiBase: 'https://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev',
+            wsBase: 'wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev',
+            testChannelId: `test-channel-${Date.now()}`,
+            testUserId: `test-user-${Date.now()}`
+        };
+
+        // Logging function
+        function log(level, message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEl = document.getElementById('event-log');
+            const colors = {
+                'INFO': '#2ecc71',
+                'WARN': '#f39c12', 
+                'ERROR': '#e74c3c',
+                'SUCCESS': '#27ae60'
+            };
+            
+            const logLine = `<div style="color: ${colors[level] || '#ecf0f1'}; margin: 2px 0;">
+                [${timestamp}] [${level}] ${message}
+                ${data ? `<br>    ${JSON.stringify(data, null, 2)}` : ''}
+            </div>`;
+            
+            logEl.innerHTML += logLine;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Update test status
+        function updateTestStatus(testId, status, message = '') {
+            const element = document.getElementById(testId);
+            if (element) {
+                element.className = `test-item ${status}`;
+                const button = element.querySelector('button');
+                if (button && status === 'success') {
+                    button.textContent = '✓';
+                    button.className = 'btn btn-success';
+                } else if (button && status === 'error') {
+                    button.textContent = '✗';
+                    button.className = 'btn btn-danger';
+                }
+                
+                if (message) {
+                    const existing = element.querySelector('.test-message');
+                    if (existing) existing.remove();
+                    element.innerHTML += `<div class="test-message" style="font-size: 12px; color: #6c757d; margin-top: 5px;">${message}</div>`;
+                }
+            }
+        }
+
+        // Authentication
+        async function testAuthentication() {
+            const token = document.getElementById('auth-token').value.trim();
+            if (!token) {
+                log('ERROR', 'No token provided');
+                return;
+            }
+
+            log('INFO', 'Testing authentication...');
+            state.token = token;
+            
+            // Simple token validation (decode JWT payload)
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                log('SUCCESS', 'Token parsed successfully', { userId: payload.sub, exp: new Date(payload.exp * 1000) });
+                state.authenticated = true;
+                document.getElementById('auth-status').className = 'status-indicator status-success';
+                
+                // Enable other tests
+                enableTestButtons();
+            } catch (error) {
+                log('ERROR', 'Invalid token format', error.message);
+                document.getElementById('auth-status').className = 'status-indicator status-error';
+            }
+        }
+
+        function enableTestButtons() {
+            const buttons = document.querySelectorAll('button[disabled]');
+            buttons.forEach(btn => {
+                if (btn.id !== 'ptt-button') { // PTT button enabled separately
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        // Browser support test
+        async function testBrowserSupport() {
+            log('INFO', 'Testing browser support...');
+            
+            const checks = {
+                webrtc: !!(window.RTCPeerConnection || window.webkitRTCPeerConnection),
+                mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                websockets: !!window.WebSocket,
+                audioContext: !!(window.AudioContext || window.webkitAudioContext)
+            };
+
+            const allSupported = Object.values(checks).every(Boolean);
+            
+            if (allSupported) {
+                log('SUCCESS', 'Browser support: All features available', checks);
+                updateTestStatus('test-browser-support', 'success', 'WebRTC, MediaDevices, WebSockets ✓');
+            } else {
+                log('WARN', 'Browser support: Some features missing', checks);
+                updateTestStatus('test-browser-support', 'warning', 'Some features unavailable');
+            }
+        }
+
+        // Audio devices test
+        async function testAudioDevices() {
+            log('INFO', 'Testing audio devices...');
+            
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+                
+                log('SUCCESS', 'Audio devices detected', {
+                    inputs: audioInputs.length,
+                    outputs: audioOutputs.length
+                });
+                updateTestStatus('test-audio-devices', 'success', `${audioInputs.length} inputs, ${audioOutputs.length} outputs`);
+            } catch (error) {
+                log('ERROR', 'Failed to enumerate audio devices', error.message);
+                updateTestStatus('test-audio-devices', 'error', 'Device enumeration failed');
+            }
+        }
+
+        // WebSocket test
+        async function testWebSocket() {
+            if (!state.authenticated) {
+                log('ERROR', 'Authentication required for WebSocket test');
+                return;
+            }
+
+            log('INFO', 'Testing WebSocket connection...');
+            
+            const wsUrl = `${CONFIG.wsBase}?token=${encodeURIComponent(state.token)}`;
+            const ws = new WebSocket(wsUrl);
+            let connected = false;
+
+            const timeout = setTimeout(() => {
+                if (!connected) {
+                    log('ERROR', 'WebSocket connection timeout');
+                    updateTestStatus('test-websocket', 'error', 'Connection timeout');
+                    ws.close();
+                }
+            }, 10000);
+
+            ws.onopen = () => {
+                connected = true;
+                clearTimeout(timeout);
+                log('SUCCESS', 'WebSocket connected');
+                updateTestStatus('test-websocket', 'success', 'Connected successfully');
+                
+                // Test message sending
+                ws.send(JSON.stringify({ action: 'ping', timestamp: Date.now() }));
+                
+                state.ws = ws;
+                document.getElementById('connection-status').textContent = '✅';
+            };
+
+            ws.onerror = (error) => {
+                clearTimeout(timeout);
+                log('ERROR', 'WebSocket error', error);
+                updateTestStatus('test-websocket', 'error', 'Connection failed');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                log('INFO', 'WebSocket message received', data);
+            };
+        }
+
+        // Create meeting test
+        async function testCreateMeeting() {
+            if (!state.authenticated) {
+                log('ERROR', 'Authentication required');
+                return;
+            }
+
+            log('INFO', 'Testing create meeting...');
+            
+            try {
+                const response = await fetch(`${CONFIG.apiBase}/createMeeting`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.token}`
+                    },
+                    body: JSON.stringify({
+                        channelId: CONFIG.testChannelId,
+                        channelType: 'test'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('SUCCESS', 'Meeting created successfully', data);
+                    updateTestStatus('test-create-meeting', 'success', `Meeting ID: ${data.meeting.meetingId}`);
+                    state.currentMeeting = data.meeting;
+                    document.querySelector('#test-create-attendee button').disabled = false;
+                } else {
+                    log('ERROR', 'Failed to create meeting', data);
+                    updateTestStatus('test-create-meeting', 'error', `Error: ${data.error}`);
+                }
+            } catch (error) {
+                log('ERROR', 'Create meeting request failed', error.message);
+                updateTestStatus('test-create-meeting', 'error', 'Request failed');
+            }
+        }
+
+        // Create attendee test
+        async function testCreateAttendee() {
+            if (!state.currentMeeting) {
+                log('ERROR', 'Meeting required for attendee creation');
+                return;
+            }
+
+            log('INFO', 'Testing create attendee...');
+            
+            try {
+                const response = await fetch(`${CONFIG.apiBase}/createAttendee`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.token}`
+                    },
+                    body: JSON.stringify({
+                        meetingId: state.currentMeeting.meetingId,
+                        userId: CONFIG.testUserId,
+                        userName: 'Test User'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('SUCCESS', 'Attendee created successfully', data);
+                    updateTestStatus('test-create-attendee', 'success', `Attendee ID: ${data.attendee.attendeeId}`);
+                    state.currentAttendee = data.attendee;
+                    document.querySelector('#test-audio-session button').disabled = false;
+                    document.getElementById('ptt-button').disabled = false;
+                } else {
+                    log('ERROR', 'Failed to create attendee', data);
+                    updateTestStatus('test-create-attendee', 'error', `Error: ${data.error}`);
+                }
+            } catch (error) {
+                log('ERROR', 'Create attendee request failed', error.message);
+                updateTestStatus('test-create-attendee', 'error', 'Request failed');
+            }
+        }
+
+        // Chime SDK initialization test
+        async function testChimeSDKInit() {
+            log('INFO', 'Testing Chime SDK initialization...');
+            
+            try {
+                if (typeof ChimeSDK === 'undefined') {
+                    throw new Error('Chime SDK not loaded');
+                }
+                
+                // Test basic SDK components
+                const logger = new ChimeSDK.ConsoleLogger('TestSDK', ChimeSDK.LogLevel.INFO);
+                const deviceController = new ChimeSDK.DefaultDeviceController(logger);
+                
+                log('SUCCESS', 'Chime SDK components initialized', {
+                    logger: !!logger,
+                    deviceController: !!deviceController
+                });
+                updateTestStatus('test-sdk-init', 'success', 'SDK components ready');
+                
+            } catch (error) {
+                log('ERROR', 'Chime SDK initialization failed', error.message);
+                updateTestStatus('test-sdk-init', 'error', 'SDK initialization failed');
+            }
+        }
+
+        // Audio session test
+        async function testAudioSession() {
+            if (!state.currentMeeting || !state.currentAttendee) {
+                log('ERROR', 'Meeting and attendee required for audio session');
+                return;
+            }
+
+            log('INFO', 'Testing audio session...');
+            
+            try {
+                // Create meeting configuration
+                const meetingSessionConfiguration = new ChimeSDK.MeetingSessionConfiguration(
+                    state.currentMeeting,
+                    state.currentAttendee
+                );
+
+                // Create device controller and logger
+                const logger = new ChimeSDK.ConsoleLogger('AudioTest', ChimeSDK.LogLevel.INFO);
+                const deviceController = new ChimeSDK.DefaultDeviceController(logger);
+
+                // Create meeting session
+                const meetingSession = new ChimeSDK.DefaultMeetingSession(
+                    meetingSessionConfiguration,
+                    logger,
+                    deviceController
+                );
+
+                state.meetingSession = meetingSession;
+                state.audioVideo = meetingSession.audioVideo;
+
+                log('SUCCESS', 'Audio session initialized', {
+                    meetingId: state.currentMeeting.meetingId,
+                    attendeeId: state.currentAttendee.attendeeId
+                });
+                updateTestStatus('test-audio-session', 'success', 'Session ready');
+                
+                // Enable PTT testing
+                document.getElementById('ptt-button').disabled = false;
+                
+            } catch (error) {
+                log('ERROR', 'Audio session initialization failed', error.message);
+                updateTestStatus('test-audio-session', 'error', 'Session init failed');
+            }
+        }
+
+        // PTT functions
+        function startPTT() {
+            if (!state.audioVideo) {
+                log('WARN', 'Audio session not ready for PTT');
+                return;
+            }
+
+            state.pttStartTime = Date.now();
+            state.pttActivations++;
+            
+            document.getElementById('ptt-button').classList.add('transmitting');
+            log('INFO', 'PTT activated');
+            
+            // Send WebSocket message if connected
+            if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                state.ws.send(JSON.stringify({
+                    action: 'updatePTTState',
+                    channelId: CONFIG.testChannelId,
+                    userId: CONFIG.testUserId,
+                    isSpeaking: true
+                }));
+            }
+
+            // Update metrics
+            document.getElementById('ptt-count').textContent = state.pttActivations;
+        }
+
+        function stopPTT() {
+            if (!state.pttStartTime) return;
+
+            const duration = Date.now() - state.pttStartTime;
+            state.pttDurations.push(duration);
+            
+            document.getElementById('ptt-button').classList.remove('transmitting');
+            log('INFO', `PTT deactivated (${duration}ms)`);
+            
+            // Send WebSocket message if connected
+            if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                state.ws.send(JSON.stringify({
+                    action: 'updatePTTState',
+                    channelId: CONFIG.testChannelId,
+                    userId: CONFIG.testUserId,
+                    isSpeaking: false
+                }));
+            }
+
+            // Update metrics
+            const avgDuration = state.pttDurations.reduce((a, b) => a + b, 0) / state.pttDurations.length;
+            document.getElementById('avg-duration').textContent = `${Math.round(avgDuration)}ms`;
+            
+            state.pttStartTime = null;
+        }
+
+        // Initialize page
+        log('INFO', 'PTT Test Suite initialized');
+        log('INFO', `Test Channel: ${CONFIG.testChannelId}`);
+        log('INFO', `Test User: ${CONFIG.testUserId}`);
+    </script>
+</body>
+</html>

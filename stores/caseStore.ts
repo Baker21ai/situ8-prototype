@@ -6,6 +6,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CaseType, CaseStatus, InvestigationPhase } from '../lib/types/case';
+import { useAuditStore } from './auditStore';
+import { useUserStore } from './userStore';
 
 // Simplified case interface that's compatible with full Case interface
 interface SimpleCase {
@@ -52,6 +54,7 @@ interface CaseState {
 interface CaseActions {
   createCase: (caseData: Partial<SimpleCase>) => void;
   updateCase: (id: string, updates: Partial<SimpleCase>) => void;
+  deleteCase: (id: string) => Promise<void>;
   selectCase: (caseData: SimpleCase | null) => void;
   setFilters: (filters: Partial<CaseState['filters']>) => void;
   clearFilters: () => void;
@@ -109,10 +112,107 @@ export const useCaseStore = create<CaseStore>()(
       
       updateCase: (id, updates) => {
         const { cases } = get();
+        const caseToUpdate = cases.find(c => c.id === id);
+        
+        if (!caseToUpdate) {
+          console.error('Case not found:', id);
+          return;
+        }
+        
+        // Create updated case
+        const updatedCase = { 
+          ...caseToUpdate, 
+          ...updates,
+          updatedAt: new Date().toISOString(),
+          updatedBy: updates.updatedBy || 'system'
+        };
+        
+        // Update cases list
         const updatedCases = cases.map(caseItem =>
-          caseItem.id === id ? { ...caseItem, ...updates } : caseItem
+          caseItem.id === id ? updatedCase : caseItem
         );
         set({ cases: updatedCases });
+        
+        // Log audit entry
+        const auditStore = useAuditStore.getState();
+        const userStore = useUserStore.getState();
+        const currentUser = userStore.currentUser;
+        
+        if (currentUser) {
+          const changes = Object.entries(updates).map(([field, newValue]) => ({
+            field,
+            oldValue: (caseToUpdate as any)[field],
+            newValue,
+            fieldType: 'string',
+            isSensitive: field === 'leadInvestigatorId'
+          }));
+          
+          auditStore.logAction({
+            userId: currentUser.id,
+            userName: currentUser.name,
+            userRole: currentUser.role,
+            action: 'update',
+            entityType: 'case',
+            entityId: id,
+            entityName: caseToUpdate.title,
+            reason: `Case updated: ${caseToUpdate.caseNumber}`,
+            changes,
+            beforeState: caseToUpdate,
+            afterState: updatedCase
+          });
+        }
+      },
+      
+      deleteCase: async (id) => {
+        set({ loading: true, error: null });
+        try {
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const { cases } = get();
+          const caseToDelete = cases.find(c => c.id === id);
+          
+          if (!caseToDelete) {
+            throw new Error('Case not found');
+          }
+          
+          const updatedCases = cases.filter(caseItem => caseItem.id !== id);
+          
+          // If the deleted case was selected, clear selection
+          const { selectedCase } = get();
+          if (selectedCase?.id === id) {
+            set({ selectedCase: null });
+          }
+          
+          set({ cases: updatedCases, loading: false });
+          
+          // Log audit entry for deletion
+          const auditStore = useAuditStore.getState();
+          const userStore = useUserStore.getState();
+          const currentUser = userStore.currentUser;
+          
+          if (currentUser) {
+            auditStore.logAction({
+              userId: currentUser.id,
+              userName: currentUser.name,
+              userRole: currentUser.role,
+              action: 'delete',
+              entityType: 'case',
+              entityId: id,
+              entityName: caseToDelete.title,
+              reason: `Case deleted: ${caseToDelete.caseNumber}`,
+              beforeState: caseToDelete,
+              afterState: null,
+              severity: 'high' // Case deletion is a high-severity action
+            });
+          }
+        } catch (error) {
+          set({ 
+            loading: false, 
+            error: error instanceof Error ? error.message : 'Failed to delete case' 
+          });
+          throw error;
+        }
       },
       
       selectCase: (caseData) => {

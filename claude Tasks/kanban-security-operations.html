@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Security Operations - Complete Incident Flow Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #1f2937;
+            margin: 0 0 10px 0;
+        }
+        .header p {
+            color: #6b7280;
+            margin: 0;
+        }
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        .kanban-column {
+            flex-shrink: 0;
+            width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .column-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .column-title {
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .column-count {
+            background: #f3f4f6;
+            color: #6b7280;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .column-content {
+            padding: 16px;
+            min-height: 200px;
+        }
+        .activity-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .activity-card:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .activity-card:last-child {
+            margin-bottom: 0;
+        }
+        .activity-title {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .activity-location {
+            color: #6b7280;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .activity-priority {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .priority-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .priority-high { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+        .priority-medium { background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; }
+        .priority-low { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 24px;
+            margin-top: 100px;
+        }
+        
+        .status-colors {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .status-color {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .test-instructions {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .test-instructions h3 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+        .test-instructions ul {
+            color: #1e40af;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Kanban Security Operations</h1>
+            <p>Complete Ambient Incident Flow Demonstration</p>
+        </div>
+
+        <div class="test-instructions">
+            <h3>🧪 Test Instructions</h3>
+            <ul>
+                <li><strong>Open the main app:</strong> Navigate to <a href="http://localhost:5173" target="_blank">http://localhost:5173</a></li>
+                <li><strong>Go to Activities:</strong> Click on "Activities" in the navigation</li>
+                <li><strong>Verify Kanban Layout:</strong> You should see the Kanban board with multiple columns</li>
+                <li><strong>Check Complete Flow:</strong> Each column should contain activities showing the incident lifecycle</li>
+                <li><strong>Test Status Transitions:</strong> Activities should show realistic progression through statuses</li>
+            </ul>
+        </div>
+
+        <div class="status-colors">
+            <div class="status-color" style="background: #eff6ff; color: #1e40af;">
+                <div class="status-dot" style="background: #3b82f6;"></div>
+                Detecting
+            </div>
+            <div class="status-color" style="background: #faf5ff; color: #7c3aed;">
+                <div class="status-dot" style="background: #a855f7;"></div>
+                Pending
+            </div>
+            <div class="status-color" style="background: #fef2f2; color: #dc2626;">
+                <div class="status-dot" style="background: #ef4444;"></div>
+                Escalated
+            </div>
+            <div class="status-color" style="background: #eef2ff; color: #3730a3;">
+                <div class="status-dot" style="background: #6366f1;"></div>
+                In Progress
+            </div>
+            <div class="status-color" style="background: #fffbeb; color: #a16207;">
+                <div class="status-dot" style="background: #f59e0b;"></div>
+                Review
+            </div>
+            <div class="status-color" style="background: #f0fdf4; color: #166534;">
+                <div class="status-dot" style="background: #22c55e;"></div>
+                Resolved
+            </div>
+            <div class="status-color" style="background: #f9fafb; color: #374151;">
+                <div class="status-dot" style="background: #6b7280;"></div>
+                Deferred/Cancelled
+            </div>
+        </div>
+
+        <div class="kanban-board">
+            <!-- Detecting Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        🔍 Detecting
+                        <span class="column-count">3</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Unauthorized Access Attempt (HIGH)</div>
+                        <div class="activity-location">Building A - Main Entrance</div>
+                        <span class="activity-priority priority-high">High</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Perimeter Breach Alert (CRITICAL)</div>
+                        <div class="activity-location">Perimeter Fence - North Gate</div>
+                        <span class="activity-priority priority-critical">Critical</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">After-Hours Movement (MEDIUM)</div>
+                        <div class="activity-location">Employee Parking Lot</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Pending Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        ⏸️ Pending
+                        <span class="column-count">2</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Suspicious Activity Detected (MEDIUM)</div>
+                        <div class="activity-location">Building B - Loading Dock</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Vehicle in Restricted Area (LOW)</div>
+                        <div class="activity-location">Perimeter Fence - South Gate</div>
+                        <span class="activity-priority priority-low">Low</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Escalated Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        ⚠️ Escalated
+                        <span class="column-count">2</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Weapon Detection Alert (CRITICAL)</div>
+                        <div class="activity-location">Visitor Center</div>
+                        <span class="activity-priority priority-critical">Critical</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Tailgating Incident (HIGH)</div>
+                        <div class="activity-location">Data Center Entrance</div>
+                        <span class="activity-priority priority-high">High</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- In Progress Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        🚨 In Progress
+                        <span class="column-count">3</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Camera Tampering Alert (HIGH)</div>
+                        <div class="activity-location">Security Office</div>
+                        <span class="activity-priority priority-high">High</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Emergency Exit Misuse (MEDIUM)</div>
+                        <div class="activity-location">Building C - Parking Garage</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Visitor Protocol Violation (LOW)</div>
+                        <div class="activity-location">Maintenance Building</div>
+                        <span class="activity-priority priority-low">Low</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Review Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        ⏰ Review
+                        <span class="column-count">2</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Card Reader Malfunction (MEDIUM)</div>
+                        <div class="activity-location">Building A - Main Entrance</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Loitering Detection (LOW)</div>
+                        <div class="activity-location">Employee Parking Lot</div>
+                        <span class="activity-priority priority-low">Low</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Resolved Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        ✅ Resolved
+                        <span class="column-count">2</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">Unauthorized Access Attempt - RESOLVED (HIGH)</div>
+                        <div class="activity-location">Building A - Main Entrance</div>
+                        <span class="activity-priority priority-high">High</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Suspicious Behavior - RESOLVED (MEDIUM)</div>
+                        <div class="activity-location">Perimeter Fence - North Gate</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">→</div>
+
+            <!-- Deferred/Cancelled Column -->
+            <div class="kanban-column">
+                <div class="column-header">
+                    <div class="column-title">
+                        ⏸️ Deferred/Cancelled
+                        <span class="column-count">2</span>
+                    </div>
+                </div>
+                <div class="column-content">
+                    <div class="activity-card">
+                        <div class="activity-title">After-Hours Movement - DEFERRED (MEDIUM)</div>
+                        <div class="activity-location">Employee Parking Lot</div>
+                        <span class="activity-priority priority-medium">Medium</span>
+                    </div>
+                    <div class="activity-card">
+                        <div class="activity-title">Vehicle Alert - CANCELLED (LOW)</div>
+                        <div class="activity-location">Perimeter Fence - South Gate</div>
+                        <span class="activity-priority priority-low">Low</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #6b7280;">
+            <p><strong>Expected Result:</strong> The main application should display a similar Kanban layout with real data from your mock activities</p>
+            <p><strong>Status Flow:</strong> Detecting → Pending → Escalated → In Progress → Review → Resolved</p>
+            <p><strong>Test:</strong> Navigate to <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> and check the Activities page</p>
+        </div>
+    </div>
+</body>
+</html>

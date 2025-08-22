@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
+import { getGuardApiClient, GuardApiClient } from '../services/guard-api-client';
 
 export interface GuardLocation {
   latitude: number;
@@ -40,8 +41,12 @@ interface GuardState {
   isLoading: boolean;
   error: string | null;
   lastSync: Date | null;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  offlineQueueCount: number;
+  apiClient: GuardApiClient | null;
 
   // Actions
+  initializeApiClient: (baseUrl: string, apiKey?: string) => void;
   setGuards: (guards: Guard[]) => void;
   updateGuard: (guardId: number, updates: Partial<Guard>) => void;
   updateGuardLocation: (guardId: number, location: GuardLocation) => void;
@@ -52,6 +57,8 @@ interface GuardState {
   getAvailableGuards: () => Guard[];
   getGuardsByBuilding: (building: string) => Guard[];
   syncGuards: () => Promise<void>;
+  syncOfflineChanges: () => Promise<void>;
+  getOfflineQueueStatus: () => { count: number; oldestItem?: Date };
 }
 
 // Initial mock data matching CommandCenter_new.tsx
@@ -307,18 +314,44 @@ export const useGuardStore = create<GuardState>()(
         isLoading: false,
         error: null,
         lastSync: null,
+        syncStatus: 'idle',
+        offlineQueueCount: 0,
+        apiClient: null,
+        
+        initializeApiClient: (baseUrl, apiKey) => {
+          try {
+            const client = getGuardApiClient({ baseUrl, apiKey });
+            set({ apiClient: client });
+          } catch (error) {
+            console.error('Failed to initialize Guard API client:', error);
+            set({ error: 'Failed to initialize API client' });
+          }
+        },
 
         setGuards: (guards) => set({ guards }),
 
-        updateGuard: (guardId, updates) => {
+        updateGuard: async (guardId, updates) => {
+          // Update local state immediately
           set((state) => ({
             guards: state.guards.map((guard) =>
               guard.id === guardId ? { ...guard, ...updates, lastUpdate: new Date() } : guard
             )
           }));
+          
+          // Sync with API if available
+          const { apiClient } = get();
+          if (apiClient) {
+            const response = await apiClient.updateGuard(guardId, updates);
+            if (!response.success) {
+              // Update offline queue count
+              const queueStatus = apiClient.getOfflineQueueStatus();
+              set({ offlineQueueCount: queueStatus.count });
+            }
+          }
         },
 
-        updateGuardLocation: (guardId, location) => {
+        updateGuardLocation: async (guardId, location) => {
+          // Update local state immediately
           set((state) => ({
             guards: state.guards.map((guard) =>
               guard.id === guardId
@@ -332,6 +365,17 @@ export const useGuardStore = create<GuardState>()(
                 : guard
             )
           }));
+          
+          // Sync with API if available
+          const { apiClient } = get();
+          if (apiClient) {
+            const response = await apiClient.updateGuardLocation(guardId, location);
+            if (!response.success) {
+              // Update offline queue count
+              const queueStatus = apiClient.getOfflineQueueStatus();
+              set({ offlineQueueCount: queueStatus.count });
+            }
+          }
         },
 
         setSelectedGuard: (guard) => set({ selectedGuard: guard }),
@@ -367,15 +411,74 @@ export const useGuardStore = create<GuardState>()(
         },
 
         syncGuards: async () => {
-          set({ isLoading: true, error: null });
-          try {
-            // TODO: Implement API call to sync guards with backend
-            // For now, we'll simulate a successful sync
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            set({ lastSync: new Date(), isLoading: false });
-          } catch (error) {
-            set({ error: 'Failed to sync guards', isLoading: false });
+          const { apiClient } = get();
+          if (!apiClient) {
+            set({ error: 'API client not initialized', syncStatus: 'error' });
+            return;
           }
+          
+          set({ isLoading: true, error: null, syncStatus: 'syncing' });
+          
+          try {
+            // Fetch guards from API
+            const response = await apiClient.fetchGuards();
+            
+            if (response.success && response.data) {
+              set({
+                guards: response.data,
+                lastSync: new Date(),
+                isLoading: false,
+                syncStatus: 'success'
+              });
+            } else {
+              throw new Error(response.error || 'Failed to fetch guards');
+            }
+          } catch (error) {
+            set({ 
+              error: error instanceof Error ? error.message : 'Failed to sync guards',
+              isLoading: false,
+              syncStatus: 'error'
+            });
+          }
+        },
+        
+        syncOfflineChanges: async () => {
+          const { apiClient } = get();
+          if (!apiClient) {
+            return;
+          }
+          
+          set({ syncStatus: 'syncing' });
+          
+          try {
+            const result = await apiClient.syncOfflineQueue();
+            
+            if (result.errors.length > 0) {
+              console.error('Sync errors:', result.errors);
+            }
+            
+            // Update offline queue count
+            const queueStatus = apiClient.getOfflineQueueStatus();
+            set({ 
+              offlineQueueCount: queueStatus.count,
+              syncStatus: result.failed === 0 ? 'success' : 'error'
+            });
+            
+            // If successful, sync fresh data
+            if (result.synced > 0) {
+              await get().syncGuards();
+            }
+          } catch (error) {
+            set({ syncStatus: 'error' });
+          }
+        },
+        
+        getOfflineQueueStatus: () => {
+          const { apiClient } = get();
+          if (!apiClient) {
+            return { count: 0 };
+          }
+          return apiClient.getOfflineQueueStatus();
         }
       }),
       {

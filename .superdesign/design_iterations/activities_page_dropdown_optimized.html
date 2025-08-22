@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Activities Center - Dropdown Optimized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="theme_security_platform.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom dropdown styling */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            z-index: 1000;
+            top: 100%;
+            left: 0;
+        }
+        
+        .dropdown-content a {
+            color: #374151;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .dropdown.active .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-trigger {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-trigger:hover {
+            border-color: #9ca3af;
+            background-color: #f9fafb;
+        }
+        
+        /* Custom animations */
+        .activity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card:hover {
+            transform: scale(1.02);
+        }
+        
+        .realtime-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen overflow-hidden">
+    <div class="h-full flex flex-col">
+        <!-- Breadcrumb Navigation -->
+        <div class="flex-shrink-0 bg-white border-b px-4 py-2">
+            <nav class="flex text-sm text-gray-600">
+                <a href="#" class="hover:text-gray-900 transition-colors">Command Center</a>
+                <i data-lucide="chevron-right" class="mx-2 h-4 w-4"></i>
+                <span class="text-gray-900 font-medium">Activities</span>
+            </nav>
+        </div>
+        
+        <!-- Enhanced Header with Facility Overview -->
+        <div class="flex-shrink-0 bg-white border-b shadow-sm">
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 class="text-2xl font-semibold text-gray-900">Enterprise Activities Center</h1>
+                        <p class="text-sm text-gray-600">Amazon-scale security operations</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Service Status Indicators -->
+                        <div class="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm border border-green-200">
+                            <i data-lucide="activity" class="h-4 w-4"></i>
+                            <span>Services Active</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm border border-blue-200">
+                            <i data-lucide="camera" class="h-4 w-4"></i>
+                            <span>847 cameras</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <!-- Action Buttons -->
+                            <button class="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm">
+                                <i data-lucide="plus" class="h-4 w-4"></i>
+                                Create Activity
+                            </button>
+                            
+                            <button class="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm">
+                                <i data-lucide="radio" class="h-4 w-4"></i>
+                                Radio
+                            </button>
+                            
+                            <button class="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm">
+                                <i data-lucide="headphones" class="h-4 w-4"></i>
+                                Comms
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden">
+            <!-- Left Panel - Activity List -->
+            <div class="flex-1 lg:flex-[3] min-w-0 min-h-0">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm h-full flex flex-col">
+                    <!-- Activity List Header -->
+                    <div class="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-gray-200 gap-3">
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-lg font-semibold flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+                                <span class="hidden sm:inline">Activity Stream</span>
+                                <span class="sm:hidden">Activities</span>
+                                <div class="realtime-dot w-2 h-2 bg-green-500 rounded-full ml-2"></div>
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1 sm:flex-none">
+                                <input 
+                                    type="text" 
+                                    placeholder="Search activities..."
+                                    class="pl-8 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
+                                    id="activity-search"
+                                >
+                                <i data-lucide="search" class="h-4 w-4 absolute left-2.5 top-2.5 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Filters Section -->
+                    <div class="flex-shrink-0 p-3 border-b border-gray-200 bg-gray-50">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <!-- Time Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <i data-lucide="clock" class="h-4 w-4"></i>
+                                    <span>Time: Live</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'Time: Live')">Live</a>
+                                    <a href="#" onclick="selectOption(this, 'Time: Last 15min')">Last 15 minutes</a>
+                                    <a href="#" onclick="selectOption(this, 'Time: Last 1hr')">Last 1 hour</a>
+                                    <a href="#" onclick="selectOption(this, 'Time: Last 4hrs')">Last 4 hours</a>
+                                    <a href="#" onclick="selectOption(this, 'Time: Last 24hrs')">Last 24 hours</a>
+                                </div>
+                            </div>
+
+                            <!-- Priority Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <i data-lucide="alert-triangle" class="h-4 w-4"></i>
+                                    <span>Priority: All</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'Priority: All')">All Priorities</a>
+                                    <a href="#" onclick="selectOption(this, 'Priority: Critical')">Critical Only</a>
+                                    <a href="#" onclick="selectOption(this, 'Priority: High')">High Priority</a>
+                                    <a href="#" onclick="selectOption(this, 'Priority: Medium')">Medium Priority</a>
+                                    <a href="#" onclick="selectOption(this, 'Priority: Low')">Low Priority</a>
+                                </div>
+                            </div>
+
+                            <!-- Status Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <i data-lucide="check-circle" class="h-4 w-4"></i>
+                                    <span>Status: All</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'Status: All')">All Status</a>
+                                    <a href="#" onclick="selectOption(this, 'Status: Active')">Active</a>
+                                    <a href="#" onclick="selectOption(this, 'Status: Pending')">Pending</a>
+                                    <a href="#" onclick="selectOption(this, 'Status: Resolved')">Resolved</a>
+                                </div>
+                            </div>
+
+                            <!-- Type Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <i data-lucide="tag" class="h-4 w-4"></i>
+                                    <span>Type: All</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'Type: All')">All Types</a>
+                                    <a href="#" onclick="selectOption(this, 'Type: Medical')">Medical Emergency</a>
+                                    <a href="#" onclick="selectOption(this, 'Type: Security')">Security Breach</a>
+                                    <a href="#" onclick="selectOption(this, 'Type: Maintenance')">Maintenance</a>
+                                    <a href="#" onclick="selectOption(this, 'Type: Safety')">Safety Issue</a>
+                                </div>
+                            </div>
+
+                            <!-- View Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <i data-lucide="layout-grid" class="h-4 w-4"></i>
+                                    <span>View: Grid</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'View: Grid')">Grid View</a>
+                                    <a href="#" onclick="selectOption(this, 'View: List')">List View</a>
+                                    <a href="#" onclick="selectOption(this, 'View: Compact')">Compact View</a>
+                                    <a href="#" onclick="selectOption(this, 'View: Summary')">Summary View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity List Content -->
+                    <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        <div class="p-4 space-y-3">
+                            <!-- Main Activity -->
+                            <div class="activity-card p-4 bg-white border border-gray-200 rounded-lg cursor-pointer transition-all duration-200 border-l-4 border-l-yellow-500">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <div class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium border border-yellow-200">
+                                                🟡 Medium
+                                            </div>
+                                            <div class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs border border-blue-200">
+                                                Mock Activity
+                                            </div>
+                                        </div>
+                                        <h3 class="font-semibold text-gray-900 mb-1">Mock Activity 2585</h3>
+                                        <p class="text-sm text-gray-600 mb-2">Standard activity monitoring for system testing and validation.</p>
+                                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                                            <span class="flex items-center gap-1">
+                                                <i data-lucide="clock" class="h-3 w-3"></i>
+                                                Now
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <i data-lucide="map-pin" class="h-3 w-3"></i>
+                                                Mock Location
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <i data-lucide="hash" class="h-3 w-3"></i>
+                                                +4995 related
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 ml-4">
+                                        <button class="px-3 py-1 bg-blue-600 text-white rounded-md text-xs hover:bg-blue-700 transition-colors">
+                                            View Details
+                                        </button>
+                                        <button class="px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-xs hover:bg-gray-50 transition-colors">
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loading placeholder for more activities -->
+                            <div class="text-center py-8 text-gray-500">
+                                <i data-lucide="loader" class="h-6 w-6 mx-auto mb-2 animate-spin"></i>
+                                Loading more activities...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity List Footer with Dropdown Pagination -->
+                    <div class="flex-shrink-0 border-t border-gray-200 p-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <span class="text-sm text-gray-600">Showing 1 of 5,000</span>
+                                
+                                <!-- Results per page dropdown -->
+                                <div class="dropdown">
+                                    <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                        <span class="text-sm">Show: 10 per page</span>
+                                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                    </div>
+                                    <div class="dropdown-content">
+                                        <a href="#" onclick="selectOption(this, 'Show: 10 per page')">10 per page</a>
+                                        <a href="#" onclick="selectOption(this, 'Show: 25 per page')">25 per page</a>
+                                        <a href="#" onclick="selectOption(this, 'Show: 50 per page')">50 per page</a>
+                                        <a href="#" onclick="selectOption(this, 'Show: 100 per page')">100 per page</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Page navigation dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger" onclick="toggleDropdown(this)">
+                                    <span class="text-sm">Page: 1 of 500</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'Page: 1 of 500')">Page 1</a>
+                                    <a href="#" onclick="selectOption(this, 'Page: 2 of 500')">Page 2</a>
+                                    <a href="#" onclick="selectOption(this, 'Page: 3 of 500')">Page 3</a>
+                                    <a href="#" onclick="selectOption(this, 'Page: 10 of 500')">Page 10</a>
+                                    <a href="#" onclick="selectOption(this, 'Page: 50 of 500')">Page 50</a>
+                                    <a href="#" onclick="selectOption(this, 'Page: 100 of 500')">Page 100</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Communications Hub -->
+            <div class="flex-1 lg:flex-[1] min-w-0 lg:min-w-[280px] min-h-0">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm h-full flex flex-col">
+                    <!-- Communications Header -->
+                    <div class="flex-shrink-0 p-3 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                            <i data-lucide="headphones" class="h-5 w-5"></i>
+                            Communications Hub
+                        </h2>
+                        
+                        <!-- Communications Dropdown Controls -->
+                        <div class="flex gap-2 mb-3 flex-wrap">
+                            <!-- Time Range Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger text-sm" onclick="toggleDropdown(this)">
+                                    <span>15m</span>
+                                    <i data-lucide="chevron-down" class="h-3 w-3"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, '15m')">Last 15 minutes</a>
+                                    <a href="#" onclick="selectOption(this, '1h')">Last 1 hour</a>
+                                    <a href="#" onclick="selectOption(this, '4h')">Last 4 hours</a>
+                                    <a href="#" onclick="selectOption(this, '24h')">Last 24 hours</a>
+                                </div>
+                            </div>
+
+                            <!-- Priority Dropdown -->
+                            <div class="dropdown">
+                                <div class="dropdown-trigger text-sm" onclick="toggleDropdown(this)">
+                                    <span>All</span>
+                                    <i data-lucide="chevron-down" class="h-3 w-3"></i>
+                                </div>
+                                <div class="dropdown-content">
+                                    <a href="#" onclick="selectOption(this, 'All')">All</a>
+                                    <a href="#" onclick="selectOption(this, 'Critical')">Critical</a>
+                                    <a href="#" onclick="selectOption(this, 'High')">High</a>
+                                    <a href="#" onclick="selectOption(this, 'Medium')">Medium</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Channel Dropdown -->
+                        <div class="dropdown">
+                            <div class="dropdown-trigger text-sm" onclick="toggleDropdown(this)">
+                                <span>Main Channel</span>
+                                <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                            </div>
+                            <div class="dropdown-content">
+                                <a href="#" onclick="selectOption(this, 'Main Channel')">Main Channel</a>
+                                <a href="#" onclick="selectOption(this, 'Emergency')">Emergency</a>
+                                <a href="#" onclick="selectOption(this, 'Dispatch')">Dispatch</a>
+                                <a href="#" onclick="selectOption(this, 'Security')">Security</a>
+                                <a href="#" onclick="selectOption(this, 'Medical')">Medical</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communications Content -->
+                    <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        <div class="p-4 space-y-4">
+                            <!-- Unified Chronological Feed -->
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                    <i data-lucide="timeline" class="h-4 w-4"></i>
+                                    UNIFIED CHRONOLOGICAL FEED
+                                </h3>
+                                <div class="text-xs text-gray-600 mb-3">All incidents and communications merged chronologically</div>
+                                
+                                <div class="space-y-3">
+                                    <!-- Communication Entry 1 -->
+                                    <div class="p-3 bg-gray-50 rounded-md border-l-4 border-green-500">
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-xs text-white font-medium">CL</div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-sm font-medium text-gray-900">Chen, L.</span>
+                                                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">MAIN</span>
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">VOICE</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900 mb-1">"Sector clear, continuing patrol"</div>
+                                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                    <span>• Parking Lot</span>
+                                                    <span class="text-green-600">99% accurate</span>
+                                                    <span>• Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Communication Entry 2 -->
+                                    <div class="p-3 bg-gray-50 rounded-md border-l-4 border-blue-500">
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs text-white font-medium">WR</div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-sm font-medium text-gray-900">Wilson, R.</span>
+                                                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">MAIN</span>
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">VOICE</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900 mb-1">"Visitor escort completed"</div>
+                                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                    <span>• Building A</span>
+                                                    <span class="text-green-600">91% accurate</span>
+                                                    <span>• Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Communication Entry 3 -->
+                                    <div class="p-3 bg-gray-50 rounded-md border-l-4 border-purple-500">
+                                        <div class="flex items-start gap-2">
+                                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-xs text-white font-medium">GM</div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-sm font-medium text-gray-900">Garcia, M.</span>
+                                                    <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs">EMERGENCY</span>
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">RADIO</span>
+                                                </div>
+                                                <div class="text-sm text-gray-900 mb-1">"Requesting backup at south entrance"</div>
+                                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                                                    <span>• Gate 5</span>
+                                                    <span class="text-yellow-600">94% accurate</span>
+                                                    <span>• Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communications Footer -->
+                    <div class="flex-shrink-0 border-t border-gray-200 p-3">
+                        <div class="flex gap-2">
+                            <button class="flex-1 py-2 px-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                <i data-lucide="radio" class="h-4 w-4 inline mr-1"></i>
+                                Open Radio
+                            </button>
+                            <button class="py-2 px-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                                <i data-lucide="expand" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Stats Dashboard Footer -->
+        <div id="statsFooter" class="flex-shrink-0 bg-white border-t shadow-sm">
+            <!-- Stats Toggle Button -->
+            <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+                <button 
+                    onclick="toggleStats()" 
+                    class="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    id="statsToggle"
+                >
+                    <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    <span>Facility Overview</span>
+                    <div class="text-xs text-gray-500 ml-2">847 cameras • 5000 activities • 0 critical</div>
+                </button>
+            </div>
+            
+            <!-- Collapsible Stats Content -->
+            <div id="statsContent" class="p-4" style="display: none;">
+                <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    <!-- Cameras Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="camera" class="h-5 w-5 text-blue-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">847</div>
+                                <div class="text-xs text-gray-600">Cameras</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activities Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="activity" class="h-5 w-5 text-green-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">5000</div>
+                                <div class="text-xs text-gray-600">Activities</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Critical Stat -->
+                    <div class="stat-card p-3 bg-white border border-red-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer relative">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="h-5 w-5 text-red-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-red-700">0</div>
+                                <div class="text-xs text-gray-600">Critical</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Buildings Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="building" class="h-5 w-5 text-purple-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">32</div>
+                                <div class="text-xs text-gray-600">Buildings</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Employees Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="users" class="h-5 w-5 text-orange-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">2,847</div>
+                                <div class="text-xs text-gray-600">Employees</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Uptime Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="trending-up" class="h-5 w-5 text-teal-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">99.97%</div>
+                                <div class="text-xs text-gray-600">Uptime</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Personnel Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="shield" class="h-5 w-5 text-indigo-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">23</div>
+                                <div class="text-xs text-gray-600">Security</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Time Stat -->
+                    <div class="stat-card p-3 bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="zap" class="h-5 w-5 text-yellow-600 flex-shrink-0"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-lg font-semibold text-gray-900">4.2 min</div>
+                                <div class="text-xs text-gray-600">Response</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Dropdown functionality
+        function toggleDropdown(element) {
+            const dropdown = element.parentElement;
+            const isActive = dropdown.classList.contains('active');
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown.active').forEach(d => {
+                d.classList.remove('active');
+            });
+            
+            // Toggle current dropdown
+            if (!isActive) {
+                dropdown.classList.add('active');
+            }
+        }
+        
+        function selectOption(element, optionText) {
+            const dropdown = element.closest('.dropdown');
+            const trigger = dropdown.querySelector('.dropdown-trigger span');
+            trigger.textContent = optionText;
+            dropdown.classList.remove('active');
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown.active').forEach(d => {
+                    d.classList.remove('active');
+                });
+            }
+        });
+        
+        // Activity card click handlers
+        document.querySelectorAll('.activity-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    console.log('Activity clicked:', card);
+                    // Could open modal here
+                }
+            });
+        });
+        
+        // Real-time updates simulation
+        setInterval(() => {
+            const dots = document.querySelectorAll('.realtime-dot');
+            dots.forEach(dot => {
+                dot.style.animationDuration = Math.random() * 2 + 1 + 's';
+            });
+        }, 5000);
+        
+        // Collapsible Stats Functionality
+        let statsExpanded = false; // Start collapsed by default
+        
+        function toggleStats() {
+            const statsContent = document.getElementById('statsContent');
+            const toggleIcon = document.querySelector('#statsToggle i');
+            
+            if (statsExpanded) {
+                // Collapse
+                statsContent.style.display = 'none';
+                toggleIcon.setAttribute('data-lucide', 'chevron-down');
+                statsExpanded = false;
+            } else {
+                // Expand
+                statsContent.style.display = 'block';
+                toggleIcon.setAttribute('data-lucide', 'chevron-up');
+                statsExpanded = true;
+            }
+            
+            // Refresh icons
+            lucide.createIcons();
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('activity-search').focus();
+            }
+        });
+    </script>
+</body>
+</html>

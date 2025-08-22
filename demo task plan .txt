@@ -1,0 +1,175 @@
+# DEMO HANDOFF — Situ8 (“Demo Prep / Cloud Tasks”)
+
+> **Audience:** AI assistant (Cursor / Cloud Code)  
+> **Outcome:** Generate **task files** (no code) under `Demo Prep/Cloud Tasks/` that bridge the current repo to a demo-ready state for:
+> 1) Tailgating, 2) Door Propped Open, 3) Slip & Fall, 4) Cleaning False Alarms.
+
+## Ground Rules for You (the AI)
+- **Never commit code in this task**. Your output is **Markdown task files** only.
+- Create the folder **`Demo Prep/Cloud Tasks/`** (and keep all files there).
+- Each task file must follow the **Task Template** below (Title, Intent, Where to change, Acceptance, Risks, Dependencies, Test Plan, Demo Steps).
+- Prefer **small, PR-sized steps** in the plan; name branches as `demo/<task-slug>`.
+- Assume **Activities is the front door**; **escalation opens an Incident modal/“command center”**; use **Ambient linkouts** for full video, and **GIF/MP4 clips** where available.
+
+## Context You Must Assume
+- The repo already has: Activities list UI, an (incomplete) Incident view/modal shell, seed/demo mode, some Ambient JSON mocks.
+- The demo must walk through **end-to-end stories**: inbound Activity → evidence review → (optional) AI-prepop SOP → human review → escalate to Incident → (optional) escalate to Case → close out.
+- Do **not** build real-time guard tracking. Use **assignments** and **status** only.
+- Use **mock data + stubs** where integration isn’t essential to tell the story within the UI.
+
+---
+
+## Task Template (use this in every file)
+**Front-matter**
+- **Title**
+- **Owner**: (leave blank)
+- **Priority**: P0/P1/P2
+- **Status**: Planned
+- **Dependencies**: (list other task files)
+- **Touched Areas**: (pages/components/services)
+
+**Intent & Scope**
+- One paragraph: what this enables for the demo and why.
+
+**Repo Changes (No Code Yet)**
+- Bullet list of *files/dirs to create or edit later* (paths, component names, service names).
+- API endpoints to surface (even if mocked).
+- Data contracts (shape of mock JSON, fields shown in UI).
+
+**Acceptance Criteria**
+- Concrete, observable behaviors in the running app.
+- Include empty/edge states and performance notes (e.g., modal opens < 1s).
+
+**Risks & Mitigations**
+- Integration gotchas, data gaps, perf cliffs, UI debt.
+
+**Test Plan (Manual)**
+- Steps the presenter or QA can follow to verify behavior.
+
+**Demo Script Hooks**
+- Exact steps and spoken narration for the demo.
+
+---
+
+## Generate These Task Files
+
+Create the following **Markdown task files** under `Demo Prep/Cloud Tasks/`. Use the template above in each.
+
+### 0. Scaffolding & Readme
+1. `00_README.md`  
+   - Purpose of this folder, how to use the tasks, branch naming, how to “check off” tasks pre-demo.
+2. `01_repo_audit.md`  
+   - **Intent:** Inventory what already exists vs. what’s missing.  
+   - **Repo scan prompts:** list Activities components, Incident modal shell, seed/mock data, SOP scaffolding, routing, any Ambient link handling.  
+   - **Output:** table of gaps + suggested bridging steps.
+
+3. `02_env_and_secrets.md`  
+   - Document all **non-secret** env flags and where **demo-safe secrets** would go if needed (but avoid real creds).  
+   - Define **demo toggles** (e.g., `DEMO_MODE=true`, `SHOW_AMBIENT_LINKS=true`).
+
+---
+
+### A. Data & Evidence (Shared)
+4. `10_mock_data_ingest.md`  
+   - Define **mock event JSON** for each scenario (tailgating, door-propped, slip-and-fall, cleaning false alarms).  
+   - Fields: `id`, `type`, `priority`, `location`, `timestamp`, `evidence { thumbUrl, mp4ClipUrl?, ambientAlertUrl }`, `sensors[]`, `actor?`.  
+   - Add a **script or seed** plan (no code) to inject into the Activities feed on a timer/reset.
+
+5. `11_evidence_display_and_linkout.md`  
+   - Show **GIF/MP4 clip** inline **if present**; otherwise show thumbnail.  
+   - Add a **“View Full Video in Ambient”** link that opens a new tab to the alert timestamp.  
+   - Acceptance: evidence appears in Activity card and in the Incident modal; external link works.
+
+---
+
+### B. Activities Page (Front Door)
+6. `20_activities_list_and_states.md`  
+   - Ensure **Priority view** and **Chronological view** exist; include **“Clear / False Alarm”** and **“Escalate to Incident”** actions on the card.  
+   - Include **±15 min context** view when expanding an Activity.  
+   - Acceptance: toggle views; context timeline shows mixed priorities around the selected time.
+
+7. `21_activity_card_actions_and_sop_prefill.md`  
+   - On clicking an Activity, show **AI-prefilled SOP** (stubbed content ok) with **human review required** before escalation.  
+   - Actions: **Assign guard(s)**, **Add note**, **Mark false alarm**, **Escalate**.  
+   - Acceptance: Escalation requires explicit confirmation.
+
+---
+
+### C. Incident “Command Center” Modal
+8. `30_incident_modal_shell_ready.md`  
+   - Confirm modal opens instantly from Activity; structure tabs/sections: **Overview**, **Evidence**, **Assignments**, **Timeline**, **SOP**, **Comms** (stub).  
+   - Big primary buttons: **Dispatch/Assign**, **Broadcast**, **Escalate to Case**, **Close Incident**.
+
+9. `31_assignments_roles_and_status.md`  
+   - Manual assignment only; allow multiple roles (e.g., **Primary**, **Runner**, **Supervisor**).  
+   - Show assignees, status chips, and quick reassignment.
+
+10. `32_case_escalation_minimal.md`  
+   - From Incident modal: **Create Case** or **Add to Case**; minimal Case screen for the demo with **Evidence** list and **Timeline**.
+
+---
+
+### D. Scenario Flows (End-to-End)
+> For each scenario, create a file that stitches together the shared pieces above into a crisp demo flow.
+
+11. `40_tailgating_flow.md`  
+   - **Trigger:** Activity `type=tailgating` with clip + badge meta.  
+   - Steps: review evidence → show timeline context (previous badge, next person) → assign 2 roles → escalate to Incident → optional Case.  
+   - Acceptance: Ambient link, clip inline, roles assigned, closeout notes.
+
+12. `41_door_propped_open_flow.md`  
+   - **Trigger:** Activity `type=door-propped` (sensor: door held > threshold).  
+   - Rules: after-hours = High/Critical; otherwise Medium with SLA.  
+   - Steps: evidence (photo/sensor details) → SOP prefill (check door, notify facilities) → escalate if not cleared in X minutes.
+
+13. `42_slip_and_fall_flow.md`  
+   - **Trigger:** Activity `type=slip-fall` (video clip).  
+   - Auto-priority Critical; SOP shows **medical response** steps; assignments: **Medic/First Aid**, **Crowd Control**.  
+   - Evidence and report note fields required before close.
+
+14. `43_cleaning_false_alarm_flow.md`  
+   - **Trigger:** Activity `type=person_detected` but tagged **cleaning** (uniform/time/location).  
+   - Path: mark **False Alarm** → archive with reason → **do not** escalate.  
+   - Add **suppression rule note** (e.g., “Weeknights 10p–2a, Bldg C Lobby, janitorial route”) so future demos can show learning.
+
+---
+
+### E. Communications (Stubbed for Demo)
+15. `50_comms_tray_and_transcripts_stub.md`  
+   - Keep a **docked Comms tray** with **PTT controls disabled** but **transcript events** appearing in the Incident timeline as text (mock).  
+   - Acceptance: sending a canned “All-Call” message inserts a transcript entry in the Incident timeline.
+
+---
+
+### F. Performance & Polish
+16. `60_demo_mode_reset_and_timing.md`  
+   - One-click **reset** to reseed Activities; ensure **Incident modal opens <1s**; evidence thumbnails never block UI thread.
+
+17. `61_accessibility_and_keyboard.md`  
+   - Keyboard shortcuts: open Activities (`g a`), focus search, open last Incident (`g i`), confirm Escalate (`Enter`), cancel (`Esc`).  
+   - Focus order and ARIA roles documented.
+
+---
+
+### G. Presenter Aids
+18. `70_end_to_end_demo_script.md`  
+   - A step-by-step script the presenter reads: “Here’s tailgating… here’s the evidence… escalate… assign…” Include screenshots to capture once the UI is ready.
+
+19. `71_qc_checklist.md`  
+   - Pre-demo checks: seeds load, links resolve, keyboard works, timings OK, no console errors, fallback copy in place.
+
+20. `72_open_questions_and_risks.md`  
+   - Track unknowns (e.g., final SOP copy, any live integration toggles).
+
+21. `73_out_of_scope_for_demo.md`  
+   - Explicitly list: real-time guard tracking; live embedded Ambient streaming; mobile PTT; SSO; analytics dashboards.
+
+---
+
+## Naming Conventions
+- Files: `NN_<slug>.md` (two-digit order number).
+- Branches: `demo/<slug>` (match file slugs).
+- Components you will likely touch later: `ActivitiesPage`, `ActivityCard`, `IncidentModal`, `CaseView`, `CommsTray`.
+
+## References for You (do not paste code, just align) 
+- Use the existing Activities/Incident patterns, activity card variations, and escalation rules from prior specs. 

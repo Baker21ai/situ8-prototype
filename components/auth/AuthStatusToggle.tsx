@@ -48,7 +48,7 @@ export const AuthStatusToggle: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* AWS Connection Status */}
-        <Alert variant={authStatus.cognitoInitialized ? "default" : "warning"}>
+        <Alert variant={authStatus.cognitoInitialized ? "default" : "destructive"}>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>AWS Cognito Status</AlertTitle>
           <AlertDescription>
