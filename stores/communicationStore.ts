@@ -83,6 +83,10 @@ interface CommunicationActions {
   toggleMessagePanel: () => void;
   setSelectedMessage: (messageId: string | null) => void;
   
+  // Message persistence
+  loadPersistedMessages: (userId: string) => Promise<void>;
+  syncMessagesFromBackend: (channelId: string, limit?: number) => Promise<void>;
+  
   // Utility
   getChannelById: (channelId: string) => CommunicationChannel | undefined;
   getUnreadCount: (channelId: string) => number;
@@ -117,6 +121,23 @@ export const useCommunicationStore = create<CommunicationStore>()(
       // Service initialization
       initializeService: (service: CommunicationService) => {
         set({ communicationService: service });
+        
+        // Automatically load persisted data after service initialization
+        const initializeData = async () => {
+          // Import userStore dynamically to avoid circular dependencies
+          const { useUserStore } = await import('./userStore');
+          const currentUser = useUserStore.getState().currentUser;
+          const userId = currentUser?.id || currentUser?.email || 'anonymous-user';
+          
+          try {
+            await get().loadUserChannels(userId);
+            await get().loadPersistedMessages(userId);
+          } catch (error) {
+            console.error('Failed to initialize communication data:', error);
+          }
+        };
+        
+        initializeData();
       },
 
       // Channel management
@@ -349,7 +370,72 @@ export const useCommunicationStore = create<CommunicationStore>()(
         const { action } = wsMessage;
 
         switch (action) {
+          case 'message':
+            // Handle message from Lambda router
+            if (wsMessage.message) {
+              get().addMessage({
+                id: wsMessage.message.messageId,
+                channelId: wsMessage.message.channelId,
+                senderId: wsMessage.message.senderId,
+                senderName: wsMessage.message.senderEmail || wsMessage.message.senderId,
+                senderRole: wsMessage.message.senderRole || 'user',
+                content: wsMessage.message.content,
+                type: wsMessage.message.type || 'text',
+                timestamp: new Date(wsMessage.message.timestamp),
+                metadata: wsMessage.message.metadata,
+                isRead: false
+              });
+            }
+            break;
+
+          case 'message_history':
+            // Handle message history when joining channel
+            if (wsMessage.messages && Array.isArray(wsMessage.messages)) {
+              const { messages } = get();
+              const channelId = wsMessage.messages[0]?.channelId;
+              if (channelId) {
+                const formattedMessages = wsMessage.messages.map((msg: any) => ({
+                  id: msg.messageId,
+                  channelId: msg.channelId,
+                  senderId: msg.senderId,
+                  senderName: msg.senderEmail || msg.senderId,
+                  senderRole: msg.senderRole || 'user',
+                  content: msg.content,
+                  type: msg.type || 'text',
+                  timestamp: new Date(msg.timestamp),
+                  metadata: msg.metadata,
+                  isRead: true
+                }));
+                set({
+                  messages: {
+                    ...messages,
+                    [channelId]: formattedMessages
+                  }
+                });
+              }
+            }
+            break;
+
+          case 'user_joined':
+            get().updateUserStatus(wsMessage.userId, wsMessage.userEmail || wsMessage.userId, 'online');
+            break;
+
+          case 'user_left':
+            get().removeUser(wsMessage.userId);
+            break;
+
+          case 'typing':
+            // Handle typing indicator
+            console.log('Typing indicator:', wsMessage.userId, wsMessage.isTyping);
+            break;
+
+          case 'pong':
+            // Handle keepalive response
+            console.log('Pong received:', wsMessage.timestamp);
+            break;
+
           case 'newMessage':
+            // Legacy support
             if (wsMessage.message) {
               get().addMessage(wsMessage.message);
             }
@@ -438,6 +524,80 @@ export const useCommunicationStore = create<CommunicationStore>()(
         set({ messages: updated });
       },
 
+      // Message persistence methods
+      loadPersistedMessages: async (userId: string) => {
+        const { communicationService, channels } = get();
+        if (!communicationService) return;
+
+        set({ isLoading: true });
+
+        try {
+          // Load messages for all user channels
+          const messagePromises = channels.map(async (channel) => {
+            const response = await communicationService.getChannelMessages(channel.id, 50);
+            if (response.success && response.data) {
+              return {
+                channelId: channel.id,
+                messages: response.data.messages
+              };
+            }
+            return null;
+          });
+
+          const results = await Promise.all(messagePromises);
+          const { messages: currentMessages } = get();
+          const newMessages = { ...currentMessages };
+
+          results.forEach(result => {
+            if (result) {
+              // Merge with existing messages, avoiding duplicates
+              const existingMessages = newMessages[result.channelId] || [];
+              const existingIds = new Set(existingMessages.map(m => m.id));
+              
+              const uniqueNewMessages = result.messages.filter(m => !existingIds.has(m.id));
+              newMessages[result.channelId] = [...existingMessages, ...uniqueNewMessages]
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+            }
+          });
+
+          set({ messages: newMessages });
+        } catch (error) {
+          console.error('Failed to load persisted messages:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to load messages' });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      syncMessagesFromBackend: async (channelId: string, limit = 50) => {
+        const { communicationService } = get();
+        if (!communicationService) return;
+
+        try {
+          const response = await communicationService.getChannelMessages(channelId, limit);
+          if (response.success && response.data) {
+            const { messages } = get();
+            const existingMessages = messages[channelId] || [];
+            const existingIds = new Set(existingMessages.map(m => m.id));
+            
+            // Add only new messages to avoid duplicates
+            const newMessages = response.data.messages.filter(m => !existingIds.has(m.id));
+            
+            if (newMessages.length > 0) {
+              set({
+                messages: {
+                  ...messages,
+                  [channelId]: [...existingMessages, ...newMessages]
+                    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to sync messages for channel ${channelId}:`, error);
+        }
+      },
+
       reset: () => {
         set(initialState);
       },
@@ -445,12 +605,15 @@ export const useCommunicationStore = create<CommunicationStore>()(
     {
       name: 'communication-store',
       partialize: (state) => ({
-        // Only persist essential data, not real-time state
+        // Persist essential data and messages for conversation continuity
         channels: state.channels,
+        messages: state.messages,
         activeChannelId: state.activeChannelId,
         unreadCounts: state.unreadCounts,
         isMessagePanelOpen: state.isMessagePanelOpen,
       }),
+      // Add version to handle schema changes
+      version: 1,
     }
   )
 );

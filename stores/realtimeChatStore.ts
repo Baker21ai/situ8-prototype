@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useUserStore } from './userStore';
 
@@ -91,7 +91,10 @@ interface RealtimeChatState {
   createConversation: (type: Conversation['type'], participants: string[], name: string, metadata?: Conversation['metadata']) => Promise<Conversation>;
   sendMessage: (conversationId: string, content: string, type?: ChatMessage['type'], attachments?: ChatMessage['attachments']) => Promise<void>;
   loadMessages: (conversationId: string, cursor?: string) => Promise<void>;
+  loadMoreMessages: (conversationId: string) => Promise<void>;
   loadConversations: () => Promise<void>;
+  loadPersistedConversations: () => Promise<void>;
+  syncAllMessages: () => Promise<void>;
   markAsRead: (conversationId: string, messageId: string) => void;
   deleteMessage: (messageId: string) => void;
   setTyping: (conversationId: string, isTyping: boolean) => void;
@@ -138,7 +141,8 @@ const defaultConversations: Conversation[] = [
 
 export const useRealtimeChatStore = create<RealtimeChatState>()(
   devtools(
-    (set, get) => ({
+    persist(
+      (set, get) => ({
       // Initial state
       conversations: defaultConversations,
       messages: {},
@@ -184,6 +188,12 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
             action: 'join',
             channelId: 'main'
           }));
+          
+          // Load persisted conversations and messages after connection
+          setTimeout(() => {
+            get().loadPersistedConversations();
+            get().syncAllMessages();
+          }, 500);
         };
         
         ws.onmessage = (event) => {
@@ -278,7 +288,7 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
           case 'message_history':
             // Message history received when joining channel
             if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
-              const channelId = data.messages[0].channelId || 'main';
+              const channelId = data.channelId || data.messages[0].channelId || 'main';
               const historyMessages: ChatMessage[] = data.messages.map((msg: any) => ({
                 id: msg.messageId || `msg-${Date.now()}-${Math.random()}`,
                 conversationId: msg.channelId || channelId,
@@ -293,10 +303,61 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
                 metadata: msg.metadata
               }));
               
+              // Update pagination info
+              const { messagesCursor, hasMoreMessages } = get();
               set({
                 messages: {
                   ...get().messages,
                   [channelId]: historyMessages
+                },
+                messagesCursor: {
+                  ...messagesCursor,
+                  [channelId]: data.lastEvaluatedKey || null
+                },
+                hasMoreMessages: {
+                  ...hasMoreMessages,
+                  [channelId]: data.hasMore || false
+                }
+              });
+            }
+            break;
+            
+          case 'message_history_batch':
+            // Additional message history received via pagination
+            if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+              const channelId = data.channelId || 'main';
+              const batchMessages: ChatMessage[] = data.messages.map((msg: any) => ({
+                id: msg.messageId || `msg-${Date.now()}-${Math.random()}`,
+                conversationId: msg.channelId || channelId,
+                senderId: msg.senderId,
+                senderName: msg.senderEmail || msg.senderId,
+                senderEmail: msg.senderEmail,
+                senderRole: msg.senderRole,
+                content: msg.content,
+                type: msg.type || 'text',
+                timestamp: msg.timestamp || new Date().toISOString(),
+                status: 'delivered',
+                metadata: msg.metadata
+              }));
+              
+              // Prepend to existing messages (older messages come first)
+              const { messages, messagesCursor, hasMoreMessages } = get();
+              const existingMessages = messages[channelId] || [];
+              const existingIds = new Set(existingMessages.map(m => m.id));
+              const newMessages = batchMessages.filter(m => !existingIds.has(m.id));
+              
+              set({
+                messages: {
+                  ...messages,
+                  [channelId]: [...newMessages, ...existingMessages]
+                },
+                messagesCursor: {
+                  ...messagesCursor,
+                  [channelId]: data.lastEvaluatedKey || null
+                },
+                hasMoreMessages: {
+                  ...hasMoreMessages,
+                  [channelId]: data.hasMore || false
                 }
               });
             }
@@ -439,10 +500,21 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
 
       // Load messages (from cache or fetch if needed)
       loadMessages: async (conversationId, cursor) => {
-        // Messages are loaded via WebSocket when joining channel
-        // This is here for compatibility
         const ws = get().ws;
-        if (ws && ws.readyState === WebSocket.OPEN) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          set({ error: 'Not connected to chat server' });
+          return;
+        }
+
+        if (cursor) {
+          // Load more messages with pagination
+          ws.send(JSON.stringify({
+            action: 'load_more_messages',
+            channelId: conversationId,
+            cursor: cursor
+          }));
+        } else {
+          // Initial load - join channel to get recent messages
           ws.send(JSON.stringify({
             action: 'join',
             channelId: conversationId
@@ -450,10 +522,112 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
         }
       },
 
+      // Load more messages for pagination
+      loadMoreMessages: async (conversationId) => {
+        const { messagesCursor, hasMoreMessages } = get();
+        
+        // Check if there are more messages to load
+        if (!hasMoreMessages[conversationId]) {
+          return;
+        }
+        
+        const cursor = messagesCursor[conversationId];
+        if (!cursor) {
+          return;
+        }
+        
+        // Use the existing loadMessages method with cursor
+        await get().loadMessages(conversationId, cursor);
+      },
+
       // Load conversations
       loadConversations: async () => {
         // In real implementation, fetch from API
         // For now, we use default conversations
+      },
+
+      // Load persisted conversations from storage/API
+      loadPersistedConversations: async () => {
+        try {
+          // For now, use the communication store's channel data
+          const { useCommunicationStore } = await import('./communicationStore');
+          const channels = useCommunicationStore.getState().channels;
+          
+          // Convert channels to conversations
+          const conversations: Conversation[] = channels.map(channel => ({
+            id: channel.id,
+            type: channel.type === 'broadcast' ? 'broadcast' : 
+                  channel.type === 'team' ? 'group' : 
+                  channel.type === 'direct' ? 'direct' : 'group',
+            name: channel.name,
+            participants: channel.memberIds,
+            lastActivity: channel.updatedAt.toISOString(),
+            unreadCount: 0,
+            description: channel.description,
+            metadata: {
+              purpose: channel.description,
+              createdAt: channel.createdAt.toISOString()
+            }
+          }));
+          
+          // Merge with existing conversations, avoiding duplicates
+          const existingConversations = get().conversations;
+          const existingIds = new Set(existingConversations.map(c => c.id));
+          const newConversations = conversations.filter(c => !existingIds.has(c.id));
+          
+          if (newConversations.length > 0) {
+            set({
+              conversations: [...existingConversations, ...newConversations]
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load persisted conversations:', error);
+        }
+      },
+
+      // Sync all messages from backend storage
+      syncAllMessages: async () => {
+        try {
+          // For now, use the communication store's message data
+          const { useCommunicationStore } = await import('./communicationStore');
+          const communicationMessages = useCommunicationStore.getState().messages;
+          
+          // Convert communication messages to chat messages
+          const { messages: currentMessages } = get();
+          const newMessages: Record<string, ChatMessage[]> = { ...currentMessages };
+          
+          Object.entries(communicationMessages).forEach(([channelId, msgs]) => {
+            const existingMessages = newMessages[channelId] || [];
+            const existingIds = new Set(existingMessages.map(m => m.id));
+            
+            const convertedMessages: ChatMessage[] = msgs
+              .filter(msg => !existingIds.has(msg.id))
+              .map(msg => ({
+                id: msg.id,
+                conversationId: msg.channelId,
+                senderId: msg.senderId,
+                senderName: msg.senderName,
+                senderRole: msg.senderRole,
+                content: msg.content,
+                type: msg.type as ChatMessage['type'],
+                timestamp: msg.timestamp.toISOString(),
+                status: msg.status as ChatMessage['status'],
+                metadata: {
+                  ...msg.metadata,
+                  location: msg.metadata?.tags?.includes('location') ? 'Unknown Location' : undefined
+                }
+              }));
+            
+            if (convertedMessages.length > 0) {
+              newMessages[channelId] = [...existingMessages, ...convertedMessages]
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+            }
+          });
+          
+          set({ messages: newMessages });
+        } catch (error) {
+          console.error('Failed to sync all messages:', error);
+        }
       },
 
       // Mark as read
@@ -570,7 +744,21 @@ export const useRealtimeChatStore = create<RealtimeChatState>()(
       }
     }),
     {
-      name: 'realtime-chat-store'
+      name: 'realtime-chat-store',
+      partialize: (state) => ({
+        // Persist conversations and messages for session continuity
+        conversations: state.conversations,
+        messages: state.messages,
+        activeConversationId: state.activeConversationId,
+        messagesCursor: state.messagesCursor,
+        hasMoreMessages: state.hasMoreMessages,
+      }),
+      // Add version to handle schema changes
+      version: 1,
+    }
+    ),
+    {
+      name: 'realtime-chat-store-devtools'
     }
   )
 );

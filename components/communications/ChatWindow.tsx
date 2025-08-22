@@ -25,7 +25,9 @@ import {
   Pause,
   Square
 } from 'lucide-react';
-import { useChatStore, ChatMessage } from '../../stores/chatStore';
+import { useRealtimeChatStore, ChatMessage } from '../../stores/realtimeChatStore';
+import { useCommunicationService } from '../../services/ServiceProvider';
+import { useUserStore } from '../../stores/userStore';
 import { format, isToday, isYesterday } from 'date-fns';
 
 interface ChatWindowProps {
@@ -42,6 +44,9 @@ export function ChatWindow({
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout>();
@@ -54,29 +59,83 @@ export function ChatWindow({
     sendMessage,
     setReplyingTo,
     loadMessages,
-    typingIndicators
-  } = useChatStore();
+    loadMoreMessages,
+    hasMoreMessages,
+    typingIndicators,
+    setTyping,
+    initializeWebSocket,
+    isConnected,
+    connectionState,
+    handleWebSocketMessage
+  } = useRealtimeChatStore();
+  const communicationService = useCommunicationService();
+  const { currentUser } = useUserStore();
 
   const currentConversationId = conversationId || activeConversationId;
   const conversation = conversations.find(c => c.id === currentConversationId);
   const conversationMessages = messages[currentConversationId || ''] || [];
+
+  // Initialize WebSocket on mount
+  useEffect(() => {
+    initializeWebSocket();
+  }, [initializeWebSocket]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationMessages]);
 
-  // Load messages when conversation changes
+  // Load persisted history when conversation changes (service-backed)
   useEffect(() => {
-    if (currentConversationId && !messages[currentConversationId]) {
-      loadMessages(currentConversationId);
+    let cancelled = false;
+    const loadHistory = async () => {
+      if (!currentConversationId) return;
+      try {
+        const resp = await communicationService.getChannelMessages(currentConversationId, 50);
+        if (!cancelled && resp.success && resp.data?.messages?.length) {
+          handleWebSocketMessage({ action: 'message_history', messages: resp.data.messages });
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadHistory();
+    return () => { cancelled = true; };
+  }, [currentConversationId, communicationService, handleWebSocketMessage]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    let typingTimeout: NodeJS.Timeout;
+    
+    const handleTyping = () => {
+      if (currentConversationId) {
+        setTyping(currentConversationId, true);
+        
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          setTyping(currentConversationId, false);
+        }, 1000);
+      }
+    };
+    
+    if (message && currentConversationId) {
+      handleTyping();
     }
-  }, [currentConversationId, loadMessages, messages]);
+    
+    return () => clearTimeout(typingTimeout);
+  }, [message, currentConversationId, setTyping]);
 
   const handleSend = async () => {
     if (!message.trim() || !currentConversationId) return;
-    
-    await sendMessage(currentConversationId, message.trim());
+    // Persist via service (DynamoDB) and broadcast via WebSocket
+    await communicationService.sendMessage(
+      currentConversationId,
+      message.trim(),
+      currentUser?.id || 'unknown',
+      currentUser?.email || 'Unknown User',
+      currentUser?.role || 'user',
+      'text'
+    );
     setMessage('');
     inputRef.current?.focus();
   };
@@ -88,38 +147,119 @@ export function ChatWindow({
     }
   };
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordingDuration(0);
-    
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
-    }, 1000);
+  const requestMicrophone = async (): Promise<MediaStream | null> => {
+    try {
+      if (mediaStream) return mediaStream;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMediaStream(stream);
+      return stream;
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      return null;
+    }
+  };
+
+  const startRecording = async () => {
+    if (isRecording) return;
+    const stream = await requestMicrophone();
+    if (!stream) return;
+
+    audioChunksRef.current = [];
+    try {
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+    }
   };
 
   const stopRecording = async () => {
+    if (!isRecording) return;
     setIsRecording(false);
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
     }
-    
-    // Simulate voice message
+
+    const mediaRecorder = mediaRecorderRef.current;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      await new Promise<void>((resolve) => {
+        mediaRecorder.onstop = () => resolve();
+        mediaRecorder.stop();
+      });
+    }
+
+    // Create blob and local URL for playback
+    const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    audioChunksRef.current = [];
+    let fileUrl: string | null = null;
+    try {
+      // Upload to S3 via presigned URL
+      const presign = await communicationService.getPresignedUploadUrl(`voice-${Date.now()}.webm`, 'audio/webm');
+      if (presign.success && presign.data) {
+        await communicationService.uploadToPresignedUrl(presign.data.uploadUrl, blob, 'audio/webm');
+        fileUrl = presign.data.fileUrl;
+      }
+    } catch (e) {
+      // Fallback to local blob URL (session-only)
+      fileUrl = URL.createObjectURL(blob);
+    }
+
     if (currentConversationId && recordingDuration > 0) {
-      await sendMessage(
+      await communicationService.sendMessage(
         currentConversationId,
         'Voice message',
+        currentUser?.id || 'unknown',
+        currentUser?.email || 'Unknown User',
+        currentUser?.role || 'user',
         'voice',
-        [{
-          type: 'voice',
-          url: '/mock-voice-message.mp3',
-          name: 'Voice message',
-          duration: recordingDuration
-        }]
+        {
+          attachments: [
+            {
+              url: fileUrl,
+              voiceDuration: recordingDuration
+            } as any
+          ]
+        }
       );
     }
-    
+
     setRecordingDuration(0);
   };
+
+  // Keyboard Push-to-Talk: hold V or Space to record
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Avoid capturing when typing in inputs or if already recording
+      const target = e.target as HTMLElement;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      if (isTyping) return;
+      if ((e.key === 'v' || e.code === 'Space') && !isRecording) {
+        e.preventDefault();
+        startRecording();
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'v' || e.code === 'Space') {
+        e.preventDefault();
+        stopRecording();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isRecording]);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -207,20 +347,13 @@ export function ChatWindow({
             )}
             
             {/* Voice message */}
-            {msg.type === 'voice' && msg.attachments?.[0] && (
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`h-8 w-8 p-0 ${isOwnMessage ? 'text-white hover:bg-blue-400' : ''}`}
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-                <div className="flex-1">
-                  <div className="h-8 bg-white/20 rounded-full"></div>
-                </div>
+            {msg.type === 'voice' && (msg.attachments?.[0] || (msg.metadata as any)?.attachments?.[0]) && (
+              <div className="flex items-center gap-3">
+                <audio controls className="h-8">
+                  <source src={(msg.attachments?.[0]?.url || (msg.metadata as any)?.attachments?.[0]?.url) as string} type="audio/webm" />
+                </audio>
                 <span className="text-sm">
-                  {formatDuration(msg.attachments[0].duration || 0)}
+                  {formatDuration((msg.attachments?.[0]?.duration || (msg.metadata as any)?.attachments?.[0]?.duration || 0) as number)}
                 </span>
               </div>
             )}
@@ -307,16 +440,20 @@ export function ChatWindow({
             {getConversationIcon()}
             <div>
               <h3 className="font-semibold">{conversation.name}</h3>
-              {conversation.type === 'group' && (
-                <p className="text-sm text-gray-500">
-                  {conversation.participants.length} members
-                </p>
-              )}
-              {conversation.metadata?.building && (
-                <p className="text-sm text-gray-500">
-                  {conversation.metadata.building}
-                </p>
-              )}
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                {conversation.type === 'group' && (
+                  <span>{conversation.participants.length} members</span>
+                )}
+                {conversation.metadata?.building && (
+                  <span>{conversation.metadata.building}</span>
+                )}
+                <span className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${
+                    isConnected ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  {isConnected ? 'Connected' : connectionState}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -341,6 +478,19 @@ export function ChatWindow({
       {/* Messages */}
       <ScrollArea className="flex-1">
         <div className="p-4">
+          {/* Load More Messages Button */}
+          {currentConversationId && hasMoreMessages[currentConversationId] && (
+            <div className="flex justify-center mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadMoreMessages(currentConversationId)}
+                className="text-xs"
+              >
+                Load More Messages
+              </Button>
+            </div>
+          )}
           {Object.entries(messagesByDate).map(([date, msgs]) => (
             <div key={date}>
               {/* Date separator */}
@@ -455,8 +605,13 @@ export function ChatWindow({
               <Button 
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0"
-                onClick={startRecording}
+                className={`h-10 w-10 p-0 ${isRecording ? 'text-red-600' : ''}`}
+                onMouseDown={() => startRecording()}
+                onMouseUp={() => stopRecording()}
+                onMouseLeave={() => isRecording && stopRecording()}
+                onTouchStart={() => startRecording()}
+                onTouchEnd={() => stopRecording()}
+                title="Hold to talk (V or Space)"
               >
                 <Mic className="h-5 w-5" />
               </Button>

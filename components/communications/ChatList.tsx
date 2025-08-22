@@ -15,7 +15,7 @@ import {
   Plus,
   Radio
 } from 'lucide-react';
-import { useChatStore } from '../../stores/chatStore';
+import { useRealtimeChatStore } from '../../stores/realtimeChatStore';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatListProps {
@@ -32,8 +32,14 @@ export function ChatList({
   const { 
     conversations, 
     activeConversationId,
-    setActiveConversation
-  } = useChatStore();
+    setActiveConversation,
+    initializeWebSocket
+  } = useRealtimeChatStore();
+  
+  // Initialize WebSocket on mount
+  React.useEffect(() => {
+    initializeWebSocket();
+  }, [initializeWebSocket]);
 
   // Sort conversations by pinned first, then by last activity
   const sortedConversations = useMemo(() => {

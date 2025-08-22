@@ -82,6 +82,16 @@ export class CommunicationService extends BaseService {
                            'wss://8hj9sdifek.execute-api.us-west-2.amazonaws.com/dev';
   }
 
+  // Helper methods
+  protected generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  protected async createAuditEntry(context: any): Promise<void> {
+    // Audit entry creation logic
+    console.log('Audit entry created:', context);
+  }
+
   /**
    * Send a message to a channel
    */
@@ -113,7 +123,7 @@ export class CommunicationService extends BaseService {
       };
 
       // Store message in DynamoDB
-      const dbResponse = await this.awsClient.request('/messages', {
+      const dbResponse = await this.awsClient.makeRequest('/messages', {
         method: 'POST',
         body: {
           action: 'create',
@@ -162,7 +172,7 @@ export class CommunicationService extends BaseService {
     auditContext?: AuditContext
   ): Promise<ServiceResponse<{ messages: MessageResponse[], hasMore: boolean, lastKey?: string }>> {
     try {
-      const response = await this.awsClient.request('/messages', {
+      const response = await this.awsClient.makeRequest('/messages', {
         method: 'GET',
         queryParams: {
           action: 'getByChannel',
@@ -233,7 +243,7 @@ export class CommunicationService extends BaseService {
       };
 
       // Store channel in DynamoDB
-      const dbResponse = await this.awsClient.request('/channels', {
+      const dbResponse = await this.awsClient.makeRequest('/channels', {
         method: 'POST',
         body: {
           action: 'create',
@@ -277,7 +287,7 @@ export class CommunicationService extends BaseService {
     auditContext?: AuditContext
   ): Promise<ServiceResponse<ChannelResponse[]>> {
     try {
-      const response = await this.awsClient.request('/channels', {
+      const response = await this.awsClient.makeRequest('/channels', {
         method: 'GET',
         queryParams: {
           action: 'getUserChannels',
@@ -319,7 +329,7 @@ export class CommunicationService extends BaseService {
   ): Promise<ServiceResponse<void>> {
     try {
       // Update channel membership
-      const response = await this.awsClient.request('/channels', {
+      const response = await this.awsClient.makeRequest('/channels', {
         method: 'PUT',
         body: {
           action: 'addMember',
@@ -368,7 +378,7 @@ export class CommunicationService extends BaseService {
   ): Promise<ServiceResponse<void>> {
     try {
       // Update channel membership
-      const response = await this.awsClient.request('/channels', {
+      const response = await this.awsClient.makeRequest('/channels', {
         method: 'PUT',
         body: {
           action: 'removeMember',
@@ -410,7 +420,7 @@ export class CommunicationService extends BaseService {
    */
   private async updateChannelActivity(channelId: string, timestamp: Date): Promise<void> {
     try {
-      await this.awsClient.request('/channels', {
+      await this.awsClient.makeRequest('/channels', {
         method: 'PUT',
         body: {
           action: 'updateActivity',
@@ -429,7 +439,7 @@ export class CommunicationService extends BaseService {
    */
   private async broadcastToChannel(channelId: string, message: any): Promise<void> {
     try {
-      await this.awsClient.request('/websocket/broadcast', {
+      await this.awsClient.makeRequest('/websocket/broadcast', {
         method: 'POST',
         body: {
           action: 'broadcast',
@@ -448,7 +458,7 @@ export class CommunicationService extends BaseService {
    */
   private async notifyChannelMembers(userIds: string[], message: any): Promise<void> {
     try {
-      await this.awsClient.request('/websocket/notify', {
+      await this.awsClient.makeRequest('/websocket/notify', {
         method: 'POST',
         body: {
           action: 'notify',
@@ -468,10 +478,10 @@ export class CommunicationService extends BaseService {
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy', details: any }> {
     try {
       // Test DynamoDB connectivity
-      const dbHealth = await this.awsClient.request('/health/dynamodb');
+      const dbHealth = await this.awsClient.makeRequest('/health/dynamodb');
       
       // Test WebSocket API connectivity  
-      const wsHealth = await this.awsClient.request('/health/websocket');
+      const wsHealth = await this.awsClient.makeRequest('/health/websocket');
 
       const isHealthy = dbHealth.success && wsHealth.success;
 
@@ -494,5 +504,49 @@ export class CommunicationService extends BaseService {
         details: { error: error instanceof Error ? error.message : 'Unknown error' }
       };
     }
+  }
+
+  /**
+   * Get a presigned URL for uploading a file attachment (e.g., voice clip)
+   */
+  async getPresignedUploadUrl(
+    fileName: string,
+    contentType: string
+  ): Promise<ServiceResponse<{ uploadUrl: string; fileUrl: string }>> {
+    try {
+      const response = await this.awsClient.makeRequest('/uploads', {
+        method: 'POST',
+        body: {
+          action: 'presign',
+          fileName,
+          contentType
+        }
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to get presigned URL');
+      }
+
+      const { uploadUrl, fileUrl } = response.data || {};
+      return this.createSuccessResponse({ uploadUrl, fileUrl }, 'Presigned URL created');
+    } catch (error) {
+      this.logError('getPresignedUploadUrl', error);
+      return this.createErrorResponse('Failed to get presigned URL', error);
+    }
+  }
+
+  /**
+   * Upload a blob to S3 using the presigned URL
+   */
+  async uploadToPresignedUrl(
+    uploadUrl: string,
+    data: Blob | ArrayBuffer | Uint8Array,
+    contentType: string
+  ): Promise<void> {
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: data as any
+    });
   }
 }

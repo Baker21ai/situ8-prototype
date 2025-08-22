@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAdminService } from '../../services/ServiceProvider';
+import type { 
+  SystemHealth as AdminSystemHealth, 
+  UserManagement as AdminUserManagement, 
+  ComplianceSettings as AdminComplianceSettings 
+} from '../../services/admin.service';
 import { 
   Shield,
   Users,
@@ -30,7 +36,6 @@ import {
   Wifi,
   HardDrive,
   Cpu,
-  Memory,
   BarChart3,
   Bell,
   Eye,
@@ -110,9 +115,9 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({
-  systemHealth,
-  users = [],
-  complianceSettings,
+  systemHealth: propSystemHealth,
+  users: propUsers = [],
+  complianceSettings: propComplianceSettings,
   onUserAction,
   onSystemAction,
   onUpdateSettings
@@ -120,8 +125,122 @@ export function AdminPanel({
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [showSystemLogs, setShowSystemLogs] = useState(false);
+  
+  // State for real data from AdminService
+  const [systemHealth, setSystemHealth] = useState<AdminSystemHealth | null>(propSystemHealth || null);
+  const [users, setUsers] = useState<AdminUserManagement[]>(propUsers);
+  const [complianceSettings, setComplianceSettings] = useState<AdminComplianceSettings | null>(propComplianceSettings || null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const adminService = useAdminService();
 
-  // Mock data for demo
+  // Load data from AdminService on mount
+  useEffect(() => {
+    const loadAdminData = async () => {
+      if (!adminService) {
+        setError('Admin service not available');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load system health, users, and compliance settings in parallel
+        const [healthResult, usersResult, complianceResult] = await Promise.allSettled([
+          adminService.getSystemHealth(),
+          adminService.getUserList(1, 50),
+          adminService.getComplianceSettings()
+        ]);
+
+        // Process system health
+        if (healthResult.status === 'fulfilled' && healthResult.value.success) {
+          setSystemHealth(healthResult.value.data!);
+        }
+
+        // Process users
+        if (usersResult.status === 'fulfilled' && usersResult.value.success) {
+          setUsers(usersResult.value.data!.users);
+        }
+
+        // Process compliance settings
+        if (complianceResult.status === 'fulfilled' && complianceResult.value.success) {
+          setComplianceSettings(complianceResult.value.data!);
+        }
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load admin data');
+        console.error('Failed to load admin data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAdminData();
+  }, [adminService]);
+
+  // System actions handler
+  const handleSystemAction = async (action: string) => {
+    if (!adminService) return;
+
+    try {
+      if (action === 'refresh') {
+        // Reload system health data
+        const result = await adminService.getSystemHealth();
+        if (result.success) {
+          setSystemHealth(result.data!);
+        }
+      } else if (action === 'restart') {
+        // Restart services
+        const result = await adminService.restartServices();
+        if (result.success) {
+          // Reload system health after restart
+          setTimeout(async () => {
+            const healthResult = await adminService.getSystemHealth();
+            if (healthResult.success) {
+              setSystemHealth(healthResult.data!);
+            }
+          }, 2000);
+        }
+      }
+      
+      // Call prop handler if provided
+      onSystemAction?.(action);
+    } catch (err) {
+      console.error('System action failed:', err);
+    }
+  };
+
+  // User actions handler
+  const handleUserAction = async (action: string, userId: string) => {
+    if (!adminService) return;
+
+    try {
+      if (action === 'edit') {
+        // Handle user edit
+        setSelectedUser(userId);
+      } else if (action === 'suspend') {
+        // Suspend user
+        const result = await adminService.updateUserStatus(userId, 'suspended');
+        if (result.success) {
+          // Reload users
+          const usersResult = await adminService.getUserList(1, 50);
+          if (usersResult.success) {
+            setUsers(usersResult.data!.users);
+          }
+        }
+      }
+      
+      // Call prop handler if provided
+      onUserAction?.(action, userId);
+    } catch (err) {
+      console.error('User action failed:', err);
+    }
+  };
+
+  // Mock data for demo (fallback when service fails)
   const mockSystemHealth: SystemHealth = {
     overall: 'healthy',
     services: [
@@ -232,6 +351,26 @@ export function AdminPanel({
 
   return (
     <div className="h-full flex flex-col">
+      {/* Loading State */}
+      {loading && (
+        <Alert className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Loading admin data...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* System Health Alert */}
       {currentSystemHealth.overall !== 'healthy' && (
         <Alert variant={currentSystemHealth.overall === 'critical' ? 'destructive' : 'default'} className="mb-4">
@@ -306,7 +445,7 @@ export function AdminPanel({
               <Shield className="h-5 w-5" />
               System Administration
             </CardTitle>
-            <Button size="sm" variant="outline" onClick={() => onSystemAction?.('refresh')}>
+            <Button size="sm" variant="outline" onClick={() => handleSystemAction('refresh')}>
               <RefreshCw className="h-4 w-4 mr-1" />
               Refresh
             </Button>
@@ -319,6 +458,9 @@ export function AdminPanel({
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="system">System Health</TabsTrigger>
+              <TabsTrigger value="sop">SOP Management</TabsTrigger>
+              <TabsTrigger value="automations">Automations</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
               <TabsTrigger value="compliance">Compliance</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
@@ -379,7 +521,7 @@ export function AdminPanel({
               <div className="p-4 pb-3">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-medium">User Management</h3>
-                  <Button size="sm" onClick={() => onUserAction?.('create', '')}>
+                  <Button size="sm" onClick={() => handleUserAction('create', '')}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add User
                   </Button>
@@ -408,7 +550,7 @@ export function AdminPanel({
                             }>
                               {user.status}
                             </Badge>
-                            <Button size="icon" variant="ghost" onClick={() => onUserAction?.('edit', user.id)}>
+                            <Button size="icon" variant="ghost" onClick={() => handleUserAction('edit', user.id)}>
                               <Edit className="h-4 w-4" />
                             </Button>
                           </div>
@@ -455,7 +597,7 @@ export function AdminPanel({
                       <Eye className="h-4 w-4 mr-1" />
                       {showSystemLogs ? 'Hide' : 'Show'} Logs
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => onSystemAction?.('restart')}>
+                    <Button size="sm" variant="outline" onClick={() => handleSystemAction('restart')}>
                       <RefreshCw className="h-4 w-4 mr-1" />
                       Restart Services
                     </Button>
@@ -520,6 +662,240 @@ export function AdminPanel({
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="sop" className="flex-1 p-4">
+              <div className="space-y-6">
+                {/* SOP Upload Section */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">📤 Upload SOPs</h3>
+                  <Card>
+                    <CardContent className="p-6">
+                      {/* Drag & Drop Zone */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+                        <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">Drag & drop your SOP files here</h4>
+                        <p className="text-sm text-gray-600 mb-4">or click to browse</p>
+                        <Button variant="outline">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Browse Files
+                        </Button>
+                        <p className="text-xs text-gray-500 mt-3">Supports PDF, DOCX, TXT files up to 50MB</p>
+                      </div>
+                      
+                      {/* Upload Progress/History */}
+                      <div className="mt-6">
+                        <h4 className="text-sm font-medium mb-3">Recent Uploads</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-sm font-medium">Emergency Response SOP.pdf</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">Processed</Badge>
+                              <span className="text-xs text-gray-500">2 min ago</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                              <span className="text-sm font-medium">Fire Safety Procedures.docx</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">Processing</Badge>
+                              <span className="text-xs text-gray-500">5 min ago</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* SOP Library */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">📚 SOP Library</h3>
+                  <div className="grid gap-4">
+                    {/* SOP Card Example */}
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium text-base">Smoke & Fire Response</h4>
+                            <p className="text-sm text-gray-600 mt-1">Last updated: Jan 15, 2024</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {/* AI Summary */}
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">AI-Generated Summary</Label>
+                            <p className="text-sm text-gray-800 mt-1">
+                              Emergency procedures for smoke and fire incidents including evacuation protocols, 
+                              emergency contacts, and post-incident reporting requirements.
+                            </p>
+                          </div>
+                          
+                          {/* Keywords */}
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">Keywords</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <Badge variant="secondary" className="text-xs">smoke</Badge>
+                              <Badge variant="secondary" className="text-xs">fire</Badge>
+                              <Badge variant="secondary" className="text-xs">alarm</Badge>
+                              <Badge variant="secondary" className="text-xs">evacuation</Badge>
+                              <Button size="sm" variant="ghost" className="h-5 w-5 p-0">
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Teams to Notify */}
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">Teams to Notify</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <Badge variant="outline" className="text-xs">Fire Marshal</Badge>
+                              <Badge variant="outline" className="text-xs">Security Team</Badge>
+                              <Badge variant="outline" className="text-xs">Building Management</Badge>
+                              <Button size="sm" variant="ghost" className="h-5 w-5 p-0">
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Immediate Actions */}
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">Immediate Actions</Label>
+                            <ul className="text-sm text-gray-800 mt-1 space-y-1">
+                              <li>• Activate fire alarm system</li>
+                              <li>• Call emergency services (911)</li>
+                              <li>• Initiate evacuation procedures</li>
+                              <li>• Secure perimeter and account for personnel</li>
+                            </ul>
+                          </div>
+                          
+                          {/* Mapped Activities */}
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">Mapped Activities</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <Badge variant="outline" className="text-xs">Fire Alarm</Badge>
+                              <Badge variant="outline" className="text-xs">Smoke Detection</Badge>
+                              <Button size="sm" variant="ghost" className="text-xs h-6">
+                                + Map More
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Another SOP Card */}
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium text-base">Security Incident Response</h4>
+                            <p className="text-sm text-gray-600 mt-1">Last updated: Jan 10, 2024</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">AI-Generated Summary</Label>
+                            <p className="text-sm text-gray-800 mt-1">
+                              Procedures for handling security breaches, unauthorized access, and threat assessments.
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-xs font-medium text-gray-600">Keywords</Label>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <Badge variant="secondary" className="text-xs">security</Badge>
+                              <Badge variant="secondary" className="text-xs">breach</Badge>
+                              <Badge variant="secondary" className="text-xs">unauthorized</Badge>
+                              <Badge variant="secondary" className="text-xs">threat</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* AI Extraction Settings */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3">🤖 AI Extraction Settings</h3>
+                  <Card>
+                    <CardContent className="p-4 space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium">Teams Section Prompts</Label>
+                        <Textarea 
+                          className="mt-1" 
+                          placeholder="Instructions for AI to identify teams and personnel to notify..."
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Actions Section Prompts</Label>
+                        <Textarea 
+                          className="mt-1" 
+                          placeholder="Instructions for AI to extract immediate action items..."
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Keyword Generation Rules</Label>
+                        <Textarea 
+                          className="mt-1" 
+                          placeholder="Rules for generating relevant keywords and tags..."
+                          rows={2}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm">Save Settings</Button>
+                        <Button size="sm" variant="outline">Reset to Defaults</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="automations" className="flex-1 p-4">
+              <div className="text-center py-8 text-muted-foreground">
+                <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Automation Configuration</p>
+                <p className="text-xs mt-1">Auto-incident rules and SOP triggers coming soon</p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="integrations" className="flex-1 p-4">
+              <div className="text-center py-8 text-muted-foreground">
+                <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Third-Party Integrations</p>
+                <p className="text-xs mt-1">Lemel, Ambient, and other integrations coming soon</p>
               </div>
             </TabsContent>
             

@@ -125,10 +125,7 @@ export function ChatLayout({ className = '', showRadio = true }: ChatLayoutProps
                 />
               )}
               {activePanel === 'radio' && showRadio && (
-                <RadioCommunications
-                  className="h-full"
-                  isModal={false}
-                />
+                <RadioCommunications className="h-full" />
               )}
             </>
           )}
